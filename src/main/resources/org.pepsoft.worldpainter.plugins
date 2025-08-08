@@ -1,0 +1,7 @@
+{
+  "name": "Slabify Plugin",
+  "version": "${project.version}",
+  "classes": [
+    "com.gmail.frogocomics.slabify.SlabifyWPPlugin"
+  ]
+}

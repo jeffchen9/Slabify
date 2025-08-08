@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.gmail.frogocomics.slabify</groupId>
+    <artifactId>SlabifyPlugin</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <parent>
+        <groupId>org.pepsoft.worldpainter</groupId>
+        <artifactId>PluginParent</artifactId>
+        <version>1.9.0</version>
+    </parent>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.pepsoft.worldpainter</groupId>
+            <artifactId>WPGUI</artifactId>
+            <version>LATEST</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.javatuples</groupId>
+            <artifactId>javatuples</artifactId>
+            <version>1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>onnxruntime-platform</artifactId>
+            <version>1.20.0-1.5.11</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>com.gmail.frogocomics.slabify.properties</include>
+                    <include>org.pepsoft.worldpainter.plugins</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>org.demo.wpplugin.properties</exclude>
+                    <exclude>com.gmail.frogocomics.slabify.plugins</exclude>
+                </excludes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+    </build>
+    <profiles>
+        <!-- Enable this profile and execute the test phase in order to run your plugin with WorldPainter. -->
+        <profile>
+            <id>testWithWorldPainter</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.pepsoft.worldpainter</groupId>
+                    <artifactId>WPGUI</artifactId>
+                    <!-- Update this to the version of WorldPainter you wish to test with: -->
+                    <!--2.21.2-SNAPSHOT-->
+                    <version>2.22.1</version>
+                    <scope>compile</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <phase>test</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <classpath/>
+                                <!-- Uncomment this to enable debugging. Change suspend=n to suspend=y if you want to debug plugin loading or initialisation: -->
+                                <!--argument>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005</argument-->
+                                <!-- These exports are needed from Java 9+ to make the JIDE GUI framework work: -->
+<!--                                <argument>&#45;&#45;add-exports</argument>-->
+<!--                                <argument>java.desktop/com.sun.java.swing.plaf.windows=ALL-UNNAMED</argument>-->
+<!--                                <argument>&#45;&#45;add-exports</argument>-->
+<!--                                <argument>java.desktop/javax.swing.plaf.synth=ALL-UNNAMED</argument>-->
+<!--                                <argument>&#45;&#45;add-exports</argument>-->
+<!--                                <argument>java.desktop/sun.awt.shell=ALL-UNNAMED</argument>-->
+<!--                                <argument>&#45;&#45;add-exports</argument>-->
+<!--                                <argument>java.desktop/sun.swing=ALL-UNNAMED</argument>-->
+<!--                                <argument>&#45;&#45;add-exports</argument>-->
+<!--                                <argument>java.desktop/sun.awt=ALL-UNNAMED</argument>-->
+<!--                                <argument>&#45;&#45;add-exports</argument>-->
+<!--                                <argument>java.desktop/sun.awt.windows=ALL-UNNAMED</argument>-->
+<!--                                <argument>&#45;&#45;add-exports</argument>-->
+<!--                                <argument>java.desktop/sun.awt.image=ALL-UNNAMED</argument>-->
+<!--                                <argument>&#45;&#45;add-exports</argument>-->
+<!--                                <argument>java.base/sun.security.action=ALL-UNNAMED</argument>-->
+                                <argument>org.pepsoft.worldpainter.Main</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
