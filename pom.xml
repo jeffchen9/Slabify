@@ -33,11 +33,6 @@
             <artifactId>javatuples</artifactId>
             <version>1.2</version>
         </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>onnxruntime-platform</artifactId>
-            <version>1.20.0-1.5.11</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -70,7 +65,7 @@
                     <artifactId>WPGUI</artifactId>
                     <!-- Update this to the version of WorldPainter you wish to test with: -->
                     <!--2.21.2-SNAPSHOT-->
-                    <version>2.22.1</version>
+                    <version>LATEST</version>
                     <scope>compile</scope>
                 </dependency>
             </dependencies>

@@ -18,8 +18,6 @@
 
 package com.gmail.frogocomics.slabify.utils;
 
-import static org.bytedeco.onnxruntime.global.onnxruntime.OrtArenaAllocator;
-import static org.bytedeco.onnxruntime.global.onnxruntime.OrtMemTypeDefault;
 import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
 import com.gmail.frogocomics.slabify.layers.Slab.Interpolation;
@@ -29,16 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import javax.imageio.ImageIO;
-import org.bytedeco.javacpp.BytePointer;
-import org.bytedeco.javacpp.FloatPointer;
-import org.bytedeco.javacpp.LongPointer;
-import org.bytedeco.javacpp.PointerPointer;
-import org.bytedeco.javacpp.indexer.FloatIndexer;
-import org.bytedeco.onnxruntime.MemoryInfo;
-import org.bytedeco.onnxruntime.RunOptions;
-import org.bytedeco.onnxruntime.Session;
-import org.bytedeco.onnxruntime.Value;
-import org.bytedeco.onnxruntime.ValueVector;
 import org.pepsoft.worldpainter.Dimension;
 import org.pepsoft.worldpainter.Tile;
 
@@ -218,102 +206,6 @@ public final class Utils {
   }
 
   /**
-   * Upscale a tile using neural network-powered interpolation.
-   *
-   * @param tile      the tile to upscale.
-   * @param dimension the dimension the tile belongs to.
-   * @param session   the current ONNX session containing the loaded super-resolution model.
-   * @return the upscaled heightmap as a float array.
-   */
-  public static float[][] upscaleTile(Tile tile, Dimension dimension, Session session) {
-    int pad = 16;
-    int twoPad = pad * 2;
-    float[][] padded = padTile(tile, dimension, pad);
-
-    // Normalize between 0 and 1
-    normalize(padded, dimension.getMaxHeight(), dimension.getMinHeight());
-
-    // Duplicate grayscale along R, G, B channels
-    int totalElements = 3 * (TILE_SIZE + twoPad) * (TILE_SIZE + twoPad) * 4;
-
-    PointerPointer<BytePointer> inputNames = new PointerPointer<>(1);
-    BytePointer inputName = new BytePointer("input");
-    inputNames.put(0, inputName);
-    PointerPointer<BytePointer> outputNames = new PointerPointer<>(1);
-    BytePointer outputName = new BytePointer("output");
-    outputNames.put(0, outputName);
-
-    Value inputTensor = createInputTensor(padded);
-
-    // Run
-    ValueVector outputValue = session.Run(new RunOptions(), inputNames, inputTensor, 1, outputNames,
-        1);
-    Value out = outputValue.get(0);
-    FloatPointer floatArr = out.GetTensorMutableDataFloat();
-
-    float[] data = new float[totalElements];
-    floatArr.get(data);
-
-    // Clamp values just in case
-    for (int i = 0; i < data.length; i++) {
-      data[i] = Math.min(1, Math.max(0, data[i]));
-    }
-
-    // Extract channels and compute grayscale
-    int height = (TILE_SIZE + 2 * pad) * 2;
-    int width = (TILE_SIZE + 2 * pad) * 2;
-    float[][] sr = new float[TILE_SIZE * 2][TILE_SIZE * 2];
-
-    for (int y = twoPad; y < sr.length + twoPad; y++) {
-      for (int x = twoPad; x < sr[0].length + twoPad; x++) {
-        int rIndex = y * width + x;
-        int gIndex = height * width + y * width + x;
-        int bIndex = 2 * height * width + y * width + x;
-
-        // Grayscale luminance
-        sr[y - twoPad][x - twoPad] =
-            0.299f * data[rIndex] + 0.587f * data[gIndex] + 0.114f * data[bIndex];
-      }
-    }
-
-    return sr;
-  }
-
-  /**
-   * Create a tensor from a 2D float array.
-   *
-   * @param grayscale the float array.
-   * @return the tensor.
-   */
-  public static Value createInputTensor(float[][] grayscale) {
-    int height = grayscale.length;
-    int width = grayscale[0].length;
-
-    int numElements = height * width * 3;
-    FloatPointer pointer = new FloatPointer(numElements);
-    FloatIndexer idx = FloatIndexer.create(pointer);
-
-    int i = 0;
-    for (int c = 0; c < 3; c++) {
-      for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-          idx.put(i, grayscale[y][x]);
-          i++;
-        }
-      }
-    }
-
-    long[] shape = new long[]{1, 3, height, width};
-
-    LongPointer inputNodeDims = new LongPointer(4);
-    inputNodeDims.put(shape);
-
-    return Value.CreateTensorFloat(
-        MemoryInfo.CreateCpu(OrtArenaAllocator, OrtMemTypeDefault).asOrtMemoryInfo(),
-        pointer, numElements, inputNodeDims, shape.length);
-  }
-
-  /**
    * Get a heightmap from a {@link Tile} with padding from neighboring {@link Tile}s.
    *
    * @param tile      the tile to get the heightmap from.
@@ -383,7 +275,7 @@ public final class Utils {
    */
   public static float[][] upscaleTile(Tile tile, Dimension dimension, Interpolation method) {
 
-    if (method == Interpolation.HEIGHTMAP || method == Interpolation.NEUTRAL_NETWORK) {
+    if (method == Interpolation.HEIGHTMAP) {
       throw new IllegalArgumentException("This method should not be called.");
     }
 

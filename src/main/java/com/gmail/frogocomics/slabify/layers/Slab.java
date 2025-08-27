@@ -227,7 +227,6 @@ public final class Slab extends CustomLayer implements HeightmapLayer {
   public enum Interpolation {
     BILINEAR("Bilinear"),
     BICUBIC("Bicubic"),
-    NEUTRAL_NETWORK("Neural network"),
     HEIGHTMAP("From height map");
 
     private final String name;

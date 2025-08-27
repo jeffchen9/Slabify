@@ -18,8 +18,6 @@
 
 package com.gmail.frogocomics.slabify.layers;
 
-import static org.bytedeco.onnxruntime.global.onnxruntime.ORT_ENABLE_EXTENDED;
-import static org.bytedeco.onnxruntime.global.onnxruntime.ORT_LOGGING_LEVEL_WARNING;
 import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
 import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
@@ -43,19 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
-import org.bytedeco.javacpp.BytePointer;
-import org.bytedeco.javacpp.CharPointer;
-import org.bytedeco.javacpp.Loader;
-import org.bytedeco.javacpp.Pointer;
-import org.bytedeco.onnxruntime.Env;
-import org.bytedeco.onnxruntime.Session;
-import org.bytedeco.onnxruntime.SessionOptions;
 import org.pepsoft.minecraft.Chunk;
 import org.pepsoft.minecraft.Material;
-import org.pepsoft.worldpainter.Dimension;
-import org.pepsoft.worldpainter.MixedMaterial;
-import org.pepsoft.worldpainter.Platform;
-import org.pepsoft.worldpainter.Tile;
+import org.pepsoft.worldpainter.*;
 import org.pepsoft.worldpainter.exporting.AbstractLayerExporter;
 import org.pepsoft.worldpainter.exporting.FirstPassLayerExporter;
 import org.pepsoft.worldpainter.exporting.Fixup;
@@ -67,18 +55,13 @@ import org.slf4j.LoggerFactory;
 public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> implements
     FirstPassLayerExporter, SecondPassLayerExporter {
 
-  private static final String MODEL_PATH = System.getProperty("com.gmail.frogocomics.modelPath");
-
   private static final Logger logger = LoggerFactory.getLogger(SlabCustomLayerExporter.class);
-  private static final ConcurrentMap<Tile, Object> neuralNetworkTileMap = new ConcurrentHashMap<>();
 
   private final Map<Tile, Shapemap> shapemaps = new HashMap<>();
 
   private float[][] heightmap;
   private Map<String, Material> mapping;
   private boolean finished = false;
-
-  private Session session;
 
   private int cornerX;
   private int cornerY;
@@ -132,22 +115,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
         }
       }
     }
-
-    if (MODEL_PATH == null) {
-      logger.warn(
-          "The model path is unspecified! Please specify it in the form of -Dcom.gmail.frogocomics.modelPath=PATH in worldpainter.vmoptions.");
-      disable = true;
-    } else if (layer.useStairs() && layer.getInterpolation() == Interpolation.NEUTRAL_NETWORK) {
-      // Set up the neural network.
-      Env env = new Env(ORT_LOGGING_LEVEL_WARNING, "inference");
-      SessionOptions sessionOptions = new SessionOptions();
-      sessionOptions.SetGraphOptimizationLevel(ORT_ENABLE_EXTENDED);
-      sessionOptions.SetIntraOpNumThreads(1);
-      sessionOptions.SetInterOpNumThreads(1);
-      Pointer modelPath = Loader.getPlatform().startsWith("windows") ? new CharPointer(MODEL_PATH)
-          : new BytePointer(MODEL_PATH);
-      session = new Session(env, modelPath, sessionOptions);
-    }
   }
 
   /**
@@ -191,7 +158,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               || layer.getInterpolation() == Interpolation.BICUBIC) {
             logger.info("Upscaling tile: {}, {}", tile.getX(), tile.getY());
             doubleHeightMap = Utils.upscaleTile(tile, dimension, layer.getInterpolation());
-          } else if (layer.getInterpolation() == Interpolation.HEIGHTMAP) {
+          } else { // if (layer.getInterpolation() == Interpolation.HEIGHTMAP)
             doubleHeightMap = new float[TILE_SIZE * 2][TILE_SIZE * 2];
 
             int tx = tile.getX() * TILE_SIZE * 2 - cornerX * 2;
@@ -203,10 +170,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               }
             }
 
-          } else { // if (layer.getInterpolation() == Interpolation.NEUTRAL_NETWORK)
-            logger.info("Upscaling tile using NN: {}, {}", tile.getX(), tile.getY());
-            doubleHeightMap = Utils.upscaleTile(tile, dimension, session);
-            Utils.unnormalize(doubleHeightMap, tile.getMaxHeight(), tile.getMinHeight());
           }
 
           // We need to create a difference map
