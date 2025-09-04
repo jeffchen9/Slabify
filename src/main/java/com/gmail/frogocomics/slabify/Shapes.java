@@ -18,8 +18,15 @@
 
 package com.gmail.frogocomics.slabify;
 
+import org.javatuples.Pair;
 import org.pepsoft.minecraft.Constants;
 import org.pepsoft.minecraft.Material;
+import org.pepsoft.worldpainter.Configuration;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
 
 /**
  * Utility class for assigning the most appropriate shape to use to add detail to terrain. A "cut"
@@ -33,6 +40,73 @@ import org.pepsoft.minecraft.Material;
  * side containing positions 1 and 2.
  */
 public final class Shapes {
+
+  // Key: block; Values: stair, slab
+  private static final Map<String, Pair<String, String>> blockKey = new HashMap<>();
+  // Key: slab; Values: stair, block
+  private static final Map<String, Pair<String, String>> slabKey = new HashMap<>();
+
+  static {
+    // Get the block mapping list
+    File configDir = Configuration.getConfigDir();
+    File mappingFile =  new File(configDir, "stair_mapping.csv");
+
+    if (!mappingFile.exists()) {
+      // Create the default file
+
+      try (InputStream stream = Shapes.class.getClassLoader().getResourceAsStream("stair_mapping.csv")) {
+        if (stream != null) {
+          Files.copy(stream, mappingFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } else {
+          throw new IOException("stair_mapping.csv not found");
+        }
+      } catch (IOException e) {
+          throw new RuntimeException(e);
+      }
+    }
+
+    // Load the file
+    List<String[]> rows = new ArrayList<>();
+    try {
+      BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(mappingFile.toPath())));
+      String line;
+      boolean isHeader = true;
+      while ((line = reader.readLine()) != null) {
+        if (isHeader) {
+          // Skip header row
+          isHeader = false;
+          continue;
+        }
+        rows.add(line.split(","));
+      }
+    } catch (IOException e) {
+        throw new RuntimeException(e);
+    }
+
+    for (String[] row : rows) {
+      if (row.length != 3) {
+        throw new IllegalArgumentException("Wrong number of columns in stair_mapping.csv: " + row.length);
+      }
+
+      String block = row[0];
+      if (!block.contains(":")) {
+        block = com.gmail.frogocomics.slabify.Constants.MC_NAMESPACE + ":" + block;
+      }
+
+      String stair = row[1];
+      if (!stair.contains(":")) {
+        stair = com.gmail.frogocomics.slabify.Constants.MC_NAMESPACE + ":" + stair;
+      }
+
+      String slab = row[2];
+      if (!slab.contains(":")) {
+        slab = com.gmail.frogocomics.slabify.Constants.MC_NAMESPACE + ":" + slab;
+      }
+
+      blockKey.put(block, Pair.with(stair, slab));
+      slabKey.put(slab, Pair.with(stair, block));
+    }
+  }
 
   /**
    * Shape: Full block, fill
@@ -234,61 +308,61 @@ public final class Shapes {
    * An array of all the available shapes.\
    */
   private static final int[][] SHAPES = {
-      // 1
+      // 0
       F_FULL_BLOCK,
-      // 2
+      // 1
       F_SLAB,
-      // 3
+      // 2
       C_SLAB,
-      // 4
+      // 3
       F_STAIR_N,
-      // 5
+      // 4
       C_STAIR_N,
-      // 6
+      // 5
       F_STAIR_E,
-      // 7
+      // 6
       C_STAIR_E,
-      // 8
+      // 7
       F_STAIR_S,
-      // 9
+      // 8
       C_STAIR_S,
-      // 10
+      // 9
       F_STAIR_W,
-      // 11
+      // 10
       C_STAIR_W,
-      // 12
+      // 11
       F_STAIR_OUTER_TL,
-      // 13
+      // 12
       C_STAIR_OUTER_TL,
-      // 14
+      // 13
       F_STAIR_OUTER_TR,
-      // 15
+      // 14
       C_STAIR_OUTER_TR,
-      // 16
+      // 15
       F_STAIR_OUTER_BL,
-      // 17
+      // 16
       C_STAIR_OUTER_BL,
-      // 18
+      // 17
       F_STAIR_OUTER_BR,
-      // 19
+      // 18
       C_STAIR_OUTER_BR,
-      // 20
+      // 19
       F_STAIR_INNER_TL,
-      // 21
+      // 20
       C_STAIR_INNER_TL,
-      // 22
+      // 21
       F_STAIR_INNER_TR,
-      // 23
+      // 22
       C_STAIR_INNER_TR,
-      // 24
+      // 23
       F_STAIR_INNER_BL,
-      // 25
+      // 24
       C_STAIR_INNER_BL,
-      // 26
+      // 25
       F_STAIR_INNER_BR,
-      // 27
+      // 26
       C_STAIR_INNER_BR,
-      // 28
+      // 27
       EMPTY
   };
 
@@ -296,61 +370,61 @@ public final class Shapes {
    * <code>true</code> if the shape represents a fill instead of a cut
    */
   private static final boolean[] FILL = {
+      // 0
+      true,
       // 1
       true,
       // 2
-      true,
+      false,
       // 3
-      false,
+      true,
       // 4
-      true,
+      false,
       // 5
-      false,
+      true,
       // 6
-      true,
+      false,
       // 7
-      false,
+      true,
       // 8
-      true,
+      false,
       // 9
-      false,
+      true,
       // 10
-      true,
+      false,
       // 11
-      false,
+      true,
       // 12
-      true,
+      false,
       // 13
-      false,
+      true,
       // 14
-      true,
+      false,
       // 15
-      false,
+      true,
       // 16
-      true,
+      false,
       // 17
-      false,
+      true,
       // 18
-      true,
+      false,
       // 19
-      false,
+      true,
       // 20
-      true,
+      false,
       // 21
-      false,
+      true,
       // 22
-      true,
+      false,
       // 23
-      false,
+      true,
       // 24
-      true,
+      false,
       // 25
-      false,
-      // 26
       true,
-      // 27
+      // 26
       false,
-      // 28
+      // 27
       false
   };
 
@@ -449,25 +523,49 @@ public final class Shapes {
   }
 
   /**
+   * Get the base material that corresponds to a material.
+   *
+   * @param material the material, which can either be a full block or a slab block.
+   * @return the base material.
+   */
+  public static String getBaseMaterial(Material material) {
+    String name = material.name;
+
+    if (slabKey.containsKey(name)) {
+      name = slabKey.get(name).getValue1();
+    } else if (name.endsWith("_slab")) {
+      name = name.substring(0, name.length() - 5);
+    }
+
+    return name;
+  }
+
+  /**
    * Get the stair material that corresponds to a base material and a shape.
    *
    * @param baseMaterial the base material.
    * @param i the index of the shape.
    * @return the stair material.
    */
-  public static Material getStairMaterial(Material baseMaterial, int i) {
-
-    String namespace = baseMaterial.namespace;
-    String simpleName = baseMaterial.simpleName;
-
-    // Assume all slab materials end with "_slab"
-    if (simpleName.endsWith("_slab")) {
-      simpleName = simpleName.substring(0, simpleName.length() - 5);
+  public static Material getStairMaterial(String baseMaterial, int i) {
+    if (i == 0) {
+      // Full block
+      return Material.get(baseMaterial);
+    } else if (i <= 2) {
+      // Slab
+      String slabName = blockKey.containsKey(baseMaterial) ? blockKey.get(baseMaterial).getValue1() : baseMaterial + "_slab";
+      return Material.get(slabName, Constants.MC_HALF, "bottom");
+    } else if (i <= 26) {
+      // Stair
+      String stairName = blockKey.containsKey(baseMaterial) ? blockKey.get(baseMaterial).getValue0() : baseMaterial + "_stairs";
+      return Material.get(stairName, Constants.MC_FACING, FACING[i], Constants.MC_SHAPE, SHAPE[i], Constants.MC_HALF, "bottom");
+    } else {
+      // Air
+      return Material.AIR;
     }
+  }
 
-    // Assume the stair material will end with "_stairs"
-    return Material.get(namespace + ":" + simpleName + "_stairs", Constants.MC_FACING, FACING[i],
-        Constants.MC_SHAPE,
-        SHAPE[i], Constants.MC_HALF, "bottom");
+  public static int getShapesLength() {
+    return SHAPES.length;
   }
 }

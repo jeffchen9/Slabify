@@ -58,6 +58,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
   private static final Logger logger = LoggerFactory.getLogger(SlabCustomLayerExporter.class);
 
   private final Map<Tile, Shapemap> shapemaps = new HashMap<>();
+  private final Map<String, Material[]> materials = new HashMap<>();
 
   private float[][] heightmap;
   private Map<String, Material> mapping;
@@ -78,6 +79,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
       if (mapping.isEmpty()) {
         logger.warn("The layer \"{}\" has an empty mapping.", layer.getName());
+        disable = true;
       }
     }
 
@@ -156,7 +158,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
           if (layer.getInterpolation() == Interpolation.BILINEAR
               || layer.getInterpolation() == Interpolation.BICUBIC) {
-            logger.info("Upscaling tile: {}, {}", tile.getX(), tile.getY());
+            logger.debug("Upscaling tile: {}, {}", tile.getX(), tile.getY());
             doubleHeightMap = Utils.upscaleTile(tile, dimension, layer.getInterpolation());
           } else { // if (layer.getInterpolation() == Interpolation.HEIGHTMAP)
             doubleHeightMap = new float[TILE_SIZE * 2][TILE_SIZE * 2];
@@ -231,6 +233,15 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
           Material slabMaterial = layer.mimicsTerrain() ? mapping.get(materialStr)
               : mixedMaterial.getMaterial(seed, worldX, worldY, terrainHeight + 1);
+          String baseMaterial = Shapes.getBaseMaterial(slabMaterial);
+
+          if (!materials.containsKey(baseMaterial)) {
+            Material[] arr = new Material[Shapes.getShapesLength()];
+            for (int i = 0; i < Shapes.getShapesLength(); i++) {
+              arr[i] = Shapes.getStairMaterial(baseMaterial, i);
+            }
+            materials.put(baseMaterial, arr);
+          }
 
           boolean fullBlock = false;
           boolean fill = true;
@@ -242,20 +253,20 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               // FULL BLOCK
               slabMaterial = blockBelow;
               fullBlock = true;
-            } else if (idx >= 3 && idx <= 26) {
-              slabMaterial = Shapes.getStairMaterial(slabMaterial, idx);
+            } else if (idx <= 26) {
+              slabMaterial = materials.get(baseMaterial)[idx];
             } else if (idx == 27) {
               continue;
             }
 
             fill = Shapes.isFill(idx);
-          }
-
-          if (!layer.useStairs()) {
+          } else {
             double diff = dimension.getHeightAt(worldX, worldY) - terrainHeight;
             if (!(diff >= 0 && diff < 0.5)) {
               continue;
             }
+
+            slabMaterial = materials.get(baseMaterial)[1];
           }
 
           if (fill) {
@@ -396,7 +407,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
           Utils.remap(loadedHeightmap, maxValue, minValue, maxWorldValue, minWorldValue);
 
-          logger.info("Loaded heightmap: {}", heightmapLocation.getName());
+          logger.debug("Loaded heightmap: {}", heightmapLocation.getName());
 
           return new Entry(loadedHeightmap, heightmapLocation);
         } catch (IOException e) {
@@ -412,7 +423,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
       if (entry != null && entry.activeExporters.decrementAndGet() == 0) {
         layerMap.remove(layer);
-        logger.info("Unloaded heightmap: {}", entry.sourceFile.getName());
+        logger.debug("Unloaded heightmap: {}", entry.sourceFile.getName());
         System.gc();
       }
     }
