@@ -1,4 +1,4 @@
-BLOCK,STAIR,SLAB
+block,stairs,slab,vert_corner,quarter,vert_quarter,corner_slab,vert_corner_slab,eighth_slab
 oak_planks,oak_stairs,oak_slab
 spruce_planks,spruce_stairs,spruce_slab
 birch_planks,birch_stairs,birch_slab

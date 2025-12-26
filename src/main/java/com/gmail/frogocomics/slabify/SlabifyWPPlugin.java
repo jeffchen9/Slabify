@@ -18,12 +18,9 @@
 
 package com.gmail.frogocomics.slabify;
 
-import static com.gmail.frogocomics.slabify.Version.VERSION;
-
 import com.gmail.frogocomics.slabify.gui.SlabCustomLayerEditor;
 import com.gmail.frogocomics.slabify.layers.Slab;
-import java.util.Collections;
-import java.util.List;
+import com.gmail.frogocomics.slabify.shape.Shapes;
 import org.pepsoft.worldpainter.Platform;
 import org.pepsoft.worldpainter.layers.CustomLayer;
 import org.pepsoft.worldpainter.layers.Layer;
@@ -31,6 +28,11 @@ import org.pepsoft.worldpainter.layers.LayerEditor;
 import org.pepsoft.worldpainter.plugins.AbstractPlugin;
 import org.pepsoft.worldpainter.plugins.CustomLayerProvider;
 import org.pepsoft.worldpainter.plugins.LayerEditorProvider;
+
+import java.util.Collections;
+import java.util.List;
+
+import static com.gmail.frogocomics.slabify.Version.VERSION;
 
 /**
  * The main plugin class for Slabify.
@@ -45,6 +47,7 @@ public final class SlabifyWPPlugin extends AbstractPlugin implements CustomLayer
 
   public SlabifyWPPlugin() {
     super(NAME, VERSION);
+    Shapes.init();
   }
 
   @Override

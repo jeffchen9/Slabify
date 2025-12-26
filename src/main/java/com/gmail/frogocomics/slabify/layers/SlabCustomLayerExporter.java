@@ -18,54 +18,46 @@
 
 package com.gmail.frogocomics.slabify.layers;
 
-import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
-import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
-
-import com.gmail.frogocomics.slabify.Shapes;
-import com.gmail.frogocomics.slabify.layers.Slab.Interpolation;
+import com.gmail.frogocomics.slabify.Constants;
+import com.gmail.frogocomics.slabify.linalg.Matrix;
+import com.gmail.frogocomics.slabify.shape.EmptyShape;
+import com.gmail.frogocomics.slabify.shape.FullShape;
+import com.gmail.frogocomics.slabify.shape.Shape;
+import com.gmail.frogocomics.slabify.shape.Shape.Options;
+import com.gmail.frogocomics.slabify.shape.Shapes;
 import com.gmail.frogocomics.slabify.utils.Utils;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.image.Raster;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.imageio.ImageIO;
+import org.javatuples.Triplet;
 import org.pepsoft.minecraft.Chunk;
 import org.pepsoft.minecraft.Material;
-import org.pepsoft.worldpainter.*;
+import org.pepsoft.worldpainter.Dimension;
+import org.pepsoft.worldpainter.MixedMaterial;
+import org.pepsoft.worldpainter.Platform;
+import org.pepsoft.worldpainter.Tile;
 import org.pepsoft.worldpainter.exporting.AbstractLayerExporter;
 import org.pepsoft.worldpainter.exporting.FirstPassLayerExporter;
-import org.pepsoft.worldpainter.exporting.Fixup;
-import org.pepsoft.worldpainter.exporting.MinecraftWorld;
 import org.pepsoft.worldpainter.exporting.SecondPassLayerExporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.*;
+import java.util.Map.Entry;
+
+import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
+import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
+
 public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> implements
-    FirstPassLayerExporter, SecondPassLayerExporter {
+    FirstPassLayerExporter {
 
   private static final Logger logger = LoggerFactory.getLogger(SlabCustomLayerExporter.class);
 
+  private final Map<String, Options> shapes;
+  private int resolution = 1;
+  private final List<Matrix> shapeMatrices = new ArrayList<>();
+  // Shape, id, true if fill, false if cut
+  private final List<Triplet<Shape, Integer, Boolean>> shapeIndices = new ArrayList<>();
   private final Map<Tile, Shapemap> shapemaps = new HashMap<>();
-  private final Map<String, Material[]> materials = new HashMap<>();
 
-  private float[][] heightmap;
   private Map<String, Material> mapping;
-  private boolean finished = false;
-
-  private int cornerX;
-  private int cornerY;
 
   private boolean disable = false;
 
@@ -83,39 +75,61 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       }
     }
 
-    if (layer.useStairs() && layer.getInterpolation() == Interpolation.HEIGHTMAP
-        && layer.getHeightmap().isPresent()) {
-      // Check if the current world is square
-      int minX = Integer.MAX_VALUE;
-      int minY = Integer.MAX_VALUE;
-      int maxX = Integer.MIN_VALUE;
-      int maxY = Integer.MIN_VALUE;
+    // Disable if all shapes are disabled
+    this.shapes = layer.getShapes();
+    if (shapes.values().stream().allMatch(options -> options == Options.DISABLE)) {
+      disable = true;
+    } else {
+      // If there are shapes that are enabled, get a list of the shapes
 
-      for (Point p : dimension.getTileCoords()) {
-        int tx = p.x;
-        int ty = p.y;
-
-        minX = Math.min(minX, tx);
-        maxX = Math.max(maxX, tx);
-        minY = Math.min(minY, ty);
-        maxY = Math.max(maxY, ty);
-      }
-
-      int expectedCount = (maxX - minX + 1) * (maxY - minY + 1);
-
-      if (expectedCount != dimension.getTileCount()) {
-        disable = true;
-      } else {
-        cornerX = dimension.getLowestX();
-        cornerY = dimension.getLowestY();
-
-        try {
-          heightmap = HeightmapStore.INSTANCE.loadHeightmap(layer, layer.getHeightmap().get(),
-              dimension);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
+      // First, get the resolution
+      for (Entry<String, Options> entry : layer.getShapes().entrySet()) {
+        if (entry.getValue() != Options.DISABLE) {
+          resolution = Math.max(resolution, Shapes.SHAPES.get(entry.getKey()).getMinimumResolution());
         }
       }
+
+      for (Entry<String, Options> entry : layer.getShapes().entrySet()) {
+        Shape shape = Shapes.SHAPES.get(entry.getKey());
+        Optional<List<Matrix>> optBakedShapes = shape.getBakedShapes(entry.getValue(), resolution);
+
+        if (optBakedShapes.isPresent()) {
+          List<Matrix> bakedShapes = optBakedShapes.get();
+
+          // Fill
+          shapeMatrices.addAll(bakedShapes);
+
+          if (!layer.isAddHalf()) {
+            // Cut
+            for (Matrix m : bakedShapes) {
+              Matrix copyM = m.clone();
+              copyM.sub(resolution);
+              shapeMatrices.add(copyM);
+            }
+          }
+
+          // Fill
+          for (int i = 0; i < bakedShapes.size(); i++) {
+            shapeIndices.add(Triplet.with(shape, i, true));
+          }
+
+          if (!layer.isAddHalf()) {
+            // Cut
+            for (int i = 0; i < bakedShapes.size(); i++) {
+              shapeIndices.add(Triplet.with(shape, i, false));
+            }
+          }
+        }
+      }
+
+      // Add additional shapes: full and empty
+      shapeMatrices.addAll(FullShape.getInstance().getBakedShapes(null, resolution).get());
+      shapeIndices.add(Triplet.with(FullShape.getInstance(), 0, true));
+      shapeMatrices.addAll(EmptyShape.getInstance().getBakedShapes(null, resolution).get());
+      shapeIndices.add(Triplet.with(EmptyShape.getInstance(), 0, true));
+
+      // TODO
+      // logger.info(shapeMatrices.toString());
     }
   }
 
@@ -147,46 +161,41 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       MixedMaterial mixedMaterial = layer.getMaterial();
       long seed = dimension.getSeed();
 
-      int[][] shapemap = null;
+      int[][] shapemap;
 
-      if (layer.useStairs()) {
-        if (shapemaps.containsKey(tile)) {
-          // The tile was already created
-          shapemap = shapemaps.get(tile).map;
-        } else {
-          float[][] doubleHeightMap;
+      // Create shape map and difference map
+      if (shapemaps.containsKey(tile)) {
+        // The tile was already created
+        shapemap = shapemaps.get(tile).map;
+      } else {
 
-          if (layer.getInterpolation() == Interpolation.BILINEAR
-              || layer.getInterpolation() == Interpolation.BICUBIC) {
-            logger.debug("Upscaling tile: {}, {}", tile.getX(), tile.getY());
-            doubleHeightMap = Utils.upscaleTile(tile, dimension, layer.getInterpolation());
-          } else { // if (layer.getInterpolation() == Interpolation.HEIGHTMAP)
-            doubleHeightMap = new float[TILE_SIZE * 2][TILE_SIZE * 2];
+        float[][] doubleHeightMap;
+        logger.debug("Upscaling tile: {}, {}", tile.getX(), tile.getY());
 
-            int tx = tile.getX() * TILE_SIZE * 2 - cornerX * 2;
-            int ty = tile.getY() * TILE_SIZE * 2 - cornerY * 2;
-
-            for (int x = 0; x < TILE_SIZE * 2; x++) {
-              for (int y = 0; y < TILE_SIZE * 2; y++) {
-                doubleHeightMap[x][y] = heightmap[ty + y][tx + x];
-              }
-            }
-
-          }
-
-          // We need to create a difference map
-          int[][] originalMap = new int[TILE_SIZE][TILE_SIZE];
+        if (resolution == 1) {
+          // No upscaling, just copy over everything.
+          doubleHeightMap = new float[TILE_SIZE][TILE_SIZE];
           for (int x = 0; x < TILE_SIZE; x++) {
             for (int y = 0; y < TILE_SIZE; y++) {
-              originalMap[x][y] = tile.getIntHeight(x, y);
+              doubleHeightMap[x][y] = tile.getHeight(x, y);
             }
           }
-
-          float[][] differenceMap = Utils.getDifference(doubleHeightMap, originalMap);
-
-          shapemap = Shapes.findMostSimilarShapes(differenceMap);
-          shapemaps.put(tile, new Shapemap(shapemap));
+        } else {
+          doubleHeightMap = Utils.upscaleTile(tile, dimension, layer.getInterpolation(), resolution);
         }
+
+        // We need to create a difference map
+        int[][] originalMap = new int[TILE_SIZE][TILE_SIZE];
+        for (int x = 0; x < TILE_SIZE; x++) {
+          for (int y = 0; y < TILE_SIZE; y++) {
+            originalMap[x][y] = tile.getIntHeight(x, y);
+          }
+        }
+
+        float[][] differenceMap = Utils.getDifference(doubleHeightMap, originalMap, layer.isAddHalf());
+
+        shapemap = Shapes.findMostSimilarShapes(differenceMap, resolution, shapeMatrices, Constants.LOSS_EXPONENT);
+        shapemaps.put(tile, new Shapemap(shapemap));
       }
 
       for (int x = 0; x < 16; x++) {
@@ -219,7 +228,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               (terrainHeight < maxHeight - 2) ? chunk.getMaterial(x, terrainHeight + 2, z)
                   : Material.AIR;
 
-          // Do not place anything if the block below is solid
+          // Do not place anything if the block below is not solid
           if (!blockBelow.solid) {
             continue;
           }
@@ -231,43 +240,18 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             continue;
           }
 
-          Material slabMaterial = layer.mimicsTerrain() ? mapping.get(materialStr)
+          Material baseMaterial = layer.mimicsTerrain() ? mapping.get(materialStr)
               : mixedMaterial.getMaterial(seed, worldX, worldY, terrainHeight + 1);
-          String baseMaterial = Shapes.getBaseMaterial(slabMaterial);
 
-          if (!materials.containsKey(baseMaterial)) {
-            Material[] arr = new Material[Shapes.getShapesLength()];
-            for (int i = 0; i < Shapes.getShapesLength(); i++) {
-              arr[i] = Shapes.getStairMaterial(baseMaterial, i);
-            }
-            materials.put(baseMaterial, arr);
+          Triplet<Shape, Integer, Boolean> t = shapeIndices.get(shapemap[localX][localY]);
+          Material slabMaterial = t.getValue0().getMaterial(baseMaterial, t.getValue1());
+
+          // If material is empty, skip
+          if (slabMaterial == Material.AIR) {
+            continue;
           }
 
-          boolean fullBlock = false;
-          boolean fill = true;
-
-          if (layer.useStairs()) {
-            int idx = shapemap[localX][localY];
-
-            if (idx == 0) {
-              // FULL BLOCK
-              slabMaterial = blockBelow;
-              fullBlock = true;
-            } else if (idx <= 26) {
-              slabMaterial = materials.get(baseMaterial)[idx];
-            } else if (idx == 27) {
-              continue;
-            }
-
-            fill = Shapes.isFill(idx);
-          } else {
-            double diff = dimension.getHeightAt(worldX, worldY) - terrainHeight;
-            if (!(diff >= 0 && diff < 0.5)) {
-              continue;
-            }
-
-            slabMaterial = materials.get(baseMaterial)[1];
-          }
+          boolean fill = t.getValue2();
 
           if (fill) {
             if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
@@ -285,7 +269,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
                 blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
                 || blockAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
-              if (!fullBlock && slabMaterial != Material.AIR) {
+              if (!(t.getValue0() instanceof FullShape)) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
             }
@@ -308,9 +292,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                 blockBelow == Material.WATER || blockBelow == Material.FALLING_WATER ||
                 blockBelow == Material.FLOWING_WATER || blockBelow.containsWater() ||
                 tile.getWaterLevel(localX, localY) == terrainHeight) {
-              if (slabMaterial != Material.AIR) {
-                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-              }
+              slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
             }
 
             chunk.setMaterial(x, terrainHeight, z, slabMaterial);
@@ -320,124 +302,12 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     }
   }
 
-  @Override
-  public Set<Stage> getStages() {
-    return EnumSet.of(Stage.CARVE);
-  }
-
-  @Override
-  public List<Fixup> carve(Rectangle area, Rectangle exportedArea, MinecraftWorld minecraftWorld) {
-    // No operations are actually done here. This is just to signal that the export is finished.
-    if (!finished) { // Ensure exporterFinished() is called only once for each thread.
-      finished = true;
-
-      HeightmapStore.INSTANCE.exporterFinished(layer);
-    }
-
-    return null;
-  }
-
   private static class Shapemap {
 
     private final int[][] map;
 
     private Shapemap(int[][] map) {
       this.map = map;
-    }
-  }
-
-  private static class NeuralNetworkTileStore {
-
-    private static final NeuralNetworkTileStore INSTANCE = new NeuralNetworkTileStore();
-
-    private final ConcurrentMap<Tile, Shapemap> map = new ConcurrentHashMap<>();
-
-
-  }
-
-  private static class HeightmapStore {
-
-    private static final HeightmapStore INSTANCE = new HeightmapStore();
-
-    private final ConcurrentMap<Slab, Entry> layerMap = new ConcurrentHashMap<>();
-
-    private float[][] loadHeightmap(Slab layer, File heightmapLocation, Dimension dimension)
-        throws IOException {
-      Entry entry = layerMap.compute(layer, (key, existing) -> {
-        if (existing != null) {
-          existing.activeExporters.incrementAndGet();
-          return existing;
-        }
-
-        try {
-          BufferedImage image = ImageIO.read(heightmapLocation);
-
-          if (image.getRaster().getDataBuffer().getDataType() != DataBuffer.TYPE_USHORT) {
-            throw new IllegalArgumentException("Image is not 16-bit grayscale.");
-          }
-
-          int width = image.getWidth();
-          int height = image.getHeight();
-          Raster raster = image.getRaster();
-
-          float[][] loadedHeightmap = new float[height][width];
-
-          float minValue = Float.MAX_VALUE;
-          float maxValue = -Float.MAX_VALUE;
-
-          for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-              int pixelValue = raster.getSample(x, y, 0);  // channel 0
-              float value = pixelValue / 65535f;
-              loadedHeightmap[y][x] = value;
-
-              if (value > maxValue) {
-                maxValue = value;
-              }
-
-              if (value < minValue) {
-                minValue = value;
-              }
-            }
-          }
-
-          // Get max and min value in heightmap
-          float minWorldValue = dimension.getLowestHeight();
-          float maxWorldValue = dimension.getHighestHeight();
-
-          Utils.remap(loadedHeightmap, maxValue, minValue, maxWorldValue, minWorldValue);
-
-          logger.debug("Loaded heightmap: {}", heightmapLocation.getName());
-
-          return new Entry(loadedHeightmap, heightmapLocation);
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      });
-
-      return entry.heightmap;
-    }
-
-    public void exporterFinished(Slab layer) {
-      Entry entry = layerMap.get(layer);
-
-      if (entry != null && entry.activeExporters.decrementAndGet() == 0) {
-        layerMap.remove(layer);
-        logger.debug("Unloaded heightmap: {}", entry.sourceFile.getName());
-        System.gc();
-      }
-    }
-
-    private static class Entry {
-
-      private final AtomicInteger activeExporters = new AtomicInteger(1);
-      private final float[][] heightmap;
-      private final File sourceFile;
-
-      private Entry(float[][] heightmap, File sourceFile) {
-        this.heightmap = heightmap;
-        this.sourceFile = sourceFile;
-      }
     }
   }
 }

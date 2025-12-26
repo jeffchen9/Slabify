@@ -18,15 +18,10 @@
 
 package com.gmail.frogocomics.slabify.layers;
 
-import com.gmail.frogocomics.slabify.HeightmapLayer;
+import com.gmail.frogocomics.slabify.shape.Shape;
+import com.gmail.frogocomics.slabify.shape.Shape.Options;
+import com.gmail.frogocomics.slabify.shape.Shapes;
 import com.gmail.frogocomics.slabify.utils.Utils;
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
 import org.pepsoft.minecraft.Material;
 import org.pepsoft.worldpainter.Dimension;
 import org.pepsoft.worldpainter.MixedMaterial;
@@ -38,12 +33,19 @@ import org.pepsoft.worldpainter.layers.Layer;
 import org.pepsoft.worldpainter.layers.exporters.ExporterSettings;
 import org.pepsoft.worldpainter.layers.renderers.LayerRenderer;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Automatically place slabs according to the heightmap. The user can specify a specific slab to
  * use or use the "mimic" function, which looks at the underlying block to determine which slab
  * to apply.
  */
-public final class Slab extends CustomLayer implements HeightmapLayer {
+public final class Slab extends CustomLayer {
 
   /**
    * This class is serialised in the .world file when it is saved, so it must be stable. It is
@@ -55,10 +57,11 @@ public final class Slab extends CustomLayer implements HeightmapLayer {
   private MixedMaterial material;
   private boolean replace = false;
   private boolean mimic = false;
+  private boolean addHalf = false;
+  private boolean conquest = false;
   private Map<String, Material> mapping = new LinkedHashMap<>();
-  private boolean stairs = false;
+  private Map<String, Options> shapes;
   private Interpolation interpolation = Interpolation.BILINEAR;
-  private File heightmapLocation;
 
   public Slab(String name, MixedMaterial material) {
     // Load slab icon from resources
@@ -68,6 +71,18 @@ public final class Slab extends CustomLayer implements HeightmapLayer {
     // Make sure the material is registered, in case it's new
     MixedMaterialManager.getInstance().register(material);
     this.material = material;
+
+    Map<String, Options> shapes = new HashMap<>();
+
+    for (Shape shape: Shapes.SHAPES.values()) {
+      if (shape.isVanilla()) {
+        shapes.put(shape.getName(), Options.ENABLE);
+      } else {
+        shapes.put(shape.getName(), Options.DISABLE);
+      }
+    }
+
+    this.shapes = shapes;
   }
 
   @Override
@@ -131,9 +146,8 @@ public final class Slab extends CustomLayer implements HeightmapLayer {
     clone.setMimic(mimic);
     clone.setReplaceNonSolidBlocks(replace);
     clone.setMapping(mapping);
-    clone.setUseStairs(stairs);
+    clone.setShapes(shapes);
     clone.setInterpolation(interpolation);
-    clone.setHeightmap(heightmapLocation);
     MixedMaterialManager.getInstance().register(clone.material);
     return clone;
   }
@@ -176,6 +190,22 @@ public final class Slab extends CustomLayer implements HeightmapLayer {
     this.mimic = mimic;
   }
 
+  public boolean isAddHalf() {
+    return addHalf;
+  }
+
+  public void setAddHalf(boolean addHalf) {
+    this.addHalf = addHalf;
+  }
+
+  public boolean allowConquest() {
+    return conquest;
+  }
+
+  public void setAllowConquest(boolean conquest) {
+    this.conquest = conquest;
+  }
+
   /**
    * Get the mapping as an unmodifiable map.
    *
@@ -195,12 +225,12 @@ public final class Slab extends CustomLayer implements HeightmapLayer {
     this.mapping = mapping;
   }
 
-  public boolean useStairs() {
-    return stairs;
+  public Map<String, Options> getShapes() {
+    return shapes;
   }
 
-  public void setUseStairs(boolean stairs) {
-    this.stairs = stairs;
+  public void setShapes(Map<String, Options> shapes) {
+    this.shapes = shapes;
   }
 
   public Interpolation getInterpolation() {
@@ -211,23 +241,18 @@ public final class Slab extends CustomLayer implements HeightmapLayer {
     this.interpolation = interpolation;
   }
 
-  @Override
-  public Optional<File> getHeightmap() {
-    return Optional.ofNullable(heightmapLocation);
-  }
-
-  @Override
-  public void setHeightmap(File map) {
-    heightmapLocation = map;
-  }
-
   /**
-   * Represents the interpolation method to use for stairs.
+   * Represents the interpolation method to use for stairs (or more complicated shapes).
    */
   public enum Interpolation {
+    /**
+     * Bilinear interpolation
+     */
     BILINEAR("Bilinear"),
-    BICUBIC("Bicubic"),
-    HEIGHTMAP("From height map");
+    /**
+     * Bicubic interpolation
+     */
+    BICUBIC("Bicubic");
 
     private final String name;
 

@@ -18,17 +18,18 @@
 
 package com.gmail.frogocomics.slabify.utils;
 
-import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
-
 import com.gmail.frogocomics.slabify.layers.Slab.Interpolation;
-import java.awt.Color;
+import org.pepsoft.worldpainter.Dimension;
+import org.pepsoft.worldpainter.Tile;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import javax.imageio.ImageIO;
-import org.pepsoft.worldpainter.Dimension;
-import org.pepsoft.worldpainter.Tile;
+
+import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
 /**
  * Utility class.
@@ -180,25 +181,37 @@ public final class Utils {
   }
 
   /**
-   * Get the difference between the upscaled (2x) height and the original height.
+   * Get the difference between the upscaled height and the original height.
    *
    * @param upscaledMap the upscaled map, as a float array.
    * @param originalMap the original map, as an integer array.
+   * @param addHalf     whether to add 0.5 to the upscaled map.
    * @return the difference, as a float array.
    */
-  public static float[][] getDifference(float[][] upscaledMap, int[][] originalMap) {
-    int height = TILE_SIZE;
-    int width = TILE_SIZE;
+  public static float[][] getDifference(float[][] upscaledMap, int[][] originalMap, boolean addHalf) {
 
-    float[][] differenceMap = new float[height * 2][width * 2];
+    int resolution = upscaledMap.length / originalMap.length;
 
-    for (int x = 0; x < height; x++) {
-      for (int y = 0; y < width; y++) {
-        differenceMap[2 * x][2 * y] = (upscaledMap[2 * x][2 * y] - originalMap[x][y]) * 2;
-        differenceMap[2 * x + 1][2 * y] = (upscaledMap[2 * x + 1][2 * y] - originalMap[x][y]) * 2;
-        differenceMap[2 * x][2 * y + 1] = (upscaledMap[2 * x][2 * y + 1] - originalMap[x][y]) * 2;
-        differenceMap[2 * x + 1][2 * y + 1] =
-            (upscaledMap[2 * x + 1][2 * y + 1] - originalMap[x][y]) * 2;
+    float[][] differenceMap = new float[upscaledMap.length][upscaledMap[0].length];
+    float f = addHalf ? 0.5f : 0;
+
+    if (resolution == 1) {
+      for (int x = 0; x < TILE_SIZE; x++) {
+        for (int y = 0; y < TILE_SIZE; y++) {
+          differenceMap[x][y] = upscaledMap[x][y] - originalMap[x][y] + f;
+        }
+      }
+    } else {
+      for (int i1 = 0; i1 < TILE_SIZE; i1++) {
+        for (int i2 = 0; i2 < TILE_SIZE; i2++) {
+          for (int i3 = 0; i3 < resolution; i3++) {
+            for (int i4 = 0; i4 < resolution; i4++) {
+              int x = resolution * i1 + i3;
+              int y = resolution * i2 + i4;
+              differenceMap[x][y] = (upscaledMap[x][y] - originalMap[i1][i2] + f) * resolution;
+            }
+          }
+        }
       }
     }
 
@@ -270,17 +283,19 @@ public final class Utils {
    * @param tile      the tile to upscale.
    * @param dimension the dimension the tile belongs to.
    * @param method    the interpolation method to use. The method must be either
-   *                  {@link Interpolation#BICUBIC} or {@link Interpolation#BILINEAR}.
+   *                  {@link Interpolation#BICUBIC} or {@link Interpolation#BILINEAR}
+   * @param resolution the amount of upscaling needed, must be a power of 2.
    * @return the upscaled heightmap as a float array.
    */
-  public static float[][] upscaleTile(Tile tile, Dimension dimension, Interpolation method) {
+  public static float[][] upscaleTile(Tile tile, Dimension dimension, Interpolation method, int resolution) {
+    float[][] padded = padTile(tile, dimension, 2);
+    float[][] upscaled = method == Interpolation.BICUBIC ? bicubic(padded) : bilinear(padded);
 
-    if (method == Interpolation.HEIGHTMAP) {
-      throw new IllegalArgumentException("This method should not be called.");
+    for (int i = 0; i < Integer.numberOfTrailingZeros(resolution) - 1; i++) {
+      upscaled = method == Interpolation.BICUBIC ? bicubic(upscaled) : bilinear(upscaled);
     }
 
-    float[][] padded = padTile(tile, dimension, 2);
-    return method == Interpolation.BICUBIC ? bicubic(padded) : bilinear(padded);
+    return upscaled;
   }
 
   /**

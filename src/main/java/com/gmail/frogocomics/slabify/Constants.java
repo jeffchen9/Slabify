@@ -24,7 +24,7 @@ public final class Constants {
 
   public static final String MC_NAMESPACE = "minecraft";
   public static final String DEFAULT_BLOCK = Material.STONE.simpleName;
-  public static final String DEFAULT_SLAB = "stone_slab";
+  public static final double LOSS_EXPONENT = 2; // 2 for MSE, 1 for MAE
 
   private Constants() {
     // Prevent instantiation

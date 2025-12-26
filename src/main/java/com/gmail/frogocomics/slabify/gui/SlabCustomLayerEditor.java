@@ -18,56 +18,25 @@
 
 package com.gmail.frogocomics.slabify.gui;
 
-import static org.pepsoft.minecraft.Constants.MC_STONE_SLAB;
-
 import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.layers.Slab;
 import com.gmail.frogocomics.slabify.layers.Slab.Interpolation;
 import com.gmail.frogocomics.slabify.layers.SlabCustomLayerSettings;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Insets;
-import java.awt.event.ItemEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.Collator;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import javax.swing.AbstractCellEditor;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.GroupLayout;
+import com.gmail.frogocomics.slabify.shape.Shape;
+import com.gmail.frogocomics.slabify.shape.Shape.Options;
+import com.gmail.frogocomics.slabify.shape.Shapes;
+import org.javatuples.Pair;
+import org.pepsoft.minecraft.Material;
+import org.pepsoft.worldpainter.*;
+import org.pepsoft.worldpainter.Dimension.Anchor;
+import org.pepsoft.worldpainter.dynmap.DynmapPreviewer;
+import org.pepsoft.worldpainter.layers.AbstractLayerEditor;
+import org.pepsoft.worldpainter.layers.exporters.ExporterSettings;
+
+import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.LayoutStyle.ComponentPlacement;
-import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -75,21 +44,19 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
-import org.javatuples.Pair;
-import org.pepsoft.minecraft.Material;
-import org.pepsoft.worldpainter.DefaultPlugin;
-import org.pepsoft.worldpainter.Dimension.Anchor;
-import org.pepsoft.worldpainter.MixedMaterial;
-import org.pepsoft.worldpainter.MixedMaterialChooser;
-import org.pepsoft.worldpainter.MixedMaterialManager;
-import org.pepsoft.worldpainter.Platform;
-import org.pepsoft.worldpainter.Terrain;
-import org.pepsoft.worldpainter.TileFactory;
-import org.pepsoft.worldpainter.TileFactoryFactory;
-import org.pepsoft.worldpainter.World2;
-import org.pepsoft.worldpainter.dynmap.DynmapPreviewer;
-import org.pepsoft.worldpainter.layers.AbstractLayerEditor;
-import org.pepsoft.worldpainter.layers.exporters.ExporterSettings;
+import java.awt.*;
+import java.awt.Dimension;
+import java.awt.event.ItemEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.*;
+import java.text.Collator;
+import java.util.*;
+import java.util.List;
+import java.util.Map.Entry;
+
+import static org.pepsoft.minecraft.Constants.MC_STONE;
 
 public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
@@ -103,18 +70,18 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
   // Replace non-solid blocks
   private JLabel replaceLabel;
   private JCheckBox replaceMaterialBox;
-  // Use stairs
-  private JLabel stairsLabel;
-  private JCheckBox stairsBox;
+  // Shape
+  private JLabel shapesLabel;
+  private JButton shapesBox;
   // Interpolation method
   private JLabel interpolationLabel;
   private JComboBox<Interpolation> interpolationBox;
-  // Custom height map location
-  private JLabel heightmapLabel;
-  private ImageRefChooser heightmapChooser;
   // Mimic underlying blocks
   private JLabel mimicLabel;
   private JCheckBox mimicBox;
+  // Additive
+  private JLabel additiveLabel;
+  private JCheckBox additiveBox;
 
   // Block mapping table
   private JTable mimicTable;
@@ -132,7 +99,6 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
   // Layer color
   private JLabel paintLabel;
   private SimplePaintPicker paintPicker;
-  // private PaintPicker paintPicker;
 
   /**
    * Creates new form SlabCustomLayerEditor
@@ -208,17 +174,13 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     mixedMaterialSelector.setPlatform(platform);
     mixedMaterialSelector.addPropertyChangeListener("material", event -> settingsChanged());
 
-    interpolationBox.addItemListener(e -> {
-      if (e.getStateChange() == ItemEvent.SELECTED) {
-        Interpolation selected = (Interpolation) e.getItem();
-        heightmapChooser.setEnabled(selected == Interpolation.HEIGHTMAP);
-      }
-    });
+    // Shape selection
+    shapesBox.addActionListener(e -> openShapesDialog());
   }
 
   @Override
   public Slab createLayer() {
-    Material stoneSlabMaterial = Material.get(MC_STONE_SLAB);
+    Material stoneSlabMaterial = Material.get(MC_STONE);
     return new Slab("My Slab", MixedMaterial.create(platform, stoneSlabMaterial));
   }
 
@@ -248,10 +210,9 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     replaceMaterialBox.setSelected(layer.replacesNonSolidBlocks());
     mimicBox.setSelected(layer.mimicsTerrain());
     updateMimicTable(layer.getMapping());
-    stairsBox.setSelected(layer.useStairs());
+    updateShapesDialog(layer.getShapes());
+    additiveBox.setSelected(layer.isAddHalf());
     interpolationBox.setSelectedItem(layer.getInterpolation());
-    heightmapChooser.setLayerParent(layer);
-    heightmapChooser.setHeightmapLocation(layer.getHeightmap().orElse(null));
 
     addButton.setEnabled(layer.mimicsTerrain());
     removeButton.setEnabled(layer.mimicsTerrain());
@@ -316,10 +277,23 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     layer.setOpacity(paintPicker.getOpacity());
     layer.setReplaceNonSolidBlocks(replaceMaterialBox.isSelected());
     layer.setMimic(mimicBox.isSelected());
+    layer.setAddHalf(additiveBox.isSelected());
     layer.setMapping(getCurrentMapping());
-    layer.setUseStairs(stairsBox.isSelected());
+
+    // Get from shapes dialog
+    Map<String, Options> newShapes = new HashMap<>();
+    for (Entry<String, Map<Options, JCheckBox>> entry : shapeSelectionMap.entrySet()) {
+      Map<Options, JCheckBox> v = entry.getValue();
+
+      for (Entry<Options, JCheckBox> entry2 : v.entrySet()) {
+        if (entry2.getValue().isSelected()) {
+          newShapes.put(entry.getKey(), entry2.getKey());
+        }
+      }
+    }
+
+    layer.setShapes(newShapes);
     layer.setInterpolation((Interpolation) interpolationBox.getSelectedItem());
-    layer.setHeightmap(heightmapChooser.getHeightmapLocation());
   }
 
   private Map<String, Material> getCurrentMapping() {
@@ -357,19 +331,19 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     mimicLabel.setToolTipText("Places the slab variant of the underlying block, where possible");
     mimicBox = new JCheckBox();
 
-    stairsLabel = new JLabel("Use stairs:");
-    stairsLabel.setToolTipText("Uses stairs to add further detail in addition to slabs");
-    stairsBox = new JCheckBox();
+    additiveLabel = new JLabel("Additive:");
+    additiveLabel.setToolTipText("Only add to the terrain");
+    additiveBox = new JCheckBox();
+
+    shapesLabel = new JLabel("Allowed shapes:");
+    shapesLabel.setToolTipText("Set allowed block shapes");
+    shapesBox = new JButton("Edit");
+    createShapesDialog();
 
     interpolationLabel = new JLabel("Interpolation method:");
     interpolationLabel.setToolTipText("The interpolation method used to add extra detail");
     interpolationBox = new JComboBox<>(Interpolation.values());
     interpolationBox.setSelectedIndex(0);
-
-    heightmapLabel = new JLabel("2x heightmap:");
-    heightmapLabel.setToolTipText("The double-resolution heightmap used to add extra stair detail");
-    heightmapChooser = new ImageRefChooser();
-    heightmapChooser.setEnabled(false);
 
     nameLabel = new JLabel("Name:");
     nameField = new JTextField();
@@ -389,9 +363,9 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
                 .addComponent(materialLabel)
                 .addComponent(replaceLabel)
                 .addComponent(mimicLabel)
-                .addComponent(stairsLabel)
+                .addComponent(additiveLabel)
+                .addComponent(shapesLabel)
                 .addComponent(interpolationLabel)
-                .addComponent(heightmapLabel)
             )
             .addGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(nameField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
@@ -402,10 +376,9 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
                     GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE)
                 .addComponent(replaceMaterialBox)
                 .addComponent(mimicBox)
-                .addComponent(stairsBox)
+                .addComponent(additiveBox)
+                .addComponent(shapesBox)
                 .addComponent(interpolationBox, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
-                    GroupLayout.DEFAULT_SIZE)
-                .addComponent(heightmapChooser, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
                     GroupLayout.DEFAULT_SIZE)
             )
     );
@@ -441,18 +414,18 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
             )
             .addPreferredGap(ComponentPlacement.RELATED)
             .addGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(stairsLabel)
-                .addComponent(stairsBox)
+                .addComponent(additiveLabel)
+                .addComponent(additiveBox)
+            )
+            .addPreferredGap(ComponentPlacement.RELATED)
+            .addGroup(layout.createParallelGroup(Alignment.LEADING)
+                .addComponent(shapesLabel)
+                .addComponent(shapesBox)
             )
             .addPreferredGap(ComponentPlacement.RELATED)
             .addGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(interpolationLabel)
                 .addComponent(interpolationBox)
-            )
-            .addPreferredGap(ComponentPlacement.RELATED)
-            .addGroup(layout.createParallelGroup(Alignment.LEADING)
-                .addComponent(heightmapLabel)
-                .addComponent(heightmapChooser)
             )
     );
 
@@ -468,11 +441,11 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     mimicTable.getColumnModel().getColumn(0)
         .setCellEditor(new CustomRendererEditor(namesArray, Constants.DEFAULT_BLOCK));
     mimicTable.getColumnModel().getColumn(1)
-        .setCellEditor(new CustomRendererEditor(namesArray, Constants.DEFAULT_SLAB));
+        .setCellEditor(new CustomRendererEditor(namesArray, Constants.DEFAULT_BLOCK));
     mimicTable.getColumnModel().getColumn(0)
         .setCellRenderer(new CustomRendererEditor(namesArray, Constants.DEFAULT_BLOCK));
     mimicTable.getColumnModel().getColumn(1)
-        .setCellRenderer(new CustomRendererEditor(namesArray, Constants.DEFAULT_SLAB));
+        .setCellRenderer(new CustomRendererEditor(namesArray, Constants.DEFAULT_BLOCK));
 
     if (enableBorders) {
       mimicTable.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
@@ -580,7 +553,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
         new ImageIcon(getClass().getResource("/com/gmail/frogocomics/slabify/icons/eye.png")));
     previewButton.setToolTipText("View the mapping");
     previewButton.setMargin(new Insets(2, 2, 2, 2));
-    previewButton.addActionListener(e -> openDialog());
+    previewButton.addActionListener(e -> openPreviewDialog());
 
     buttonPanel.add(addButton);
     buttonPanel.add(Box.createVerticalStrut(4));
@@ -702,7 +675,113 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     }
   }
 
-  private void openDialog() {
+  private JPanel shapesPanel;
+  private final Map<String, Map<Options, JCheckBox>> shapeSelectionMap = new HashMap<>();
+
+  private void createShapesDialog() {
+    if (shapesPanel == null) {
+      shapesPanel = new JPanel(new GridBagLayout());
+      GridBagConstraints gbc = new GridBagConstraints();
+      gbc.insets = new Insets(5, 10, 5, 10);
+      gbc.fill = GridBagConstraints.BOTH;
+
+      gbc.gridy = 0;
+      gbc.gridx = 1;
+
+      for (Options option : Options.values()) {
+        shapesPanel.add(new JLabel(option.toString()), gbc);
+        gbc.gridx++;
+      }
+
+      gbc.gridx = 0;
+      gbc.gridy++;
+
+      for (Shape shape : Shapes.SHAPES.values()) {
+        JLabel label = new JLabel(shape.toString());
+
+        // Bold the labels of non-vanilla shapes to indicate to the user the potential incompatibility
+        if (!shape.isVanilla()) {
+          label.setText(label.getText() + "*");
+          label.setFont(label.getFont().deriveFont(Font.BOLD));
+        }
+
+        shapesPanel.add(label, gbc);
+
+        Map<Options, JCheckBox> rowMap = new EnumMap<>(Options.class);
+        ButtonGroup group = new ButtonGroup();
+
+        gbc.gridx++;
+
+        for (Options option : Options.values()) {
+          if (shape.getAvailableOptions().contains(option)) {
+            JCheckBox checkBox = new JCheckBox();
+            group.add(checkBox);
+
+            // This is to account for the rare occurrence a layer was saved and new shapes are created. The default
+            // option would be to disable the new shape, so the checkbox corresponding to Options.DISABLE is selected.
+            if (option == Options.DISABLE) {
+              checkBox.setSelected(true);
+            }
+
+            shapesPanel.add(checkBox, gbc);
+            rowMap.put(option, checkBox);
+          } else {
+            // Empty placeholder keeps grid aligned
+            shapesPanel.add(Box.createHorizontalStrut(16), gbc);
+          }
+
+          gbc.gridx++;
+        }
+
+        shapeSelectionMap.put(shape.getName(), rowMap);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+      }
+    }
+  }
+
+  private void updateShapesDialog(Map<String, Options> shapes) {
+
+    if (shapesPanel != null) {
+      for (Entry<String, Options> entry : shapes.entrySet()) {
+        String k = entry.getKey();
+        Options v = entry.getValue();
+        Map<Options, JCheckBox> rowMap = shapeSelectionMap.get(k);
+
+        for (Entry<Options, JCheckBox> entry2 : rowMap.entrySet()) {
+          Options k2 = entry2.getKey();
+          JCheckBox v2 = entry2.getValue();
+          v2.setSelected(v == k2);
+        }
+      }
+    }
+  }
+
+  private void openShapesDialog() {
+    JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+    JDialog dialog = new JDialog(parentFrame, "Select allowed shapes", true);
+    dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+    dialog.setLocationRelativeTo(parentFrame);
+
+    JLabel label1 = new JLabel("Disable or set resolution for the different block shapes");
+    label1.setBorder(new EmptyBorder(5, 10, 5, 10));
+    dialog.add(label1, BorderLayout.NORTH);
+
+    dialog.add(shapesPanel, BorderLayout.CENTER);
+
+    JLabel label2 = new JLabel("* Conquest only");
+    label2.setFont(label2.getFont().deriveFont(Font.BOLD));
+    label2.setBorder(new EmptyBorder(5, 10, 5, 10));
+    dialog.add(label2, BorderLayout.SOUTH);
+
+    dialog.pack();
+    dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),
+        KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+    dialog.setVisible(true);
+  }
+
+  private void openPreviewDialog() {
     JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
     JDialog dialog = new JDialog(parentFrame, "Preview Window", true);
     dialog.setSize(800, 600);
