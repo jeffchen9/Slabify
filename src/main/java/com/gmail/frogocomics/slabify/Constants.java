@@ -26,6 +26,10 @@ public final class Constants {
   public static final String DEFAULT_BLOCK = Material.STONE.simpleName;
   public static final double LOSS_EXPONENT = 2; // 2 for MSE, 1 for MAE
 
+  public static final String CQ_HINGE = "hinge";
+  public static final String CQ_LAYER = "layer";
+  public static final String CQ_EXTENSION_TOGGLE = "extension_toggle";
+
   private Constants() {
     // Prevent instantiation
   }

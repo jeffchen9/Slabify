@@ -1,6 +1,7 @@
 package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.linalg.Matrix;
+import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.Collections;
@@ -29,11 +30,11 @@ public class EmptyShape extends Shape {
 
     @Override
     public Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution) {
-        return Optional.of(Collections.singletonList(shape.upscale(resolution / getMinimumResolution())));
+        return Optional.of(Collections.singletonList(shape.upscale(resolution / getMinimumResolution(null))));
     }
 
     @Override
-    public Material getMaterial(Material baseMaterial, int i) {
+    public Material getMaterial(Material baseMaterial, int i, @Nullable Options option) {
         return Material.AIR;
     }
 }

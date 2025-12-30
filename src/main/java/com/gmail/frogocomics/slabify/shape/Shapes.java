@@ -22,11 +22,14 @@ import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
 import org.pepsoft.worldpainter.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
  * Utility class for assigning the most appropriate shape to use to add detail to terrain. A "cut"
@@ -41,6 +44,8 @@ import java.util.*;
  */
 public final class Shapes {
 
+  private static final Logger logger = LoggerFactory.getLogger(Shapes.class);
+
   public static final Map<String, Shape> SHAPES = new LinkedHashMap<>();
   private static final List<String> shapesList = new ArrayList<>();
   private static final Map<String, Integer> shapesListInv = new HashMap<>();
@@ -52,8 +57,9 @@ public final class Shapes {
     // Populate shapes list
     SHAPES.put(SlabShape.NAME, new SlabShape());
     SHAPES.put(StairShape.NAME, new StairShape());
+    SHAPES.put(LayerShape.NAME, new LayerShape());
     SHAPES.put(VerticalCornerShape.NAME, new VerticalCornerShape());
-    SHAPES.put(QuarterShape.NAME, new QuarterShape());
+    SHAPES.put(QuarterSlabShape.NAME, new QuarterSlabShape());
     SHAPES.put(VerticalQuarterShape.NAME, new VerticalQuarterShape());
     SHAPES.put(CornerSlabShape.NAME, new CornerSlabShape());
     SHAPES.put(VerticalCornerSlabShape.NAME, new VerticalCornerSlabShape());
@@ -132,11 +138,11 @@ public final class Shapes {
     // Prevent instantiation
   }
 
-  public static int[][] findMostSimilarShapes(float[][] differenceMap, int resolution, List<Matrix> shapeMatrices, double exponent) {
+  public static int[][][] findMostSimilarShapes(float[][] differenceMap, int resolution, List<Matrix> shapeMatrices, double exponent) {
     int height = differenceMap.length / resolution;
     int width = differenceMap[0].length / resolution;
 
-    int[][] shapeMap = new int[height][width];
+    int[][][] shapeMap = new int[height][width][shapeMatrices.size()];
 
     for (int x = 0; x < height; x++) {
       for (int y = 0; y < width; y++) {
@@ -156,29 +162,53 @@ public final class Shapes {
     return shapeMap;
   }
 
-  public static int findMostSimilarShape(float[][] difference, List<Matrix> shapeMatrices, double exponent) {
+  public static int[] findMostSimilarShape(float[][] difference, List<Matrix> shapeMatrices, double exponent) {
     Matrix differenceMatrix = new Matrix(difference);
 
-    float lowestLoss = Float.MAX_VALUE;
-    int lowestIdx = -1;
+    float[] lossArr = new float[shapeMatrices.size()];
 
     for (int i = 0; i < shapeMatrices.size(); i++) {
       Matrix lossMatrix = differenceMatrix.clone();
       lossMatrix.sub(shapeMatrices.get(i));
       lossMatrix.pow(exponent);
-      float currentLoss = lossMatrix.sum();
-
-      if (currentLoss < lowestLoss) {
-        lowestLoss = currentLoss;
-        lowestIdx = i;
-      }
+      lossArr[i] = lossMatrix.sum();
     }
 
-    return lowestIdx;
+    return IntStream.range(0, lossArr.length)
+            .boxed()
+            .sorted(Comparator.comparingDouble(i -> lossArr[i]))
+            .mapToInt(i -> i)
+            .toArray();
   }
 
   @Nullable
   public static String getMaterial(Shape shape, String baseMaterial) {
     return mapping.containsKey(baseMaterial) ? mapping.get(baseMaterial)[shapesListInv.get(shape.getName())] : null;
+  }
+
+  /**
+   * Get a list of the shapes available for a material.
+   *
+   * @param baseMaterial the material.
+   * @return the shapes available for the material.
+   */
+  public static List<String> getAvailableShapes(String baseMaterial) {
+    List<String> availableShapes = new ArrayList<>();
+
+    // Empty and full are ALWAYS available
+    availableShapes.add(EmptyShape.NAME);
+    availableShapes.add(FullShape.NAME);
+
+    if (mapping.containsKey(baseMaterial)) {
+      String[] s = mapping.get(baseMaterial);
+
+      for (int i = 0; i < s.length; i++) {
+        if (s[i] != null) {
+          availableShapes.add(shapesList.get(i));
+        }
+      }
+    }
+
+    return availableShapes;
   }
 }

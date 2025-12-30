@@ -26,7 +26,7 @@ import com.gmail.frogocomics.slabify.shape.Shape;
 import com.gmail.frogocomics.slabify.shape.Shape.Options;
 import com.gmail.frogocomics.slabify.shape.Shapes;
 import com.gmail.frogocomics.slabify.utils.Utils;
-import org.javatuples.Triplet;
+import org.javatuples.Quartet;
 import org.pepsoft.minecraft.Chunk;
 import org.pepsoft.minecraft.Material;
 import org.pepsoft.worldpainter.Dimension;
@@ -53,8 +53,9 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
   private final Map<String, Options> shapes;
   private int resolution = 1;
   private final List<Matrix> shapeMatrices = new ArrayList<>();
-  // Shape, id, true if fill, false if cut
-  private final List<Triplet<Shape, Integer, Boolean>> shapeIndices = new ArrayList<>();
+  // Shape, id, true if fill, false if cut, option associated with shape
+  private final List<Quartet<Shape, Integer, Boolean, Options>> shapeIndices = new ArrayList<>();
+  private final Map<String, Set<Integer>> availableIndices = new HashMap<>();
   private final Map<Tile, Shapemap> shapemaps = new HashMap<>();
 
   private Map<String, Material> mapping;
@@ -85,9 +86,11 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       // First, get the resolution
       for (Entry<String, Options> entry : layer.getShapes().entrySet()) {
         if (entry.getValue() != Options.DISABLE) {
-          resolution = Math.max(resolution, Shapes.SHAPES.get(entry.getKey()).getMinimumResolution());
+          resolution = Math.max(resolution, Shapes.SHAPES.get(entry.getKey()).getMinimumResolution(entry.getValue()));
         }
       }
+
+      logger.info("Resolution: {}", resolution);
 
       for (Entry<String, Options> entry : layer.getShapes().entrySet()) {
         Shape shape = Shapes.SHAPES.get(entry.getKey());
@@ -110,13 +113,13 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
           // Fill
           for (int i = 0; i < bakedShapes.size(); i++) {
-            shapeIndices.add(Triplet.with(shape, i, true));
+            shapeIndices.add(Quartet.with(shape, i, true, entry.getValue()));
           }
 
           if (!layer.isAddHalf()) {
             // Cut
             for (int i = 0; i < bakedShapes.size(); i++) {
-              shapeIndices.add(Triplet.with(shape, i, false));
+              shapeIndices.add(Quartet.with(shape, i, false, entry.getValue()));
             }
           }
         }
@@ -124,12 +127,9 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
       // Add additional shapes: full and empty
       shapeMatrices.addAll(FullShape.getInstance().getBakedShapes(null, resolution).get());
-      shapeIndices.add(Triplet.with(FullShape.getInstance(), 0, true));
+      shapeIndices.add(Quartet.with(FullShape.getInstance(), 0, true, null));
       shapeMatrices.addAll(EmptyShape.getInstance().getBakedShapes(null, resolution).get());
-      shapeIndices.add(Triplet.with(EmptyShape.getInstance(), 0, true));
-
-      // TODO
-      // logger.info(shapeMatrices.toString());
+      shapeIndices.add(Quartet.with(EmptyShape.getInstance(), 0, true, null));
     }
   }
 
@@ -161,7 +161,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       MixedMaterial mixedMaterial = layer.getMaterial();
       long seed = dimension.getSeed();
 
-      int[][] shapemap;
+      int[][][] shapemap;
 
       // Create shape map and difference map
       if (shapemaps.containsKey(tile)) {
@@ -243,15 +243,21 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
           Material baseMaterial = layer.mimicsTerrain() ? mapping.get(materialStr)
               : mixedMaterial.getMaterial(seed, worldX, worldY, terrainHeight + 1);
 
-          Triplet<Shape, Integer, Boolean> t = shapeIndices.get(shapemap[localX][localY]);
-          Material slabMaterial = t.getValue0().getMaterial(baseMaterial, t.getValue1());
+          int[] shapemapI = shapemap[localX][localY];
+
+          if (!availableIndices.containsKey(baseMaterial.name)) {
+            availableIndices.put(baseMaterial.name, getAvailableIndices(baseMaterial.name));
+          }
+
+          Quartet<Shape, Integer, Boolean, Options> q = shapeIndices.get(Utils.filter(shapemapI, availableIndices.get(baseMaterial.name)));
+          Material slabMaterial = q.getValue0().getMaterial(baseMaterial, q.getValue1(), q.getValue3());
 
           // If material is empty, skip
           if (slabMaterial == Material.AIR) {
             continue;
           }
 
-          boolean fill = t.getValue2();
+          boolean fill = q.getValue2();
 
           if (fill) {
             if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
@@ -269,7 +275,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
                 blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
                 || blockAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
-              if (!(t.getValue0() instanceof FullShape)) {
+              if (!(q.getValue0() instanceof FullShape)) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
             }
@@ -302,11 +308,24 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     }
   }
 
+  private Set<Integer> getAvailableIndices(String baseMaterial) {
+    List<String> availableShapes = Shapes.getAvailableShapes(baseMaterial);
+    Set<Integer> availableIndices = new HashSet<>();
+
+    for (int i = 0; i < shapeIndices.size(); i++) {
+      if (availableShapes.contains(shapeIndices.get(i).getValue0().getName())) {
+        availableIndices.add(i);
+      }
+    }
+
+    return availableIndices;
+  }
+
   private static class Shapemap {
 
-    private final int[][] map;
+    private final int[][][] map;
 
-    private Shapemap(int[][] map) {
+    private Shapemap(int[][][] map) {
       this.map = map;
     }
   }

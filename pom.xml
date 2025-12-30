@@ -6,7 +6,7 @@
 
     <groupId>com.gmail.frogocomics.slabify</groupId>
     <artifactId>SlabifyPlugin</artifactId>
-    <version>1.0.0-SNAPSHOT-2</version>
+    <version>1.0.0-SNAPSHOT-3</version>
 
     <parent>
         <groupId>org.pepsoft.worldpainter</groupId>
@@ -32,11 +32,6 @@
             <groupId>org.javatuples</groupId>
             <artifactId>javatuples</artifactId>
             <version>1.2</version>
-        </dependency>
-        <dependency>
-            <groupId>net.mikera</groupId>
-            <artifactId>vectorz</artifactId>
-            <version>0.67.0</version>
         </dependency>
     </dependencies>
 

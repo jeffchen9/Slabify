@@ -1,6 +1,7 @@
 package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.linalg.Matrix;
+import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Constants;
 import org.pepsoft.minecraft.Material;
 
@@ -26,13 +27,13 @@ public class SlabShape extends Shape {
     @Override
     public Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution) {
 
-        assert resolution >= getMinimumResolution();
+        assert resolution >= getMinimumResolution(null);
 
-        return selectedOption == Options.ENABLE ? Optional.of(Collections.singletonList(shape.upscale(resolution / getMinimumResolution()))) : Optional.empty();
+        return selectedOption == Options.ENABLE ? Optional.of(Collections.singletonList(shape.upscale(resolution / getMinimumResolution(null)))) : Optional.empty();
     }
 
     @Override
-    public Material getMaterial(Material baseMaterial, int i) {
+    public Material getMaterial(Material baseMaterial, int i, @Nullable Options option) {
         if (materials.containsKey(baseMaterial.name)) {
             return materials.get(baseMaterial.name);
         }

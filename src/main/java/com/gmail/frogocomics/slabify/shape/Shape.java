@@ -1,6 +1,7 @@
 package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.linalg.Matrix;
+import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.List;
@@ -47,9 +48,11 @@ public abstract class Shape {
      * Get the minimum multiplier needed for upscaling. Vanilla blocks require 2x upscaling. However, some Conquest
      * shapes require more upscaling.
      *
+     * @param option the selected option; this is usually not relevant.
+     *
      * @return the minimum upscaling needed.
      */
-    public int getMinimumResolution() {
+    public int getMinimumResolution(@Nullable Options option) {
         return minResolution;
     }
 
@@ -60,7 +63,7 @@ public abstract class Shape {
 
     public abstract Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution);
 
-    public abstract Material getMaterial(Material baseMaterial, int i);
+    public abstract Material getMaterial(Material baseMaterial, int i, @Nullable Options option);
 
     public enum Options {
         DISABLE("Disable"),

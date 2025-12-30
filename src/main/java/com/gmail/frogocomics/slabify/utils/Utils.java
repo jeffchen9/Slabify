@@ -22,12 +22,9 @@ import com.gmail.frogocomics.slabify.layers.Slab.Interpolation;
 import org.pepsoft.worldpainter.Dimension;
 import org.pepsoft.worldpainter.Tile;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
+import java.util.Set;
 
 import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
@@ -38,49 +35,6 @@ public final class Utils {
 
   private Utils() {
     // Prevent instantiation
-  }
-
-  /**
-   * Write a float array to a normalized 16-bit grayscale image.
-   *
-   * @param data       the float array.
-   * @param outputFile the output location.
-   * @param format     the image format.
-   * @throws IOException when there is an issue with image creation.
-   */
-  public static void exportFloatArrayToImage(float[][] data, File outputFile, String format)
-      throws IOException {
-    int width = data.length;
-    int height = data[0].length;
-
-    float min = Float.MAX_VALUE;
-    float max = -Float.MAX_VALUE;
-
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        float value = data[x][y];
-        min = Math.min(min, value);
-        max = Math.max(max, value);
-      }
-    }
-
-    float range = max - min;
-
-    if (range == 0) {
-      range = 1;
-    }
-
-    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        float value = data[x][y];
-        int gray = (int) ((value - min) / range * 255);
-        gray = Math.max(0, Math.min(255, gray));
-        image.getRaster().setSample(x, y, 0, gray);
-      }
-    }
-
-    ImageIO.write(image, format, outputFile);
   }
 
   /**
@@ -107,77 +61,6 @@ public final class Utils {
     int num = width * height;
 
     return new Color((int) (sumRed / num), (int) (sumGreen / num), (int) (sumBlue / num));
-  }
-
-  /**
-   * Normalize a float array between 0 and 1. This is in-place.
-   *
-   * @param arr      the float array.
-   * @param maxValue the maximum value in the array.
-   * @param minValue the minimum value in the array.
-   */
-  public static void normalize(float[][] arr, float maxValue, float minValue) {
-    float range = maxValue - minValue;
-    int height = arr.length;
-    int width = arr[0].length;
-
-    if (range == 0) { // Avoid division by 0
-      for (float[] d : arr) {
-        Arrays.fill(d, 0);
-      }
-    } else {
-      for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-          arr[y][x] = (arr[y][x] - minValue) / range;
-        }
-      }
-    }
-  }
-
-  /**
-   * Unnormalize a float array to its original range. This is in-place.
-   *
-   * @param arr      the float array.
-   * @param maxValue the maximum value in the original range, which corresponds to 1.
-   * @param minValue the minimum value in the original range, which corresponds to 0.
-   */
-  public static void unnormalize(float[][] arr, float maxValue, float minValue) {
-    float range = maxValue - minValue;
-    int height = arr.length;
-    int width = arr[0].length;
-
-    if (range != 0) { // Avoid division by 0
-      for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-          arr[y][x] = arr[y][x] * range + minValue;
-        }
-      }
-    }
-  }
-
-  /**
-   * Remap a float array to a difference range. This is in-place.
-   *
-   * @param arr       the float array.
-   * @param maxValue1 the maximum value in the original range.
-   * @param minValue1 the minimum value in the original range.
-   * @param maxValue2 the maximum value in the target range.
-   * @param minValue2 the minimum value in the target range.
-   */
-  public static void remap(float[][] arr, float maxValue1, float minValue1, float maxValue2,
-      float minValue2) {
-    float range1 = maxValue1 - minValue1;
-    float range2 = maxValue2 - minValue2;
-    int height = arr.length;
-    int width = arr[0].length;
-
-    if (range1 != 0 && range2 != 0) {
-      for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-          arr[y][x] = (arr[y][x] - minValue1) / range1 * range2 + minValue2;
-        }
-      }
-    }
   }
 
   /**
@@ -289,117 +172,122 @@ public final class Utils {
    */
   public static float[][] upscaleTile(Tile tile, Dimension dimension, Interpolation method, int resolution) {
     float[][] padded = padTile(tile, dimension, 2);
-    float[][] upscaled = method == Interpolation.BICUBIC ? bicubic(padded) : bilinear(padded);
+    float[][] upscaled = upscale(padded, resolution, method);
 
-    for (int i = 0; i < Integer.numberOfTrailingZeros(resolution) - 1; i++) {
-      upscaled = method == Interpolation.BICUBIC ? bicubic(upscaled) : bilinear(upscaled);
-    }
-
-    return upscaled;
+    return trimPadding(upscaled, resolution, 2);
   }
 
-  /**
-   * Bicubic interpolation. Assumes padding of 2.
-   *
-   * @param paddedInput the padded input.
-   * @return the upscaled heightmap.
-   */
-  private static float[][] bicubic(float[][] paddedInput) {
-    int paddedWidth = paddedInput.length;
-    int paddedHeight = paddedInput[0].length;
+  private static float[][] upscale(float[][] input, int scale, Interpolation type) {
+    int inH = input.length;
+    int inW = input[0].length;
 
-    int tileWidth = paddedWidth - 4;
-    int tileHeight = paddedHeight - 4;
+    int outH = inH * scale;
+    int outW = inW * scale;
 
-    int upscaledWidth = tileWidth * 2;
-    int upscaledHeight = tileHeight * 2;
+    float[][] output = new float[outH][outW];
 
-    float[][] output = new float[upscaledWidth][upscaledHeight];
+    for (int y = 0; y < outH; y++) {
+      // Standard center-alignment: maps the center of the output pixel
+      // to the corresponding center in the input image.
+      float srcY = ((y + 0.5f) / scale) - 0.5f;
 
-    for (int x = 0; x < upscaledWidth; x++) {
-      float srcX = x / 2.0f;
-      int xInt = (int) Math.floor(srcX);
-      float dx = srcX - xInt;
+      for (int x = 0; x < outW; x++) {
+        float srcX = ((x + 0.5f) / scale) - 0.5f;
 
-      for (int y = 0; y < upscaledHeight; y++) {
-        float srcY = y / 2.0f;
-        int yInt = (int) Math.floor(srcY);
-        float dy = srcY - yInt;
-
-        // Adjust for padding offset
-        int px = xInt + 2;
-        int py = yInt + 2;
-
-        float[] col = new float[4];
-        for (int m = -1; m <= 2; m++) {
-          float[] row = new float[4];
-          for (int n = -1; n <= 2; n++) {
-            row[n + 1] = paddedInput[px + n][py + m];
-          }
-          col[m + 1] = cubicInterpolate(row[0], row[1], row[2], row[3], dx);
+        if (type == Interpolation.BILINEAR) {
+          output[y][x] = bilinearSample(input, srcX, srcY);
+        } else {
+          output[y][x] = bicubicSample(input, srcX, srcY);
         }
-
-        output[x][y] = cubicInterpolate(col[0], col[1], col[2], col[3], dy);
       }
     }
 
     return output;
   }
 
-  private static float cubicInterpolate(float p0, float p1, float p2, float p3, float t) {
-    float a0 = -0.5f * p0 + 1.5f * p1 - 1.5f * p2 + 0.5f * p3;
-    float a1 = p0 - 2.5f * p1 + 2.0f * p2 - 0.5f * p3;
-    float a2 = -0.5f * p0 + 0.5f * p2;
-    return ((a0 * t + a1) * t + a2) * t + p1;
+  private static float bilinearSample(float[][] img, float x, float y) {
+    int inH = img.length;
+    int inW = img[0].length;
+
+    // Find the 4 neighboring pixels
+    int x1 = (int) Math.floor(x);
+    int y1 = (int) Math.floor(y);
+
+    // Fraction for interpolation
+    float xFrac = x - x1;
+    float yFrac = y - y1;
+
+    // Clamp coordinates to valid array bounds
+    int xL = Math.max(0, Math.min(x1, inW - 1));
+    int xR = Math.max(0, Math.min(x1 + 1, inW - 1));
+    int yT = Math.max(0, Math.min(y1, inH - 1));
+    int yB = Math.max(0, Math.min(y1 + 1, inH - 1));
+
+    float v00 = img[yT][xL];
+    float v10 = img[yT][xR];
+    float v01 = img[yB][xL];
+    float v11 = img[yB][xR];
+
+    float i1 = v00 * (1 - xFrac) + v10 * xFrac;
+    float i2 = v01 * (1 - xFrac) + v11 * xFrac;
+
+    return i1 * (1 - yFrac) + i2 * yFrac;
   }
 
-  /**
-   * Bilinear interpolation. Assumes padding of 2.
-   *
-   * @param paddedInput the padded input.
-   * @return the upscaled heightmap.
-   */
-  private static float[][] bilinear(float[][] paddedInput) {
-    int paddedWidth = paddedInput.length;
-    int paddedHeight = paddedInput[0].length;
+  private static float bicubicSample(float[][] img, float x, float y) {
+    int inH = img.length;
+    int inW = img[0].length;
 
-    int tileWidth = paddedWidth - 4;
-    int tileHeight = paddedHeight - 4;
+    int xInt = (int) Math.floor(x);
+    int yInt = (int) Math.floor(y);
 
-    int upscaledWidth = tileWidth * 2;
-    int upscaledHeight = tileHeight * 2;
+    float result = 0.0f;
 
-    float[][] output = new float[upscaledWidth][upscaledHeight];
+    // Bicubic uses a 4x4 grid of pixels around the target point
+    for (int m = -1; m <= 2; m++) {
+      for (int n = -1; n <= 2; n++) {
+        // Clamp every neighbor access
+        int py = Math.max(0, Math.min(yInt + m, inH - 1));
+        int px = Math.max(0, Math.min(xInt + n, inW - 1));
 
-    for (int x = 0; x < upscaledWidth; x++) {
-      float srcX = x / 2.0f;
-      int x0 = (int) Math.floor(srcX);
-      int x1 = x0 + 1;
-      float dx = srcX - x0;
-
-      for (int y = 0; y < upscaledHeight; y++) {
-        float srcY = y / 2.0f;
-        int y0 = (int) Math.floor(srcY);
-        int y1 = y0 + 1;
-        float dy = srcY - y0;
-
-        // Shift for padding
-        int px0 = x0 + 2;
-        int px1 = x1 + 2;
-        int py0 = y0 + 2;
-        int py1 = y1 + 2;
-
-        float v00 = paddedInput[px0][py0];
-        float v10 = paddedInput[px1][py0];
-        float v01 = paddedInput[px0][py1];
-        float v11 = paddedInput[px1][py1];
-
-        float top = (1 - dx) * v00 + dx * v10;
-        float bottom = (1 - dx) * v01 + dx * v11;
-        output[x][y] = (1 - dy) * top + dy * bottom;
+        float weight = cubic(x - (xInt + n)) * cubic(y - (yInt + m));
+        result += img[py][px] * weight;
       }
     }
 
-    return output;
+    return result;
+  }
+
+  private static float cubic(float t) {
+    t = Math.abs(t);
+    if (t <= 1) {
+      return (1.5f * t - 2.5f) * t * t + 1;
+    } else if (t < 2) {
+      return ((-0.5f * t + 2.5f) * t - 4) * t + 2;
+    }
+    return 0.0f;
+  }
+
+  private static float[][] trimPadding(float[][] input, int scale, int pad) {
+    int trim = pad * scale;
+    int h = input.length - 2 * trim;
+    int w = input[0].length - 2 * trim;
+
+    float[][] out = new float[h][w];
+    for (int y = 0; y < h; y++) {
+      System.arraycopy(input[y + trim], trim, out[y], 0, w);
+    }
+    return out;
+  }
+
+  public static int filter(int[] arr, Set<Integer> allowed) {
+    for (int j : arr) {
+      if (allowed.contains(j)) {
+        return j;
+      }
+    }
+
+    // This should not happen
+    return 0;
   }
 }

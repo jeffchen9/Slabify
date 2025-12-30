@@ -747,12 +747,15 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
       for (Entry<String, Options> entry : shapes.entrySet()) {
         String k = entry.getKey();
         Options v = entry.getValue();
-        Map<Options, JCheckBox> rowMap = shapeSelectionMap.get(k);
 
-        for (Entry<Options, JCheckBox> entry2 : rowMap.entrySet()) {
-          Options k2 = entry2.getKey();
-          JCheckBox v2 = entry2.getValue();
-          v2.setSelected(v == k2);
+        if (shapeSelectionMap.containsKey(k)) {
+          Map<Options, JCheckBox> rowMap = shapeSelectionMap.get(k);
+
+          for (Entry<Options, JCheckBox> entry2 : rowMap.entrySet()) {
+            Options k2 = entry2.getKey();
+            JCheckBox v2 = entry2.getValue();
+            v2.setSelected(v == k2);
+          }
         }
       }
     }

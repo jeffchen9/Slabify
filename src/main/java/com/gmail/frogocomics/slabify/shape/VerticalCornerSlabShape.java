@@ -1,10 +1,13 @@
 package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.linalg.Matrix;
+import org.jspecify.annotations.Nullable;
+import org.pepsoft.minecraft.Constants;
 import org.pepsoft.minecraft.Material;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
+import static com.gmail.frogocomics.slabify.Constants.CQ_HINGE;
 
 /**
  *
@@ -15,18 +18,81 @@ public class VerticalCornerSlabShape extends Shape {
 
   public static final String NAME = "vert_corner_slab";
 
+  private final Map<String, Material[]> materials = new HashMap<>();
+  private final Matrix leftStairShape;
+  private final Matrix rightStairShape;
+
   public VerticalCornerSlabShape() {
-    super("Vertical Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 4);
+    super("Vertical Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2);
+
+    leftStairShape = new Matrix(new float[][]{
+            {2, 0},
+            {1, 0}
+    });
+    rightStairShape = new Matrix(new float[][]{
+            {0, 2},
+            {0, 1}
+    });
   }
 
   @Override
   public Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution) {
+
+    assert resolution >= getMinimumResolution(null);
+
+    if (selectedOption == Options.ENABLE) {
+      // Upscale shapes if needed
+      Matrix upscaledLeftStairShape = leftStairShape.upscale(resolution / 2);
+      Matrix upscaledRightStairShape = rightStairShape.upscale(resolution / 2);
+
+      List<Matrix> shapes = new ArrayList<>();
+
+      int[] angles = {90, 180, 270};
+
+      shapes.add(upscaledLeftStairShape);
+      for (int angle : angles) {
+        shapes.add(upscaledLeftStairShape.rotate(angle));
+      }
+
+      shapes.add(upscaledRightStairShape);
+      for (int angle : angles) {
+        shapes.add(upscaledRightStairShape.rotate(angle));
+      }
+
+      return Optional.of(shapes);
+    }
+
     return Optional.empty();
   }
 
   @Override
-  public Material getMaterial(Material baseMaterial, int i) {
-    // TODO
-    return Material.AIR;
+  public Material getMaterial(Material baseMaterial, int i, @Nullable Options option) {
+    if (!materials.containsKey(baseMaterial.name)) {
+      // Create materials if does not exist
+      String materialName = Shapes.getMaterial(this, baseMaterial.name);
+
+      if (materialName == null) {
+        // Default
+        materialName = baseMaterial.name + "_vertical_corner_slab";
+      }
+
+      Material[] slabMaterials = new Material[8];
+
+      slabMaterials[0] = Material.get(materialName, Constants.MC_FACING, "south", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
+      slabMaterials[1] = Material.get(materialName, Constants.MC_FACING, "east", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
+      slabMaterials[2] = Material.get(materialName, Constants.MC_FACING, "north", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
+      slabMaterials[3] = Material.get(materialName, Constants.MC_FACING, "west", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
+
+      slabMaterials[4] = Material.get(materialName, Constants.MC_FACING, "north", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
+      slabMaterials[5] = Material.get(materialName, Constants.MC_FACING, "west", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
+      slabMaterials[6] = Material.get(materialName, Constants.MC_FACING, "south", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
+      slabMaterials[7] = Material.get(materialName, Constants.MC_FACING, "east", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
+
+
+
+      materials.put(baseMaterial.name, slabMaterials);
+    }
+    
+    return materials.get(baseMaterial.name)[i];
   }
 }

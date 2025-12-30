@@ -1,4 +1,4 @@
-block,stairs,slab,vert_corner,quarter,vert_quarter,corner_slab,vert_corner_slab,eighth_slab
+block,stairs,slab,layer,corner_slab,eighth_slab,quarter,vert_corner,vert_corner_slab,vert_quarter,vert_slab
 oak_planks,oak_stairs,oak_slab
 spruce_planks,spruce_stairs,spruce_slab
 birch_planks,birch_stairs,birch_slab
@@ -12,7 +12,7 @@ bamboo_planks,bamboo_stairs,bamboo_slab
 bamboo_mosaic,bamboo_mosaic_stairs,bamboo_mosaic_slab
 crimson_planks,crimson_stairs,crimson_slab
 warped_planks,warped_stairs,warped_slab
-stone,stone_stairs,stone_slab
+stone,stone_stairs,stone_slab,,conquest:limestone_corner_slab,conquest:limestone_eighth_slab,conquest:limestone_quarter_slab,,conquest:limestone_vertical_corner_slab,,
 granite,granite_stairs,granite_slab
 polished_granite,polished_granite_stairs,polished_granite_slab
 diorite,diorite_stairs,diorite_slab
