@@ -224,6 +224,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               (terrainHeight < maxHeight - 1) ? chunk.getMaterial(x, terrainHeight + 1, z)
                   : Material.AIR;
 
+          // TODO For future feature
           Material blockTwoAbove =
               (terrainHeight < maxHeight - 2) ? chunk.getMaterial(x, terrainHeight + 2, z)
                   : Material.AIR;
@@ -257,18 +258,27 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             continue;
           }
 
+          // If material is Conquest and the layer does not allow Conquest, skip
+          if (slabMaterial.namespace.equals(Constants.CQ_NAMESPACE) && !layer.allowConquest()) {
+            continue;
+          }
+
           boolean fill = q.getValue2();
 
           if (fill) {
-            if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
-              continue;
-            }
 
-            if (!layer.replacesNonSolidBlocks() && (blockAbove != Material.AIR) && (blockAbove
-                != Material.STATIONARY_WATER) && (blockAbove != Material.WATER) && (blockAbove
-                != Material.FALLING_WATER)
-                && (blockAbove != Material.FLOWING_WATER) && !blockAbove.containsWater()) {
-              continue;
+            // Full blocks will replace everything no matter what
+            if (!(q.getValue0() instanceof FullShape)) {
+              if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
+                continue;
+              }
+
+              if (!layer.replacesNonSolidBlocks() && (blockAbove != Material.AIR) && (blockAbove
+                      != Material.STATIONARY_WATER) && (blockAbove != Material.WATER) && (blockAbove
+                      != Material.FALLING_WATER)
+                      && (blockAbove != Material.FLOWING_WATER) && !blockAbove.containsWater()) {
+                continue;
+              }
             }
 
             // Check for waterlogging

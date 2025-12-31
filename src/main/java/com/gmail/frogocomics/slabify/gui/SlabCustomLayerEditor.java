@@ -82,6 +82,9 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
   // Additive
   private JLabel additiveLabel;
   private JCheckBox additiveBox;
+  // Conquest
+  private JLabel conquestLabel;
+  private JCheckBox conquestBox;
 
   // Block mapping table
   private JTable mimicTable;
@@ -212,6 +215,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     updateMimicTable(layer.getMapping());
     updateShapesDialog(layer.getShapes());
     additiveBox.setSelected(layer.isAddHalf());
+    conquestBox.setSelected(layer.allowConquest());
     interpolationBox.setSelectedItem(layer.getInterpolation());
 
     addButton.setEnabled(layer.mimicsTerrain());
@@ -278,6 +282,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     layer.setReplaceNonSolidBlocks(replaceMaterialBox.isSelected());
     layer.setMimic(mimicBox.isSelected());
     layer.setAddHalf(additiveBox.isSelected());
+    layer.setAllowConquest(conquestBox.isSelected());
     layer.setMapping(getCurrentMapping());
 
     // Get from shapes dialog
@@ -335,6 +340,10 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     additiveLabel.setToolTipText("Only add to the terrain");
     additiveBox = new JCheckBox();
 
+    conquestLabel = new JLabel("Use Conquest blocks:");
+    conquestLabel.setToolTipText("Checking this allows the use of blocks in the conquest namespace");
+    conquestBox = new JCheckBox();
+
     shapesLabel = new JLabel("Allowed shapes:");
     shapesLabel.setToolTipText("Set allowed block shapes");
     shapesBox = new JButton("Edit");
@@ -364,6 +373,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
                 .addComponent(replaceLabel)
                 .addComponent(mimicLabel)
                 .addComponent(additiveLabel)
+                .addComponent(conquestLabel)
                 .addComponent(shapesLabel)
                 .addComponent(interpolationLabel)
             )
@@ -377,6 +387,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
                 .addComponent(replaceMaterialBox)
                 .addComponent(mimicBox)
                 .addComponent(additiveBox)
+                .addComponent(conquestBox)
                 .addComponent(shapesBox)
                 .addComponent(interpolationBox, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
                     GroupLayout.DEFAULT_SIZE)
@@ -416,6 +427,11 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
             .addGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(additiveLabel)
                 .addComponent(additiveBox)
+            )
+            .addPreferredGap(ComponentPlacement.RELATED)
+            .addGroup(layout.createParallelGroup(Alignment.LEADING)
+                    .addComponent(conquestLabel)
+                    .addComponent(conquestBox)
             )
             .addPreferredGap(ComponentPlacement.RELATED)
             .addGroup(layout.createParallelGroup(Alignment.LEADING)

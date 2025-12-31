@@ -77,10 +77,10 @@ public class VerticalQuarterShape extends Shape {
 
     if (selectedOption != Options.DISABLE) {
       // Upscale shapes if needed
-      Matrix upscaled1 = quarter1.upscale(resolution / 8);
-      Matrix upscaled2 = quarter2.upscale(resolution / 4);
-      Matrix upscaled3 = quarter3.upscale(resolution / 2);
-      Matrix upscaled4 = quarter4.upscale(resolution / 4);
+      Matrix upscaled1 = resolution >= 8 ? quarter1.upscale(resolution / 8): null;
+      Matrix upscaled2 = resolution >= 4 ? quarter2.upscale(resolution / 4) : null;
+      Matrix upscaled3 = resolution >= 2 ? quarter3.upscale(resolution / 2) : null;
+      Matrix upscaled4 = resolution >= 4 ? quarter4.upscale(resolution / 4): null;
 
       int[] angles = {90, 180, 270};
       List<Matrix> shapes = new ArrayList<>();
@@ -91,6 +91,7 @@ public class VerticalQuarterShape extends Shape {
           for (int angle : angles) {
             shapes.add(upscaled3.rotate(angle));
           }
+          break;
         case QUARTERS:
           shapes.add(upscaled3);
           for (int angle : angles) {
@@ -106,6 +107,7 @@ public class VerticalQuarterShape extends Shape {
           for (int angle : angles) {
             shapes.add(upscaled4.rotate(angle));
           }
+          break;
         case EIGHTHS:
           shapes.add(upscaled3);
           for (int angle : angles) {
@@ -126,6 +128,7 @@ public class VerticalQuarterShape extends Shape {
           for (int angle : angles) {
             shapes.add(upscaled1.rotate(angle));
           }
+          break;
       }
 
       return Optional.of(shapes);
@@ -159,6 +162,8 @@ public class VerticalQuarterShape extends Shape {
           slabMaterials[1] = Material.get(materialName, Constants.MC_FACING, "east", CQ_LAYER, "3", CQ_EXTENSION_TOGGLE, "false");
           slabMaterials[2] = Material.get(materialName, Constants.MC_FACING, "north", CQ_LAYER, "3", CQ_EXTENSION_TOGGLE, "false");
           slabMaterials[3] = Material.get(materialName, Constants.MC_FACING, "west", CQ_LAYER, "3", CQ_EXTENSION_TOGGLE, "false");
+
+          break;
         case QUARTERS:
           slabMaterials = new Material[12];
 
@@ -175,6 +180,8 @@ public class VerticalQuarterShape extends Shape {
           slabMaterials[9] = Material.get(materialName, Constants.MC_FACING, "east", CQ_LAYER, "4", CQ_EXTENSION_TOGGLE, "false");
           slabMaterials[10] = Material.get(materialName, Constants.MC_FACING, "north", CQ_LAYER, "4", CQ_EXTENSION_TOGGLE, "false");
           slabMaterials[11] = Material.get(materialName, Constants.MC_FACING, "west", CQ_LAYER, "4", CQ_EXTENSION_TOGGLE, "false");
+
+          break;
         case EIGHTHS:
           slabMaterials = new Material[16];
 
@@ -196,6 +203,8 @@ public class VerticalQuarterShape extends Shape {
           slabMaterials[13] = Material.get(materialName, Constants.MC_FACING, "east", CQ_LAYER, "1", CQ_EXTENSION_TOGGLE, "false");
           slabMaterials[14] = Material.get(materialName, Constants.MC_FACING, "north", CQ_LAYER, "1", CQ_EXTENSION_TOGGLE, "false");
           slabMaterials[15] = Material.get(materialName, Constants.MC_FACING, "west", CQ_LAYER, "1", CQ_EXTENSION_TOGGLE, "false");
+
+          break;
       }
 
       materials.put(baseMaterial.name, slabMaterials);

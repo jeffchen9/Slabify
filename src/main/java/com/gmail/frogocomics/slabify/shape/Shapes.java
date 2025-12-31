@@ -22,8 +22,6 @@ import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
 import org.pepsoft.worldpainter.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -44,8 +42,6 @@ import java.util.stream.IntStream;
  */
 public final class Shapes {
 
-  private static final Logger logger = LoggerFactory.getLogger(Shapes.class);
-
   public static final Map<String, Shape> SHAPES = new LinkedHashMap<>();
   private static final List<String> shapesList = new ArrayList<>();
   private static final Map<String, Integer> shapesListInv = new HashMap<>();
@@ -64,6 +60,7 @@ public final class Shapes {
     SHAPES.put(CornerSlabShape.NAME, new CornerSlabShape());
     SHAPES.put(VerticalCornerSlabShape.NAME, new VerticalCornerSlabShape());
     SHAPES.put(EighthSlabShape.NAME, new EighthSlabShape());
+    SHAPES.put(VerticalSlabShape.NAME, new VerticalSlabShape());
     shapesList.addAll(SHAPES.keySet());
 
     // Create inverse

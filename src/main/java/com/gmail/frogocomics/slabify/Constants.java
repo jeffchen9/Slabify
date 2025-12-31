@@ -23,6 +23,7 @@ import org.pepsoft.minecraft.Material;
 public final class Constants {
 
   public static final String MC_NAMESPACE = "minecraft";
+  public static final String CQ_NAMESPACE = "conquest";
   public static final String DEFAULT_BLOCK = Material.STONE.simpleName;
   public static final double LOSS_EXPONENT = 2; // 2 for MSE, 1 for MAE
 
