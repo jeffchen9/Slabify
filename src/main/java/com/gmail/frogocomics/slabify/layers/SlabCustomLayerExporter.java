@@ -323,8 +323,14 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     Set<Integer> availableIndices = new HashSet<>();
 
     for (int i = 0; i < shapeIndices.size(); i++) {
-      if (availableShapes.contains(shapeIndices.get(i).getValue0().getName())) {
-        availableIndices.add(i);
+
+      Shape shape = shapeIndices.get(i).getValue0();
+      if (availableShapes.contains(shape.getName())) {
+        if (layer.allowConquest() || (Shapes.getMaterial(shape, baseMaterial) != null && Shapes.getMaterial(shape, baseMaterial).startsWith(Constants.MC_NAMESPACE))) {
+          availableIndices.add(i);
+        } else if (shape instanceof FullShape || shape instanceof EmptyShape) {
+          availableIndices.add(i);
+        }
       }
     }
 

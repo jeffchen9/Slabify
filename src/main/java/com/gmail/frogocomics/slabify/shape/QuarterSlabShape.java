@@ -105,8 +105,6 @@ public class QuarterSlabShape extends Shape {
       // Create materials if does not exist
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
 
-      System.out.println(option);
-
       if (materialName == null) {
         // Default
         materialName = baseMaterial.name + "_quarter_slab";

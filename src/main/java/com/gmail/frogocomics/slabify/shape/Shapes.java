@@ -54,6 +54,7 @@ public final class Shapes {
     SHAPES.put(SlabShape.NAME, new SlabShape());
     SHAPES.put(StairShape.NAME, new StairShape());
     SHAPES.put(LayerShape.NAME, new LayerShape());
+    SHAPES.put(AltLayerShape.NAME, new AltLayerShape());
     SHAPES.put(VerticalCornerShape.NAME, new VerticalCornerShape());
     SHAPES.put(QuarterSlabShape.NAME, new QuarterSlabShape());
     SHAPES.put(VerticalQuarterShape.NAME, new VerticalQuarterShape());
@@ -180,7 +181,8 @@ public final class Shapes {
 
   @Nullable
   public static String getMaterial(Shape shape, String baseMaterial) {
-    return mapping.containsKey(baseMaterial) ? mapping.get(baseMaterial)[shapesListInv.get(shape.getName())] : null;
+    return mapping.containsKey(baseMaterial) && shapesListInv.containsKey(shape.getName()) ?
+            mapping.get(baseMaterial)[shapesListInv.get(shape.getName())] : null;
   }
 
   /**

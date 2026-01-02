@@ -1,8 +1,8 @@
 package com.gmail.frogocomics.slabify.shape;
 
+import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
-import org.pepsoft.minecraft.Constants;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
@@ -10,15 +10,16 @@ import java.util.*;
 /**
  *
  *
- * This shape is available in Vanilla.
+ * This shape is only available in Conquest Reforged.
  */
-public class LayerShape extends Shape {
+public class AltLayerShape extends Shape {
 
-  public static final String NAME = "layer";
+  public static final String NAME = "alt_layer";
   private final Map<String, Material[]> materials = new HashMap<>();
+  private final float[] heights = new float[]{0.125f, 0.25f, 0.5f, 0.75f};
 
-  public LayerShape() {
-    super("Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, true, 1);
+  public AltLayerShape() {
+    super("Alt Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 1);
   }
 
   @Override
@@ -27,8 +28,9 @@ public class LayerShape extends Shape {
     if (selectedOption == Options.ENABLE) {
       List<Matrix> shapes = new ArrayList<>();
 
-      for (int i = 1; i < 8; i++) {
-        shapes.add((new Matrix(new float[][]{{i / 8f}})).upscale(resolution / getMinimumResolution(null)));
+
+      for (int i = 1; i < heights.length; i++) {
+        shapes.add((new Matrix(new float[][]{{heights[i]}})).upscale(resolution / getMinimumResolution(null)));
       }
 
       return Optional.of(shapes);
@@ -43,10 +45,10 @@ public class LayerShape extends Shape {
       // Create materials if does not exist
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
 
-      Material[] layerMaterials = new Material[7];
+      Material[] layerMaterials = new Material[heights.length];
 
-      for (int j = 1; j < 8; j++) {
-        layerMaterials[j - 1] = Material.get(materialName, Constants.MC_LAYERS, j);
+      for (int j = 0; j < heights.length; j++) {
+        layerMaterials[j] = Material.get(materialName, Constants.CQ_LAYER, j + 1);
       }
 
       materials.put(baseMaterial.name, layerMaterials);
