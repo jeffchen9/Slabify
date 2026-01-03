@@ -58,8 +58,7 @@ public class CornerSlabShape extends Shape {
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
 
       if (materialName == null) {
-        // Default
-        materialName = baseMaterial.name + "_corner_slab";
+        return Material.AIR;
       }
 
       Material[] slabMaterials = new Material[4];

@@ -72,21 +72,23 @@ public class VerticalCornerSlabShape extends Shape {
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
 
       if (materialName == null) {
-        // Default
-        materialName = baseMaterial.name + "_vertical_corner_slab";
+        return Material.AIR;
       }
 
       Material[] slabMaterials = new Material[8];
 
       slabMaterials[0] = Material.get(materialName, Constants.MC_FACING, "south", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
-      slabMaterials[1] = Material.get(materialName, Constants.MC_FACING, "east", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
-      slabMaterials[2] = Material.get(materialName, Constants.MC_FACING, "north", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
+      slabMaterials[7] = Material.get(materialName, Constants.MC_FACING, "east", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
+      slabMaterials[4] = Material.get(materialName, Constants.MC_FACING, "north", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
       slabMaterials[3] = Material.get(materialName, Constants.MC_FACING, "west", CQ_HINGE, "right", Constants.MC_HALF, "bottom");
 
-      slabMaterials[4] = Material.get(materialName, Constants.MC_FACING, "north", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
+      slabMaterials[2] = Material.get(materialName, Constants.MC_FACING, "north", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
       slabMaterials[5] = Material.get(materialName, Constants.MC_FACING, "west", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
       slabMaterials[6] = Material.get(materialName, Constants.MC_FACING, "south", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
-      slabMaterials[7] = Material.get(materialName, Constants.MC_FACING, "east", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
+      slabMaterials[1] = Material.get(materialName, Constants.MC_FACING, "east", CQ_HINGE, "left", Constants.MC_HALF, "bottom");
+
+      // NOrth right / north left
+      // East right / east left
 
 
 

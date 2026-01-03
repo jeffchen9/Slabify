@@ -57,7 +57,9 @@ public final class Slab extends CustomLayer {
   private MixedMaterial material;
   private boolean replace = false;
   private boolean mimic = false;
+  @Deprecated // For backwards compatibility
   private boolean addHalf = false;
+  private float height = 0;
   private boolean conquest = false;
   private Map<String, Material> mapping = new LinkedHashMap<>();
   private Map<String, Options> shapes;
@@ -190,12 +192,14 @@ public final class Slab extends CustomLayer {
     this.mimic = mimic;
   }
 
-  public boolean isAddHalf() {
-    return addHalf;
+  public float getHeight() {
+    return height;
   }
 
-  public void setAddHalf(boolean addHalf) {
-    this.addHalf = addHalf;
+  public void setHeight(float height) {
+    // Check bounds--otherwise, strange behavior occurs
+    assert height >= 0 && height <= 1.5;
+    this.height = height;
   }
 
   public boolean allowConquest() {

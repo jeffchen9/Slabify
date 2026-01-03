@@ -144,8 +144,7 @@ public class VerticalCornerShape extends Shape {
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
 
       if (materialName == null) {
-        // Default
-        materialName = baseMaterial.name + "_vertical_corner";
+        return Material.AIR;
       }
 
       if (option == null) {

@@ -41,8 +41,7 @@ public class SlabShape extends Shape {
         String materialName = Shapes.getMaterial(this, baseMaterial.name);
 
         if (materialName == null) {
-            // Default
-            materialName = baseMaterial.name + "_slab";
+            return Material.AIR;
         }
 
         Material newMaterial = Material.get(materialName, Constants.MC_HALF, "bottom");

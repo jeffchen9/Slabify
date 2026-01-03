@@ -53,8 +53,9 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
   private final Map<String, Options> shapes;
   private int resolution = 1;
   private final List<Matrix> shapeMatrices = new ArrayList<>();
-  // Shape, id, true if fill, false if cut, option associated with shape
-  private final List<Quartet<Shape, Integer, Boolean, Options>> shapeIndices = new ArrayList<>();
+  // Shape, id, layer (0 if cut, 1+ if fill), option associated with shape
+  // Originally true if fill, false if cut
+  private final List<Quartet<Shape, Integer, Integer, Options>> shapeIndices = new ArrayList<>();
   private final Map<String, Set<Integer>> availableIndices = new HashMap<>();
   private final Map<Tile, Shapemap> shapemaps = new HashMap<>();
 
@@ -99,37 +100,45 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
         if (optBakedShapes.isPresent()) {
           List<Matrix> bakedShapes = optBakedShapes.get();
 
-          // Fill
+          // Fill + 1
           shapeMatrices.addAll(bakedShapes);
 
-          if (!layer.isAddHalf()) {
-            // Cut
-            for (Matrix m : bakedShapes) {
-              Matrix copyM = m.clone();
-              copyM.sub(resolution);
-              shapeMatrices.add(copyM);
-            }
+          // Fill + 2
+          for (Matrix m : bakedShapes) {
+            Matrix copyM = m.clone();
+            copyM.add(resolution);
+            shapeMatrices.add(copyM);
           }
 
-          // Fill
+          // Cut + 0
+          for (Matrix m : bakedShapes) {
+            Matrix copyM = m.clone();
+            copyM.sub(resolution);
+            shapeMatrices.add(copyM);
+          }
+
+          // Fill + 1
           for (int i = 0; i < bakedShapes.size(); i++) {
-            shapeIndices.add(Quartet.with(shape, i, true, entry.getValue()));
+            shapeIndices.add(Quartet.with(shape, i, 1, entry.getValue()));
           }
 
-          if (!layer.isAddHalf()) {
-            // Cut
-            for (int i = 0; i < bakedShapes.size(); i++) {
-              shapeIndices.add(Quartet.with(shape, i, false, entry.getValue()));
-            }
+          // Fill + 2
+          for (int i = 0; i < bakedShapes.size(); i++) {
+            shapeIndices.add(Quartet.with(shape, i, 2, entry.getValue()));
+          }
+
+          // Cut + 0
+          for (int i = 0; i < bakedShapes.size(); i++) {
+            shapeIndices.add(Quartet.with(shape, i, 0, entry.getValue()));
           }
         }
       }
 
       // Add additional shapes: full and empty
       shapeMatrices.addAll(FullShape.getInstance().getBakedShapes(null, resolution).get());
-      shapeIndices.add(Quartet.with(FullShape.getInstance(), 0, true, null));
+      shapeIndices.add(Quartet.with(FullShape.getInstance(), 0, 1, null));
       shapeMatrices.addAll(EmptyShape.getInstance().getBakedShapes(null, resolution).get());
-      shapeIndices.add(Quartet.with(EmptyShape.getInstance(), 0, true, null));
+      shapeIndices.add(Quartet.with(EmptyShape.getInstance(), 0, 1, null));
     }
   }
 
@@ -192,7 +201,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
           }
         }
 
-        float[][] differenceMap = Utils.getDifference(doubleHeightMap, originalMap, layer.isAddHalf());
+        float[][] differenceMap = Utils.getDifference(doubleHeightMap, originalMap, layer.getHeight());
 
         shapemap = Shapes.findMostSimilarShapes(differenceMap, resolution, shapeMatrices, Constants.LOSS_EXPONENT);
         shapemaps.put(tile, new Shapemap(shapemap));
@@ -222,12 +231,11 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
           Material blockAbove =
               (terrainHeight < maxHeight - 1) ? chunk.getMaterial(x, terrainHeight + 1, z)
-                  : Material.AIR;
+                  : null;
 
-          // TODO For future feature
           Material blockTwoAbove =
               (terrainHeight < maxHeight - 2) ? chunk.getMaterial(x, terrainHeight + 2, z)
-                  : Material.AIR;
+                  : null;
 
           // Do not place anything if the block below is not solid
           if (!blockBelow.solid) {
@@ -250,7 +258,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             availableIndices.put(baseMaterial.name, getAvailableIndices(baseMaterial.name));
           }
 
-          Quartet<Shape, Integer, Boolean, Options> q = shapeIndices.get(Utils.filter(shapemapI, availableIndices.get(baseMaterial.name)));
+          Quartet<Shape, Integer, Integer, Options> q = shapeIndices.get(Utils.filter(shapemapI, availableIndices.get(baseMaterial.name)));
           Material slabMaterial = q.getValue0().getMaterial(baseMaterial, q.getValue1(), q.getValue3());
 
           // If material is empty, skip
@@ -263,9 +271,13 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             continue;
           }
 
-          boolean fill = q.getValue2();
+          int height = q.getValue2();
 
-          if (fill) {
+          if (height >= 1 && blockAbove == null) {
+            continue;
+          }
+
+          if (height == 1) {
 
             // Full blocks will replace everything no matter what
             if (!(q.getValue0() instanceof FullShape)) {
@@ -291,23 +303,48 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             }
 
             chunk.setMaterial(x, terrainHeight + 1, z, slabMaterial);
+          } else if (height == 2) {
+            // Set the base material
+            chunk.setMaterial(x, terrainHeight + 1, z, baseMaterial);
 
-            // Need to deal with double height blocks. In this case, we need to remove yet another block!
-//          if (layer.replacesNonSolidBlocks() && blockAbove.hasProperty("half")
-//              && blockAbove.getProperty("half").equals("lower")) {
-//            if (blockTwoAbove.name.equals(blockAbove.name) && blockTwoAbove.hasProperty("half")
-//                && blockTwoAbove.getProperty("half").equals("upper")) {
-//              chunk.setMaterial(x, terrainHeight + 2, z, Material.AIR);
-//            }
-//          }
-          } else { // Cut
+            if (blockTwoAbove == null) {
+              continue;
+            }
+
+            // Full blocks will replace everything no matter what
+            if (!(q.getValue0() instanceof FullShape)) {
+              if (layer.replacesNonSolidBlocks() && blockTwoAbove.solid) {
+                continue;
+              }
+
+              if (!layer.replacesNonSolidBlocks() && (blockTwoAbove != Material.AIR) && (blockTwoAbove
+                      != Material.STATIONARY_WATER) && (blockTwoAbove != Material.WATER) && (blockTwoAbove
+                      != Material.FALLING_WATER)
+                      && (blockTwoAbove != Material.FLOWING_WATER) && !blockTwoAbove.containsWater()) {
+                continue;
+              }
+            }
+
             // Check for waterlogging
-            if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
-                blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
-                || blockAbove.containsWater() || blockBelow == Material.STATIONARY_WATER ||
+            if (blockTwoAbove == Material.STATIONARY_WATER || blockTwoAbove == Material.WATER ||
+                    blockTwoAbove == Material.FALLING_WATER || blockTwoAbove == Material.FLOWING_WATER
+                    || blockTwoAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
+              if (!(q.getValue0() instanceof FullShape)) {
+                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+              }
+            }
+
+            chunk.setMaterial(x, terrainHeight + 2, z, slabMaterial);
+          } else { // Cut, height == 0
+            // Check for waterlogging
+            if (blockBelow == Material.STATIONARY_WATER ||
                 blockBelow == Material.WATER || blockBelow == Material.FALLING_WATER ||
                 blockBelow == Material.FLOWING_WATER || blockBelow.containsWater() ||
                 tile.getWaterLevel(localX, localY) == terrainHeight) {
+              slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+            } else if (blockAbove != null && (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
+                    blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
+                    || blockAbove.containsWater())) {
               slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
             }
 

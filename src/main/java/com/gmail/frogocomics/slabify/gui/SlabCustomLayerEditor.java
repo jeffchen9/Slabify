@@ -81,7 +81,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
   private JCheckBox mimicBox;
   // Additive
   private JLabel additiveLabel;
-  private JCheckBox additiveBox;
+  private JSpinner additiveSpinner;
   // Conquest
   private JLabel conquestLabel;
   private JCheckBox conquestBox;
@@ -214,7 +214,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     mimicBox.setSelected(layer.mimicsTerrain());
     updateMimicTable(layer.getMapping());
     updateShapesDialog(layer.getShapes());
-    additiveBox.setSelected(layer.isAddHalf());
+    additiveSpinner.setValue(layer.getHeight());
     conquestBox.setSelected(layer.allowConquest());
     interpolationBox.setSelectedItem(layer.getInterpolation());
 
@@ -281,7 +281,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     layer.setOpacity(paintPicker.getOpacity());
     layer.setReplaceNonSolidBlocks(replaceMaterialBox.isSelected());
     layer.setMimic(mimicBox.isSelected());
-    layer.setAddHalf(additiveBox.isSelected());
+    layer.setHeight(((Number) additiveSpinner.getValue()).floatValue());
     layer.setAllowConquest(conquestBox.isSelected());
     layer.setMapping(getCurrentMapping());
 
@@ -336,9 +336,12 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     mimicLabel.setToolTipText("Places the slab variant of the underlying block, where possible");
     mimicBox = new JCheckBox();
 
-    additiveLabel = new JLabel("Additive:");
-    additiveLabel.setToolTipText("Only add to the terrain");
-    additiveBox = new JCheckBox();
+    additiveLabel = new JLabel("Height increase:");
+    additiveLabel.setToolTipText("Increase the height by this number");
+    SpinnerNumberModel numModel = new SpinnerNumberModel(0, 0, 1.5, 0.1);
+    additiveSpinner = new JSpinner(numModel);
+    JSpinner.NumberEditor numEditor = new JSpinner.NumberEditor(additiveSpinner, "0.0");
+    additiveSpinner.setEditor(numEditor);
 
     conquestLabel = new JLabel("Use Conquest blocks:");
     conquestLabel.setToolTipText("Checking this allows the use of blocks in the conquest namespace");
@@ -386,7 +389,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
                     GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE)
                 .addComponent(replaceMaterialBox)
                 .addComponent(mimicBox)
-                .addComponent(additiveBox)
+                .addComponent(additiveSpinner)
                 .addComponent(conquestBox)
                 .addComponent(shapesBox)
                 .addComponent(interpolationBox, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
@@ -426,7 +429,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
             .addPreferredGap(ComponentPlacement.RELATED)
             .addGroup(layout.createParallelGroup(Alignment.LEADING)
                 .addComponent(additiveLabel)
-                .addComponent(additiveBox)
+                .addComponent(additiveSpinner)
             )
             .addPreferredGap(ComponentPlacement.RELATED)
             .addGroup(layout.createParallelGroup(Alignment.LEADING)

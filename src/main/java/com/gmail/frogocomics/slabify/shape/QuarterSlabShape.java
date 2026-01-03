@@ -106,8 +106,7 @@ public class QuarterSlabShape extends Shape {
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
 
       if (materialName == null) {
-        // Default
-        materialName = baseMaterial.name + "_quarter_slab";
+        return Material.AIR;
       }
 
       if (option == Options.HALVES) {

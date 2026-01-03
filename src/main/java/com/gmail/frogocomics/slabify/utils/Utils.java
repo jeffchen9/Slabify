@@ -68,20 +68,19 @@ public final class Utils {
    *
    * @param upscaledMap the upscaled map, as a float array.
    * @param originalMap the original map, as an integer array.
-   * @param addHalf     whether to add 0.5 to the upscaled map.
+   * @param addHeight   the height to add.
    * @return the difference, as a float array.
    */
-  public static float[][] getDifference(float[][] upscaledMap, int[][] originalMap, boolean addHalf) {
+  public static float[][] getDifference(float[][] upscaledMap, int[][] originalMap, float addHeight) {
 
     int resolution = upscaledMap.length / originalMap.length;
 
     float[][] differenceMap = new float[upscaledMap.length][upscaledMap[0].length];
-    float f = addHalf ? 0.5f : 0;
 
     if (resolution == 1) {
       for (int x = 0; x < TILE_SIZE; x++) {
         for (int y = 0; y < TILE_SIZE; y++) {
-          differenceMap[x][y] = upscaledMap[x][y] - originalMap[x][y] + f;
+          differenceMap[x][y] = upscaledMap[x][y] - originalMap[x][y] + addHeight;
         }
       }
     } else {
@@ -91,7 +90,7 @@ public final class Utils {
             for (int i4 = 0; i4 < resolution; i4++) {
               int x = resolution * i1 + i3;
               int y = resolution * i2 + i4;
-              differenceMap[x][y] = (upscaledMap[x][y] - originalMap[i1][i2] + f) * resolution;
+              differenceMap[x][y] = (upscaledMap[x][y] - originalMap[i1][i2] + addHeight) * resolution;
             }
           }
         }

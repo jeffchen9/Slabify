@@ -45,7 +45,7 @@ public class VerticalSlabShape extends Shape {
             {0, 0, 0, 0}
     });
     slab3 = new Matrix(new float[][]{
-            {1, 1},
+            {2, 2},
             {0, 0}
     });
     slab4 = new Matrix(new float[][]{
@@ -141,8 +141,7 @@ public class VerticalSlabShape extends Shape {
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
 
       if (materialName == null) {
-        // Default
-        materialName = baseMaterial.name + "_vertical_slab";
+        return Material.AIR;
       }
 
       if (option == null) {

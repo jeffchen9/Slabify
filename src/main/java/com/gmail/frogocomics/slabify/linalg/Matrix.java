@@ -27,6 +27,19 @@ public class Matrix implements Cloneable {
   }
 
   /**
+   * Add a value to all elements of the array.
+   *
+   * @param value the value to subtract.
+   */
+  public void add(float value) {
+    for (int i = 0; i < data.length; i++) {
+      for (int j = 0; j < data[0].length; j++) {
+        data[i][j] += value;
+      }
+    }
+  }
+
+  /**
    * Subtract a value from all elements of the array.
    *
    * @param value the value to subtract.

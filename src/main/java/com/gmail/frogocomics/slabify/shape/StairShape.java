@@ -87,8 +87,7 @@ public class StairShape extends Shape {
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
 
       if (materialName == null) {
-        // Default
-        materialName = baseMaterial.name + "_stairs";
+        return Material.AIR;
       }
 
       Material[] stairMaterials = new Material[12];
