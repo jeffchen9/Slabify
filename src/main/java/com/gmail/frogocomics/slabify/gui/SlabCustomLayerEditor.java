@@ -61,9 +61,7 @@ import static org.pepsoft.minecraft.Constants.MC_STONE;
 public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
   private final Platform platform;
-  // DEBUG
-  private final boolean enableBorders = false;
-
+  private final Map<String, Map<Options, JCheckBox>> shapeSelectionMap = new HashMap<>();
   // Material
   private JLabel materialLabel;
   private MixedMaterialChooser mixedMaterialSelector;
@@ -85,7 +83,6 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
   // Conquest
   private JLabel conquestLabel;
   private JCheckBox conquestBox;
-
   // Block mapping table
   private JTable mimicTable;
   private JScrollPane tableScrollPane;
@@ -95,13 +92,15 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
   private JButton loadButton;
   private JButton saveButton;
   private JButton previewButton;
-
   // Name
   private JLabel nameLabel;
   private JTextField nameField;
   // Layer color
   private JLabel paintLabel;
   private SimplePaintPicker paintPicker;
+  private JPanel shapesPanel;
+  // Frame
+  private JFrame frame;
 
   /**
    * Creates new form SlabCustomLayerEditor
@@ -206,6 +205,8 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
   @Override
   public void reset() {
+
+
     nameField.setText(layer.getName());
     paintPicker.setPaint((Color) layer.getPaint());
     paintPicker.setOpacity(layer.getOpacity());
@@ -433,8 +434,8 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
             )
             .addPreferredGap(ComponentPlacement.RELATED)
             .addGroup(layout.createParallelGroup(Alignment.LEADING)
-                    .addComponent(conquestLabel)
-                    .addComponent(conquestBox)
+                .addComponent(conquestLabel)
+                .addComponent(conquestBox)
             )
             .addPreferredGap(ComponentPlacement.RELATED)
             .addGroup(layout.createParallelGroup(Alignment.LEADING)
@@ -465,12 +466,6 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
         .setCellRenderer(new CustomRendererEditor(namesArray, Constants.DEFAULT_BLOCK));
     mimicTable.getColumnModel().getColumn(1)
         .setCellRenderer(new CustomRendererEditor(namesArray, Constants.DEFAULT_BLOCK));
-
-    if (enableBorders) {
-      mimicTable.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
-    }
-
-    // mimicTable.setPreferredSize(new Dimension(500, mimicTable.getPreferredSize().height));
     mimicTable.getTableHeader().setReorderingAllowed(false);
 
     tableScrollPane = new JScrollPane(mimicTable);
@@ -626,7 +621,6 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     return Optional.empty();
   }
 
-
   private void settingsChanged() {
     context.settingsChanged();
   }
@@ -693,9 +687,6 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
       throw new RuntimeException(e);
     }
   }
-
-  private JPanel shapesPanel;
-  private final Map<String, Map<Options, JCheckBox>> shapeSelectionMap = new HashMap<>();
 
   private void createShapesDialog() {
     if (shapesPanel == null) {
@@ -1029,7 +1020,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
     @Override
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
-        int row, int column) {
+                                                 int row, int column) {
 
       if (value instanceof Pair) {
         @SuppressWarnings("unchecked")
@@ -1050,7 +1041,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-        boolean hasFocus, int row, int column) {
+                                                   boolean hasFocus, int row, int column) {
 
       if (value instanceof Pair) {
         @SuppressWarnings("unchecked")

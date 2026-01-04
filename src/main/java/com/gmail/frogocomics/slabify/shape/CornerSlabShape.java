@@ -2,10 +2,12 @@ package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
-import org.pepsoft.minecraft.Constants;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+
+import static org.pepsoft.minecraft.Constants.MC_FACING;
+import static org.pepsoft.minecraft.Constants.MC_HALF;
 
 /**
  *
@@ -17,20 +19,19 @@ public class CornerSlabShape extends Shape {
   public static final String NAME = "corner_slab";
 
   private final Map<String, Material[]> materials = new HashMap<>();
-  private final Matrix shape;
+  private final Matrix shape = Matrix.of(new float[][]{
+      {1, 1},
+      {1, 0}
+  });
 
   public CornerSlabShape() {
     super("Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2);
-    shape = new Matrix(new float[][]{
-            {1, 1},
-            {1, 0}
-    });
   }
 
   @Override
-  public Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution) {
+  public Optional<List<Matrix>> getShapeMatrices(Options selectedOption, int resolution) {
 
-    assert resolution >= getMinimumResolution(null);
+    assert resolution >= getMinResolution(null);
 
     if (selectedOption == Options.ENABLE) {
       // Upscale shapes if needed
@@ -63,10 +64,10 @@ public class CornerSlabShape extends Shape {
 
       Material[] slabMaterials = new Material[4];
 
-      slabMaterials[0] = Material.get(materialName, Constants.MC_FACING, "south", Constants.MC_HALF, "bottom");
-      slabMaterials[1] = Material.get(materialName, Constants.MC_FACING, "east", Constants.MC_HALF, "bottom");
-      slabMaterials[2] = Material.get(materialName, Constants.MC_FACING, "north", Constants.MC_HALF, "bottom");
-      slabMaterials[3] = Material.get(materialName, Constants.MC_FACING, "west", Constants.MC_HALF, "bottom");
+      slabMaterials[0] = Material.get(materialName, MC_FACING, "south", MC_HALF, "bottom");
+      slabMaterials[1] = Material.get(materialName, MC_FACING, "east", MC_HALF, "bottom");
+      slabMaterials[2] = Material.get(materialName, MC_FACING, "north", MC_HALF, "bottom");
+      slabMaterials[3] = Material.get(materialName, MC_FACING, "west", MC_HALF, "bottom");
 
       materials.put(baseMaterial.name, slabMaterials);
     }

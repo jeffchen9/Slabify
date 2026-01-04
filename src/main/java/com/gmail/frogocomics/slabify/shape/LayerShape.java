@@ -2,10 +2,11 @@ package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
-import org.pepsoft.minecraft.Constants;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+
+import static org.pepsoft.minecraft.Constants.MC_LAYERS;
 
 /**
  *
@@ -22,13 +23,13 @@ public class LayerShape extends Shape {
   }
 
   @Override
-  public Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution) {
+  public Optional<List<Matrix>> getShapeMatrices(Options selectedOption, int resolution) {
 
     if (selectedOption == Options.ENABLE) {
       List<Matrix> shapes = new ArrayList<>();
 
       for (int i = 1; i < 8; i++) {
-        shapes.add((new Matrix(new float[][]{{i / 8f}})).upscale(resolution / getMinimumResolution(null)));
+        shapes.add((Matrix.of(new float[][]{{i / 8f}})).upscale(resolution / getMinResolution(null)));
       }
 
       return Optional.of(shapes);
@@ -46,7 +47,7 @@ public class LayerShape extends Shape {
       Material[] layerMaterials = new Material[7];
 
       for (int j = 1; j < 8; j++) {
-        layerMaterials[j - 1] = Material.get(materialName, Constants.MC_LAYERS, j);
+        layerMaterials[j - 1] = Material.get(materialName, MC_LAYERS, j);
       }
 
       materials.put(baseMaterial.name, layerMaterials);

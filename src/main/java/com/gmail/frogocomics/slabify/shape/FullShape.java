@@ -15,26 +15,25 @@ import java.util.Optional;
  */
 public class FullShape extends Shape {
 
-    private static final FullShape instance = new FullShape();
+  public static final String NAME = "full";
+  private static final FullShape instance = new FullShape();
+  private final Matrix shape = Matrix.of(new float[][]{{1}});
 
-    public static final String NAME = "full";
-    private final Matrix shape = new Matrix(new float[][]{{1}});
+  public FullShape() {
+    super(null, NAME, new Options[]{}, true, 1);
+  }
 
-    public FullShape() {
-        super(null, NAME, new Options[]{}, true, 1);
-    }
+  public static FullShape getInstance() {
+    return instance;
+  }
 
-    public static FullShape getInstance() {
-        return instance;
-    }
+  @Override
+  public Optional<List<Matrix>> getShapeMatrices(Options selectedOption, int resolution) {
+    return Optional.of(Collections.singletonList(shape.upscale(resolution / getMinResolution(null))));
+  }
 
-    @Override
-    public Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution) {
-        return Optional.of(Collections.singletonList(shape.upscale(resolution / getMinimumResolution(null))));
-    }
-
-    @Override
-    public Material getMaterial(Material baseMaterial, int i, @Nullable Options option) {
-        return baseMaterial;
-    }
+  @Override
+  public Material getMaterial(Material baseMaterial, int i, @Nullable Options option) {
+    return baseMaterial;
+  }
 }

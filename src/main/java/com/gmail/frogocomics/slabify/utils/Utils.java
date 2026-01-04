@@ -18,12 +18,11 @@
 
 package com.gmail.frogocomics.slabify.utils;
 
+import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.layers.Slab.Interpolation;
 import org.pepsoft.worldpainter.Dimension;
 import org.pepsoft.worldpainter.Tile;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.util.Set;
 
 import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
@@ -38,32 +37,6 @@ public final class Utils {
   }
 
   /**
-   * Get the average color of an image.
-   *
-   * @param image the image.
-   * @return the average color.
-   */
-  public static Color averageColor(BufferedImage image) {
-
-    int width = image.getWidth();
-    int height = image.getHeight();
-
-    long sumRed = 0, sumGreen = 0, sumBlue = 0;
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        // Strip alpha information
-        Color pixel = new Color(image.getRGB(x, y));
-        sumRed += pixel.getRed();
-        sumGreen += pixel.getGreen();
-        sumBlue += pixel.getBlue();
-      }
-    }
-    int num = width * height;
-
-    return new Color((int) (sumRed / num), (int) (sumGreen / num), (int) (sumBlue / num));
-  }
-
-  /**
    * Get the difference between the upscaled height and the original height.
    *
    * @param upscaledMap the upscaled map, as a float array.
@@ -75,8 +48,14 @@ public final class Utils {
 
     int resolution = upscaledMap.length / originalMap.length;
 
+    // Resolution must be a power of two: 1, 2, 4, 8, etc.
+    if (resolution == 0 || (resolution & (resolution - 1)) != 0) {
+      throw new IllegalArgumentException("Resolution must be a power of two");
+    }
+
     float[][] differenceMap = new float[upscaledMap.length][upscaledMap[0].length];
 
+    // Special case of resolution of 1
     if (resolution == 1) {
       for (int x = 0; x < TILE_SIZE; x++) {
         for (int y = 0; y < TILE_SIZE; y++) {
@@ -134,22 +113,24 @@ public final class Utils {
 
         Tile neighborTile = dimension.getTile(tileX + dx, tileY + dy);
 
-        for (int x = 0; x < TILE_SIZE; x++) {
-          for (int y = 0; y < TILE_SIZE; y++) {
-            int px = x + dx * TILE_SIZE + pad;
-            int py = y + dy * TILE_SIZE + pad;
+        int xStart = (dx < 0) ? 0 : (dx == 0 ? pad : TILE_SIZE + pad);
+        int xEnd = (dx < 0) ? pad : (dx == 0 ? TILE_SIZE + pad : paddedSize);
 
-            if (px >= 0 && px < paddedSize && py >= 0 && py < paddedSize) {
-              float value;
+        int yStart = (dy < 0) ? 0 : (dy == 0 ? pad : TILE_SIZE + pad);
+        int yEnd = (dy < 0) ? pad : (dy == 0 ? TILE_SIZE + pad : paddedSize);
 
-              if (neighborTile != null) {
-                value = neighborTile.getHeight(x, y);
-              } else {
-                int cx = Math.max(pad, Math.min(paddedSize - pad - 1, px));
-                int cy = Math.max(pad, Math.min(paddedSize - pad - 1, py));
-                value = padded[cx][cy];
-              }
-              padded[px][py] = value;
+        for (int px = xStart; px < xEnd; px++) {
+          for (int py = yStart; py < yEnd; py++) {
+            if (neighborTile != null) {
+              // Map padded index back to neighbor local index
+              int nx = px - (dx * TILE_SIZE + pad);
+              int ny = py - (dy * TILE_SIZE + pad);
+              padded[px][py] = neighborTile.getHeight(nx, ny);
+            } else {
+              // Clamp to the center tile
+              int cx = Math.max(pad, Math.min(TILE_SIZE + pad - 1, px));
+              int cy = Math.max(pad, Math.min(TILE_SIZE + pad - 1, py));
+              padded[px][py] = padded[cx][cy];
             }
           }
         }
@@ -162,18 +143,23 @@ public final class Utils {
   /**
    * Upscale a tile using basic interpolation.
    *
-   * @param tile      the tile to upscale.
-   * @param dimension the dimension the tile belongs to.
-   * @param method    the interpolation method to use. The method must be either
-   *                  {@link Interpolation#BICUBIC} or {@link Interpolation#BILINEAR}
+   * @param tile       the tile to upscale.
+   * @param dimension  the dimension the tile belongs to.
+   * @param method     the interpolation method to use. The method must be either
+   *                   {@link Interpolation#BICUBIC} or {@link Interpolation#BILINEAR}.
    * @param resolution the amount of upscaling needed, must be a power of 2.
    * @return the upscaled heightmap as a float array.
    */
   public static float[][] upscaleTile(Tile tile, Dimension dimension, Interpolation method, int resolution) {
-    float[][] padded = padTile(tile, dimension, 2);
+    // Resolution must be a power of two: 1, 2, 4, 8, etc.
+    if (resolution == 0 || (resolution & (resolution - 1)) != 0) {
+      throw new IllegalArgumentException("Resolution must be a power of two");
+    }
+
+    float[][] padded = padTile(tile, dimension, Constants.TILE_PADDING);
     float[][] upscaled = upscale(padded, resolution, method);
 
-    return trimPadding(upscaled, resolution, 2);
+    return trimPadding(upscaled, resolution, Constants.TILE_PADDING);
   }
 
   private static float[][] upscale(float[][] input, int scale, Interpolation type) {
@@ -195,7 +181,7 @@ public final class Utils {
 
         if (type == Interpolation.BILINEAR) {
           output[y][x] = bilinearSample(input, srcX, srcY);
-        } else {
+        } else { // Interpolation.BICUBIC
           output[y][x] = bicubicSample(input, srcX, srcY);
         }
       }
@@ -215,22 +201,20 @@ public final class Utils {
     // Fraction for interpolation
     float xFrac = x - x1;
     float yFrac = y - y1;
+    float xInv = 1 - xFrac;
 
     // Clamp coordinates to valid array bounds
-    int xL = Math.max(0, Math.min(x1, inW - 1));
-    int xR = Math.max(0, Math.min(x1 + 1, inW - 1));
-    int yT = Math.max(0, Math.min(y1, inH - 1));
-    int yB = Math.max(0, Math.min(y1 + 1, inH - 1));
+    int xL = (x1 < 0) ? 0 : (x1 > inW - 1 ? inW - 1 : x1);
+    int xR = (x1 + 1 < 0) ? 0 : (x1 + 1 > inW - 1 ? inW - 1 : x1 + 1);
+    int yT = (y1 < 0) ? 0 : (y1 > inH - 1 ? inH - 1 : y1);
+    int yB = (y1 + 1 < 0) ? 0 : (y1 + 1 > inH - 1 ? inH - 1 : y1 + 1);
 
     float v00 = img[yT][xL];
     float v10 = img[yT][xR];
     float v01 = img[yB][xL];
     float v11 = img[yB][xR];
 
-    float i1 = v00 * (1 - xFrac) + v10 * xFrac;
-    float i2 = v01 * (1 - xFrac) + v11 * xFrac;
-
-    return i1 * (1 - yFrac) + i2 * yFrac;
+    return (v00 * xInv + v10 * xFrac) * (1 - yFrac) + (v01 * xInv + v11 * xFrac) * yFrac;
   }
 
   private static float bicubicSample(float[][] img, float x, float y) {
@@ -240,31 +224,60 @@ public final class Utils {
     int xInt = (int) Math.floor(x);
     int yInt = (int) Math.floor(y);
 
-    float result = 0.0f;
+    // Pre-calculate weights for the 4x4 grid
+    float xFrac = x - xInt;
+    float yFrac = y - yInt;
 
-    // Bicubic uses a 4x4 grid of pixels around the target point
-    for (int m = -1; m <= 2; m++) {
-      for (int n = -1; n <= 2; n++) {
-        // Clamp every neighbor access
-        int py = Math.max(0, Math.min(yInt + m, inH - 1));
-        int px = Math.max(0, Math.min(xInt + n, inW - 1));
+    // Horizontal weights (n = -1, 0, 1, 2)
+    float wx0 = cubic(xFrac + 1.0f); // distance from xInt-1
+    float wx1 = cubic(xFrac);          // distance from xInt
+    float wx2 = cubic(xFrac - 1.0f); // distance from xInt+1
+    float wx3 = cubic(xFrac - 2.0f); // distance from xInt+2
 
-        float weight = cubic(x - (xInt + n)) * cubic(y - (yInt + m));
-        result += img[py][px] * weight;
-      }
-    }
+    // Vertical weights (m = -1, 0, 1, 2)
+    float wy0 = cubic(yFrac + 1.0f);
+    float wy1 = cubic(yFrac);
+    float wy2 = cubic(yFrac - 1.0f);
+    float wy3 = cubic(yFrac - 2.0f);
+
+    // Clamp Y coordinates
+    int y0 = (yInt - 1 < 0) ? 0 : (yInt - 1 > inH - 1 ? inH - 1 : yInt - 1);
+    int y1 = (yInt < 0) ? 0 : (yInt > inH - 1 ? inH - 1 : yInt);
+    int y2 = (yInt + 1 < 0) ? 0 : (yInt + 1 > inH - 1 ? inH - 1 : yInt + 1);
+    int y3 = (yInt + 2 < 0) ? 0 : (yInt + 2 > inH - 1 ? inH - 1 : yInt + 2);
+
+    float[] row0 = img[y0];
+    float[] row1 = img[y1];
+    float[] row2 = img[y2];
+    float[] row3 = img[y3];
+
+    // Clamp X coordinates
+    int x0 = (xInt - 1 < 0) ? 0 : (xInt - 1 > inW - 1 ? inW - 1 : xInt - 1);
+    int x1 = (xInt < 0) ? 0 : (xInt > inW - 1 ? inW - 1 : xInt);
+    int x2 = (xInt + 1 < 0) ? 0 : (xInt + 1 > inW - 1 ? inW - 1 : xInt + 1);
+    int x3 = (xInt + 2 < 0) ? 0 : (xInt + 2 > inW - 1 ? inW - 1 : xInt + 2);
+
+    float result = wy0 * (row0[x0] * wx0 + row0[x1] * wx1 + row0[x2] * wx2 + row0[x3] * wx3);
+    result += wy1 * (row1[x0] * wx0 + row1[x1] * wx1 + row1[x2] * wx2 + row1[x3] * wx3);
+    result += wy2 * (row0[x0] * wx0 + row2[x1] * wx1 + row2[x2] * wx2 + row2[x3] * wx3);
+    result += wy3 * (row3[x0] * wx0 + row3[x1] * wx1 + row3[x2] * wx2 + row3[x3] * wx3);
 
     return result;
   }
 
   private static float cubic(float t) {
     t = Math.abs(t);
+
+    // Using Catmull-Rom spline
     if (t <= 1) {
       return (1.5f * t - 2.5f) * t * t + 1;
-    } else if (t < 2) {
+    }
+
+    if (t < 2) {
       return ((-0.5f * t + 2.5f) * t - 4) * t + 2;
     }
-    return 0.0f;
+
+    return 0;
   }
 
   private static float[][] trimPadding(float[][] input, int scale, int pad) {

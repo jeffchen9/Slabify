@@ -2,10 +2,11 @@ package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
-import org.pepsoft.minecraft.Constants;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+
+import static org.pepsoft.minecraft.Constants.*;
 
 /**
  *
@@ -17,30 +18,27 @@ public class StairShape extends Shape {
   public static final String NAME = "stairs";
 
   private final Map<String, Material[]> materials = new HashMap<>();
-  private final Matrix stairShape;
-  private final Matrix insideStairShape;
-  private final Matrix outsideStairShape;
+  private final Matrix stairShape = Matrix.of(new float[][]{
+      {2, 2},
+      {1, 1}
+  });
+  private final Matrix insideStairShape = Matrix.of(new float[][]{
+      {1, 2},
+      {2, 2}
+  });
+  private final Matrix outsideStairShape = Matrix.of(new float[][]{
+      {2, 1},
+      {1, 1}
+  });
 
   public StairShape() {
     super("Stairs", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 2);
-    stairShape = new Matrix(new float[][]{
-        {2, 2},
-        {1, 1}
-    });
-    insideStairShape = new Matrix(new float[][]{
-        {1, 2},
-        {2, 2}
-    });
-    outsideStairShape = new Matrix(new float[][]{
-        {2, 1},
-        {1, 1}
-    });
   }
 
   @Override
-  public Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution) {
+  public Optional<List<Matrix>> getShapeMatrices(Options selectedOption, int resolution) {
 
-    assert resolution >= getMinimumResolution(null);
+    assert resolution >= getMinResolution(null);
 
     if (selectedOption == Options.ENABLE) {
 
@@ -92,20 +90,20 @@ public class StairShape extends Shape {
 
       Material[] stairMaterials = new Material[12];
 
-      stairMaterials[0] = Material.get(materialName, Constants.MC_FACING, "west", Constants.MC_SHAPE, "straight", Constants.MC_HALF, "bottom");
-      stairMaterials[1] = Material.get(materialName, Constants.MC_FACING, "south", Constants.MC_SHAPE, "straight", Constants.MC_HALF, "bottom");
-      stairMaterials[2] = Material.get(materialName, Constants.MC_FACING, "east", Constants.MC_SHAPE, "straight", Constants.MC_HALF, "bottom");
-      stairMaterials[3] = Material.get(materialName, Constants.MC_FACING, "north", Constants.MC_SHAPE, "straight", Constants.MC_HALF, "bottom");
+      stairMaterials[0] = Material.get(materialName, MC_FACING, "west", MC_SHAPE, "straight", MC_HALF, "bottom");
+      stairMaterials[1] = Material.get(materialName, MC_FACING, "south", MC_SHAPE, "straight", MC_HALF, "bottom");
+      stairMaterials[2] = Material.get(materialName, MC_FACING, "east", MC_SHAPE, "straight", MC_HALF, "bottom");
+      stairMaterials[3] = Material.get(materialName, MC_FACING, "north", MC_SHAPE, "straight", MC_HALF, "bottom");
 
-      stairMaterials[4] = Material.get(materialName, Constants.MC_FACING, "east", Constants.MC_SHAPE, "inner_right", Constants.MC_HALF, "bottom");
-      stairMaterials[5] = Material.get(materialName, Constants.MC_FACING, "east", Constants.MC_SHAPE, "inner_left", Constants.MC_HALF, "bottom");
-      stairMaterials[6] = Material.get(materialName, Constants.MC_FACING, "west", Constants.MC_SHAPE, "inner_right", Constants.MC_HALF, "bottom");
-      stairMaterials[7] = Material.get(materialName, Constants.MC_FACING, "west", Constants.MC_SHAPE, "inner_left", Constants.MC_HALF, "bottom");
+      stairMaterials[4] = Material.get(materialName, MC_FACING, "east", MC_SHAPE, "inner_right", MC_HALF, "bottom");
+      stairMaterials[5] = Material.get(materialName, MC_FACING, "east", MC_SHAPE, "inner_left", MC_HALF, "bottom");
+      stairMaterials[6] = Material.get(materialName, MC_FACING, "west", MC_SHAPE, "inner_right", MC_HALF, "bottom");
+      stairMaterials[7] = Material.get(materialName, MC_FACING, "west", MC_SHAPE, "inner_left", MC_HALF, "bottom");
 
-      stairMaterials[8] = Material.get(materialName, Constants.MC_FACING, "west", Constants.MC_SHAPE, "outer_right", Constants.MC_HALF, "bottom");
-      stairMaterials[9] = Material.get(materialName, Constants.MC_FACING, "west", Constants.MC_SHAPE, "outer_left", Constants.MC_HALF, "bottom");
-      stairMaterials[10] = Material.get(materialName, Constants.MC_FACING, "east", Constants.MC_SHAPE, "outer_right", Constants.MC_HALF, "bottom");
-      stairMaterials[11] = Material.get(materialName, Constants.MC_FACING, "east", Constants.MC_SHAPE, "outer_left", Constants.MC_HALF, "bottom");
+      stairMaterials[8] = Material.get(materialName, MC_FACING, "west", MC_SHAPE, "outer_right", MC_HALF, "bottom");
+      stairMaterials[9] = Material.get(materialName, MC_FACING, "west", MC_SHAPE, "outer_left", MC_HALF, "bottom");
+      stairMaterials[10] = Material.get(materialName, MC_FACING, "east", MC_SHAPE, "outer_right", MC_HALF, "bottom");
+      stairMaterials[11] = Material.get(materialName, MC_FACING, "east", MC_SHAPE, "outer_left", MC_HALF, "bottom");
 
       materials.put(baseMaterial.name, stairMaterials);
     }

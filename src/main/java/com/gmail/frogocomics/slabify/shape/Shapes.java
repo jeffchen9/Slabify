@@ -49,6 +49,10 @@ public final class Shapes {
   // Key: block, Values: block for each shape
   private static final Map<String, String[]> mapping = new HashMap<>();
 
+  private Shapes() {
+    // Prevent instantiation
+  }
+
   public static void init() {
     // Populate shapes list
     SHAPES.put(SlabShape.NAME, new SlabShape());
@@ -71,7 +75,7 @@ public final class Shapes {
 
     // Get the block mapping list
     File configDir = Configuration.getConfigDir();
-    File mappingFile =  new File(configDir, "mappings.csv");
+    File mappingFile = new File(configDir, "mappings.csv");
     if (!mappingFile.exists()) {
       // Create the default file
 
@@ -82,7 +86,7 @@ public final class Shapes {
           throw new IOException("mappings.csv not found");
         }
       } catch (IOException e) {
-          throw new RuntimeException(e);
+        throw new RuntimeException(e);
       }
     }
 
@@ -103,7 +107,7 @@ public final class Shapes {
         rows.add(line.split(","));
       }
     } catch (IOException e) {
-        throw new RuntimeException(e);
+      throw new RuntimeException(e);
     }
 
     String[] shapes = headerRow.split(",");
@@ -132,10 +136,6 @@ public final class Shapes {
     }
   }
 
-  private Shapes() {
-    // Prevent instantiation
-  }
-
   public static int[][][] findMostSimilarShapes(float[][] differenceMap, int resolution, List<Matrix> shapeMatrices, double exponent) {
     int height = differenceMap.length / resolution;
     int width = differenceMap[0].length / resolution;
@@ -148,9 +148,7 @@ public final class Shapes {
         float[][] difference = new float[resolution][resolution];
 
         for (int i1 = 0; i1 < resolution; i1++) {
-          for (int i2 = 0; i2 < resolution; i2++) {
-            difference[i1][i2] = differenceMap[x * resolution + i1][y * resolution + i2];
-          }
+          System.arraycopy(differenceMap[x * resolution + i1], y * resolution, difference[i1], 0, resolution);
         }
 
         shapeMap[x][y] = findMostSimilarShape(difference, shapeMatrices, exponent);
@@ -161,7 +159,7 @@ public final class Shapes {
   }
 
   public static int[] findMostSimilarShape(float[][] difference, List<Matrix> shapeMatrices, double exponent) {
-    Matrix differenceMatrix = new Matrix(difference);
+    Matrix differenceMatrix = Matrix.of(difference);
 
     float[] lossArr = new float[shapeMatrices.size()];
 
@@ -173,16 +171,16 @@ public final class Shapes {
     }
 
     return IntStream.range(0, lossArr.length)
-            .boxed()
-            .sorted(Comparator.comparingDouble(i -> lossArr[i]))
-            .mapToInt(i -> i)
-            .toArray();
+        .boxed()
+        .sorted(Comparator.comparingDouble(i -> lossArr[i]))
+        .mapToInt(i -> i)
+        .toArray();
   }
 
   @Nullable
   public static String getMaterial(Shape shape, String baseMaterial) {
     return mapping.containsKey(baseMaterial) && shapesListInv.containsKey(shape.getName()) ?
-            mapping.get(baseMaterial)[shapesListInv.get(shape.getName())] : null;
+        mapping.get(baseMaterial)[shapesListInv.get(shape.getName())] : null;
   }
 
   /**

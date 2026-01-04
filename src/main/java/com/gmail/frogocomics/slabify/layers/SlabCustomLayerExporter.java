@@ -51,14 +51,13 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
   private static final Logger logger = LoggerFactory.getLogger(SlabCustomLayerExporter.class);
 
   private final Map<String, Options> shapes;
-  private int resolution = 1;
   private final List<Matrix> shapeMatrices = new ArrayList<>();
   // Shape, id, layer (0 if cut, 1+ if fill), option associated with shape
   // Originally true if fill, false if cut
   private final List<Quartet<Shape, Integer, Integer, Options>> shapeIndices = new ArrayList<>();
   private final Map<String, Set<Integer>> availableIndices = new HashMap<>();
   private final Map<Tile, Shapemap> shapemaps = new HashMap<>();
-
+  private int resolution = 1;
   private Map<String, Material> mapping;
 
   private boolean disable = false;
@@ -87,15 +86,13 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       // First, get the resolution
       for (Entry<String, Options> entry : layer.getShapes().entrySet()) {
         if (entry.getValue() != Options.DISABLE) {
-          resolution = Math.max(resolution, Shapes.SHAPES.get(entry.getKey()).getMinimumResolution(entry.getValue()));
+          resolution = Math.max(resolution, Shapes.SHAPES.get(entry.getKey()).getMinResolution(entry.getValue()));
         }
       }
 
-      logger.info("Resolution: {}", resolution);
-
       for (Entry<String, Options> entry : layer.getShapes().entrySet()) {
         Shape shape = Shapes.SHAPES.get(entry.getKey());
-        Optional<List<Matrix>> optBakedShapes = shape.getBakedShapes(entry.getValue(), resolution);
+        Optional<List<Matrix>> optBakedShapes = shape.getShapeMatrices(entry.getValue(), resolution);
 
         if (optBakedShapes.isPresent()) {
           List<Matrix> bakedShapes = optBakedShapes.get();
@@ -135,9 +132,9 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       }
 
       // Add additional shapes: full and empty
-      shapeMatrices.addAll(FullShape.getInstance().getBakedShapes(null, resolution).get());
+      shapeMatrices.addAll(FullShape.getInstance().getShapeMatrices(null, resolution).get());
       shapeIndices.add(Quartet.with(FullShape.getInstance(), 0, 1, null));
-      shapeMatrices.addAll(EmptyShape.getInstance().getBakedShapes(null, resolution).get());
+      shapeMatrices.addAll(EmptyShape.getInstance().getShapeMatrices(null, resolution).get());
       shapeIndices.add(Quartet.with(EmptyShape.getInstance(), 0, 1, null));
     }
   }
@@ -286,9 +283,9 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               }
 
               if (!layer.replacesNonSolidBlocks() && (blockAbove != Material.AIR) && (blockAbove
-                      != Material.STATIONARY_WATER) && (blockAbove != Material.WATER) && (blockAbove
-                      != Material.FALLING_WATER)
-                      && (blockAbove != Material.FLOWING_WATER) && !blockAbove.containsWater()) {
+                  != Material.STATIONARY_WATER) && (blockAbove != Material.WATER) && (blockAbove
+                  != Material.FALLING_WATER)
+                  && (blockAbove != Material.FLOWING_WATER) && !blockAbove.containsWater()) {
                 continue;
               }
             }
@@ -318,17 +315,17 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               }
 
               if (!layer.replacesNonSolidBlocks() && (blockTwoAbove != Material.AIR) && (blockTwoAbove
-                      != Material.STATIONARY_WATER) && (blockTwoAbove != Material.WATER) && (blockTwoAbove
-                      != Material.FALLING_WATER)
-                      && (blockTwoAbove != Material.FLOWING_WATER) && !blockTwoAbove.containsWater()) {
+                  != Material.STATIONARY_WATER) && (blockTwoAbove != Material.WATER) && (blockTwoAbove
+                  != Material.FALLING_WATER)
+                  && (blockTwoAbove != Material.FLOWING_WATER) && !blockTwoAbove.containsWater()) {
                 continue;
               }
             }
 
             // Check for waterlogging
             if (blockTwoAbove == Material.STATIONARY_WATER || blockTwoAbove == Material.WATER ||
-                    blockTwoAbove == Material.FALLING_WATER || blockTwoAbove == Material.FLOWING_WATER
-                    || blockTwoAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
+                blockTwoAbove == Material.FALLING_WATER || blockTwoAbove == Material.FLOWING_WATER
+                || blockTwoAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
               if (!(q.getValue0() instanceof FullShape)) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
@@ -343,8 +340,8 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                 tile.getWaterLevel(localX, localY) == terrainHeight) {
               slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
             } else if (blockAbove != null && (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
-                    blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
-                    || blockAbove.containsWater())) {
+                blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
+                || blockAbove.containsWater())) {
               slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
             }
 

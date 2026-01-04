@@ -18,16 +18,12 @@
 
 package com.gmail.frogocomics.slabify.gui;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import javax.swing.BorderFactory;
-import javax.swing.GroupLayout;
-import javax.swing.GroupLayout.Alignment;
-import javax.swing.JButton;
-import javax.swing.JColorChooser;
-import javax.swing.JPanel;
-import javax.swing.LayoutStyle.ComponentPlacement;
 import org.pepsoft.worldpainter.layers.renderers.RendererPreviewer;
+
+import javax.swing.*;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.LayoutStyle.ComponentPlacement;
+import java.awt.*;
 
 /**
  * Duplicate of {@link org.pepsoft.worldpainter.layers.renderers.PaintPicker} but only for a solid

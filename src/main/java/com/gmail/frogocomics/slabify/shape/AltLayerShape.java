@@ -1,11 +1,12 @@
 package com.gmail.frogocomics.slabify.shape;
 
-import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+
+import static com.gmail.frogocomics.slabify.Constants.CQ_LAYER;
 
 /**
  *
@@ -15,6 +16,7 @@ import java.util.*;
 public class AltLayerShape extends Shape {
 
   public static final String NAME = "alt_layer";
+
   private final Map<String, Material[]> materials = new HashMap<>();
   private final float[] heights = new float[]{0.125f, 0.25f, 0.5f, 0.75f};
 
@@ -23,14 +25,13 @@ public class AltLayerShape extends Shape {
   }
 
   @Override
-  public Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution) {
+  public Optional<List<Matrix>> getShapeMatrices(Options selectedOption, int resolution) {
 
     if (selectedOption == Options.ENABLE) {
       List<Matrix> shapes = new ArrayList<>();
 
-
       for (int i = 1; i < heights.length; i++) {
-        shapes.add((new Matrix(new float[][]{{heights[i]}})).upscale(resolution / getMinimumResolution(null)));
+        shapes.add((Matrix.of(new float[][]{{heights[i]}})).upscale(resolution / getMinResolution(null)));
       }
 
       return Optional.of(shapes);
@@ -48,7 +49,7 @@ public class AltLayerShape extends Shape {
       Material[] layerMaterials = new Material[heights.length];
 
       for (int j = 0; j < heights.length; j++) {
-        layerMaterials[j] = Material.get(materialName, Constants.CQ_LAYER, j + 1);
+        layerMaterials[j] = Material.get(materialName, CQ_LAYER, j + 1);
       }
 
       materials.put(baseMaterial.name, layerMaterials);

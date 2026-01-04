@@ -21,7 +21,6 @@ package com.gmail.frogocomics.slabify.layers;
 import com.gmail.frogocomics.slabify.shape.Shape;
 import com.gmail.frogocomics.slabify.shape.Shape.Options;
 import com.gmail.frogocomics.slabify.shape.Shapes;
-import com.gmail.frogocomics.slabify.utils.Utils;
 import org.pepsoft.minecraft.Material;
 import org.pepsoft.worldpainter.Dimension;
 import org.pepsoft.worldpainter.MixedMaterial;
@@ -29,12 +28,10 @@ import org.pepsoft.worldpainter.MixedMaterialManager;
 import org.pepsoft.worldpainter.Platform;
 import org.pepsoft.worldpainter.exporting.LayerExporter;
 import org.pepsoft.worldpainter.layers.CustomLayer;
-import org.pepsoft.worldpainter.layers.Layer;
 import org.pepsoft.worldpainter.layers.exporters.ExporterSettings;
 import org.pepsoft.worldpainter.layers.renderers.LayerRenderer;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -48,17 +45,16 @@ import java.util.Map;
 public final class Slab extends CustomLayer {
 
   /**
-   * This class is serialised in the .world file when it is saved, so it must be stable. It is
-   * recommended to give it a fixed {@code serialVersionUID} and ensure that any changes are
-   * backwards compatible.
+   * This class is serialised in the .world file when it is saved, so it must be stable.
+   * <ul>
+   *   <li>1 for {@code 1.0.0-SNAPSHOT-6} and before</li>
+   *   <li>2 for {@code 1.0.0-SNAPSHOT-7} and after</li>
+   * </ul>
    */
-  private static final long serialVersionUID = 1L;
-
+  private static final long serialVersionUID = 2L;
   private MixedMaterial material;
   private boolean replace = false;
   private boolean mimic = false;
-  @Deprecated // For backwards compatibility
-  private boolean addHalf = false;
   private float height = 0;
   private boolean conquest = false;
   private Map<String, Material> mapping = new LinkedHashMap<>();
@@ -67,16 +63,17 @@ public final class Slab extends CustomLayer {
 
   public Slab(String name, MixedMaterial material) {
     // Load slab icon from resources
-    super(name, "a layer of " + material.getName() + " slab on top of the terrain", DataSize.BIT,
+    super(name, "A layer of " + material.getName() + " slab on top of the terrain", DataSize.BIT,
         65, Color.RED);
 
     // Make sure the material is registered, in case it's new
     MixedMaterialManager.getInstance().register(material);
     this.material = material;
 
+    // Create default properties
     Map<String, Options> shapes = new HashMap<>();
 
-    for (Shape shape: Shapes.SHAPES.values()) {
+    for (Shape shape : Shapes.SHAPES.values()) {
       if (shape.isVanilla()) {
         shapes.put(shape.getName(), Options.ENABLE);
       } else {
@@ -89,18 +86,18 @@ public final class Slab extends CustomLayer {
 
   @Override
   public LayerRenderer getRenderer() {
-
-    // If the paint happens to be an image, we just use average color instead.
-    if (getPaint() instanceof BufferedImage) {
-      return new SlabCustomLayerRenderer((Utils.averageColor((BufferedImage) getPaint())).getRGB(), getOpacity());
+    // If the paint happens to be an image, we just use the average color of the image instead.
+    if (!(getPaint() instanceof Color)) {
+      throw new IllegalStateException("Images are not supported");
     }
+
     return new SlabCustomLayerRenderer(((Color) getPaint()).getRGB(), getOpacity());
   }
 
   @Override
   public void setName(String name) {
     super.setName(name);
-    setDescription("a layer of slab on top of the terrain");
+    setDescription("A layer of slab on top of the terrain");
   }
 
   @Override
@@ -130,14 +127,10 @@ public final class Slab extends CustomLayer {
   public Class<? extends LayerExporter> getExporterType() {
     return SlabCustomLayerExporter.class;
   }
-
-  /**
-   * A custom layer must override this method. The default implementation only works for singular
-   * non-configurable {@link Layer}s.
-   */
+  
   @Override
   public LayerExporter getExporter(Dimension dimension, Platform platform,
-      ExporterSettings settings) {
+                                   ExporterSettings settings) {
     return new SlabCustomLayerExporter(dimension, platform, this);
   }
 
@@ -145,19 +138,22 @@ public final class Slab extends CustomLayer {
   public Slab clone() {
     Slab clone = (Slab) super.clone();
     clone.setMaterial(material.clone());
-    clone.setMimic(mimic);
     clone.setReplaceNonSolidBlocks(replace);
+    clone.setMimic(mimic);
+    clone.setHeight(height);
+    clone.setAllowConquest(conquest);
     clone.setMapping(mapping);
     clone.setShapes(shapes);
     clone.setInterpolation(interpolation);
     MixedMaterialManager.getInstance().register(clone.material);
+    
     return clone;
   }
 
   /**
    * Get whether the slab will replace all non-solid blocks (other than air).
    *
-   * @return <code>true</code> if the slab will replace all non-solid blocks.
+   * @return {@code true} if the slab will replace all non-solid blocks.
    */
   public boolean replacesNonSolidBlocks() {
     return replace;
@@ -176,7 +172,7 @@ public final class Slab extends CustomLayer {
    * Get whether the layer will use the underlying block to determine the type of slab that will
    * be placed, if any.
    *
-   * @return <code>true</code> if the layer will look at the underlying block.
+   * @return {@code true} if the layer will look at the underlying block.
    */
   public boolean mimicsTerrain() {
     return mimic;
@@ -192,20 +188,43 @@ public final class Slab extends CustomLayer {
     this.mimic = mimic;
   }
 
+  /**
+   * Get the height to add to the terrain.
+   *
+   * @return the height to add.
+   */
   public float getHeight() {
     return height;
   }
 
+  /**
+   * Set the height to add to the terrain.
+   *
+   * @param height the height to add.
+   */
   public void setHeight(float height) {
     // Check bounds--otherwise, strange behavior occurs
-    assert height >= 0 && height <= 1.5;
+    if (height < 0 || height > 1.5) {
+      throw new IllegalArgumentException("Height must be between 0 and 1.5");
+    }
+
     this.height = height;
   }
 
+  /**
+   * Get whether the layer allows blocks with the {@code conquest} namespace.
+   *
+   * @return {@code true} if the layer allows Conquest blocks.
+   */
   public boolean allowConquest() {
     return conquest;
   }
 
+  /**
+   * Set whether the layer allows blocks with the {@code conquest} namespace.
+   *
+   * @param conquest whether the layer allows Conquest blocks.
+   */
   public void setAllowConquest(boolean conquest) {
     this.conquest = conquest;
   }
@@ -229,18 +248,38 @@ public final class Slab extends CustomLayer {
     this.mapping = mapping;
   }
 
+  /**
+   * Get a map of the option for each {@link Shape}.
+   *
+   * @return a map of the options.
+   */
   public Map<String, Options> getShapes() {
     return shapes;
   }
 
+  /**
+   * Set a map of the options for each {@link Shape}.
+   *
+   * @param shapes a map of the options.
+   */
   public void setShapes(Map<String, Options> shapes) {
     this.shapes = shapes;
   }
 
+  /**
+   * Get the interpolation method used for upscaling.
+   *
+   * @return the interpolation method.
+   */
   public Interpolation getInterpolation() {
     return interpolation;
   }
 
+  /**
+   * Set the interpolation method used for upscaling.
+   *
+   * @param interpolation the interpolation method.
+   */
   public void setInterpolation(Interpolation interpolation) {
     this.interpolation = interpolation;
   }
@@ -250,11 +289,11 @@ public final class Slab extends CustomLayer {
    */
   public enum Interpolation {
     /**
-     * Bilinear interpolation
+     * Bilinear interpolation (faster)
      */
     BILINEAR("Bilinear"),
     /**
-     * Bicubic interpolation
+     * Bicubic interpolation (slower and sharper)
      */
     BICUBIC("Bicubic");
 

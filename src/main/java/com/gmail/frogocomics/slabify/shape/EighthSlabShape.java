@@ -2,10 +2,15 @@ package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
-import org.pepsoft.minecraft.Constants;
 import org.pepsoft.minecraft.Material;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.pepsoft.minecraft.Constants.MC_FACING;
+import static org.pepsoft.minecraft.Constants.MC_HALF;
 
 /**
  *
@@ -17,37 +22,32 @@ public class EighthSlabShape extends Shape {
   public static final String NAME = "eighth_slab";
 
   private final Map<String, Material[]> materials = new HashMap<>();
-  private final Matrix southShape;
-  private final Matrix eastShape;
-  private final Matrix northShape;
-  private final Matrix westShape;
+  private final Matrix southShape = Matrix.of(new float[][]{
+      {1, 0},
+      {0, 0}
+  });
+  private final Matrix eastShape = Matrix.of(new float[][]{
+      {0, 1},
+      {0, 0}
+  });
+  private final Matrix northShape = Matrix.of(new float[][]{
+      {0, 0},
+      {0, 1}
+  });
+  private final Matrix westShape = Matrix.of(new float[][]{
+      {0, 0},
+      {1, 0}
+  });
 
 
   public EighthSlabShape() {
     super("Eighth Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2);
-
-    southShape = new Matrix(new float[][]{
-            {1, 0},
-            {0, 0}
-    });
-    eastShape = new Matrix(new float[][]{
-            {0, 1},
-            {0, 0}
-    });
-    northShape = new Matrix(new float[][]{
-            {0, 0},
-            {0, 1}
-    });
-    westShape = new Matrix(new float[][]{
-            {0, 0},
-            {1, 0}
-    });
   }
 
   @Override
-  public Optional<List<Matrix>> getBakedShapes(Options selectedOption, int resolution) {
+  public Optional<List<Matrix>> getShapeMatrices(Options selectedOption, int resolution) {
 
-    assert resolution >= getMinimumResolution(null);
+    assert resolution >= getMinResolution(null);
 
     if (selectedOption == Options.ENABLE) {
 
@@ -75,10 +75,10 @@ public class EighthSlabShape extends Shape {
 
       Material[] slabMaterials = new Material[12];
 
-      slabMaterials[0] = Material.get(materialName, Constants.MC_FACING, "south", Constants.MC_HALF, "bottom");
-      slabMaterials[1] = Material.get(materialName, Constants.MC_FACING, "east", Constants.MC_HALF, "bottom");
-      slabMaterials[2] = Material.get(materialName, Constants.MC_FACING, "north", Constants.MC_HALF, "bottom");
-      slabMaterials[3] = Material.get(materialName, Constants.MC_FACING, "west", Constants.MC_HALF, "bottom");
+      slabMaterials[0] = Material.get(materialName, MC_FACING, "south", MC_HALF, "bottom");
+      slabMaterials[1] = Material.get(materialName, MC_FACING, "east", MC_HALF, "bottom");
+      slabMaterials[2] = Material.get(materialName, MC_FACING, "north", MC_HALF, "bottom");
+      slabMaterials[3] = Material.get(materialName, MC_FACING, "west", MC_HALF, "bottom");
 
       materials.put(baseMaterial.name, slabMaterials);
     }
