@@ -706,7 +706,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
       gbc.gridx = 0;
       gbc.gridy++;
 
-      for (Shape shape : Shapes.SHAPES.values()) {
+      for (Shape shape : Shapes.shapesList) {
         JLabel label = new JLabel(shape.toString());
 
         // Bold the labels of non-vanilla shapes to indicate to the user the potential incompatibility

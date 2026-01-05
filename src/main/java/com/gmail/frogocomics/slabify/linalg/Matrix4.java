@@ -1,5 +1,7 @@
 package com.gmail.frogocomics.slabify.linalg;
 
+import static java.lang.Math.abs;
+
 public final class Matrix4 implements Matrix {
 
   float m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33;
@@ -130,55 +132,6 @@ public final class Matrix4 implements Matrix {
     m31 -= value;
     m32 -= value;
     m33 -= value;
-  }
-
-  @Override
-  public void sub(Matrix b) {
-    if (b.getSize() != 4) {
-      throw new IllegalArgumentException("Matrix sizes are incompatible");
-    }
-
-    m00 -= b.get(0);
-    m01 -= b.get(1);
-    m02 -= b.get(2);
-    m03 -= b.get(3);
-    m10 -= b.get(4);
-    m11 -= b.get(5);
-    m12 -= b.get(6);
-    m13 -= b.get(7);
-    m20 -= b.get(8);
-    m21 -= b.get(9);
-    m22 -= b.get(10);
-    m23 -= b.get(11);
-    m30 -= b.get(12);
-    m31 -= b.get(13);
-    m32 -= b.get(14);
-    m33 -= b.get(15);
-  }
-
-  @Override
-  public void pow(double a) {
-    m00 = (float) Math.pow(Math.abs(m00), a);
-    m01 = (float) Math.pow(Math.abs(m01), a);
-    m02 = (float) Math.pow(Math.abs(m02), a);
-    m03 = (float) Math.pow(Math.abs(m03), a);
-    m10 = (float) Math.pow(Math.abs(m10), a);
-    m11 = (float) Math.pow(Math.abs(m11), a);
-    m12 = (float) Math.pow(Math.abs(m12), a);
-    m13 = (float) Math.pow(Math.abs(m13), a);
-    m20 = (float) Math.pow(Math.abs(m20), a);
-    m21 = (float) Math.pow(Math.abs(m21), a);
-    m22 = (float) Math.pow(Math.abs(m22), a);
-    m23 = (float) Math.pow(Math.abs(m23), a);
-    m30 = (float) Math.pow(Math.abs(m30), a);
-    m31 = (float) Math.pow(Math.abs(m31), a);
-    m32 = (float) Math.pow(Math.abs(m32), a);
-    m33 = (float) Math.pow(Math.abs(m33), a);
-  }
-
-  @Override
-  public float sum() {
-    return m00 + m01 + m02 + m03 + m10 + m11 + m12 + m13 + m20 + m21 + m22 + m23 + m30 + m31 + m32 + m33;
   }
 
   @Override
@@ -417,5 +370,13 @@ public final class Matrix4 implements Matrix {
     copy.m32 = m32;
     copy.m33 = m33;
     return copy;
+  }
+
+  @Override
+  public float getLoss(float[] arr) {
+    return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m10 - arr[4]) +
+        abs(m11 - arr[5]) + abs(m12 - arr[6]) + abs(m13 - arr[7]) + abs(m20 - arr[8]) + abs(m21 - arr[9]) +
+        abs(m22 - arr[10]) + abs(m23 - arr[11]) + abs(m30 - arr[12]) + abs(m31 - arr[13]) + abs(m32 - arr[14]) +
+        abs(m33 - arr[15]);
   }
 }

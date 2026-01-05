@@ -32,6 +32,10 @@ import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
  */
 public final class Utils {
 
+  private static final int PADDED_SIZE = TILE_SIZE + 2 * Constants.TILE_PADDING;
+  private static final ThreadLocal<float[][]> PADDED_BUFFER = ThreadLocal.withInitial(() -> new float[PADDED_SIZE][PADDED_SIZE]);
+  private static final ThreadLocal<float[][]> UPSCALE_BUFFER = ThreadLocal.withInitial(() -> new float[PADDED_SIZE * Constants.MAX_UPSCALE_RESOLUTION][PADDED_SIZE * Constants.MAX_UPSCALE_RESOLUTION]);
+
   private Utils() {
     // Prevent instantiation
   }
@@ -40,43 +44,45 @@ public final class Utils {
    * Get the difference between the upscaled height and the original height.
    *
    * @param upscaledMap the upscaled map, as a float array.
-   * @param originalMap the original map, as an integer array.
+   * @param originalMap the original tile.
    * @param addHeight   the height to add.
-   * @return the difference, as a float array.
+   * @param buffer      the buffer to write to.
    */
-  public static float[][] getDifference(float[][] upscaledMap, int[][] originalMap, float addHeight) {
+  public static void getDifference(float[][] upscaledMap, Tile originalMap, float addHeight, float[][] buffer) {
 
-    int resolution = upscaledMap.length / originalMap.length;
+    int resolution = upscaledMap.length / org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
     // Resolution must be a power of two: 1, 2, 4, 8, etc.
     if (resolution == 0 || (resolution & (resolution - 1)) != 0) {
       throw new IllegalArgumentException("Resolution must be a power of two");
     }
 
-    float[][] differenceMap = new float[upscaledMap.length][upscaledMap[0].length];
-
     // Special case of resolution of 1
     if (resolution == 1) {
       for (int x = 0; x < TILE_SIZE; x++) {
         for (int y = 0; y < TILE_SIZE; y++) {
-          differenceMap[x][y] = upscaledMap[x][y] - originalMap[x][y] + addHeight;
+          buffer[x][y] = upscaledMap[x][y] - originalMap.getIntHeight(x, y) + addHeight;
         }
       }
     } else {
       for (int i1 = 0; i1 < TILE_SIZE; i1++) {
         for (int i2 = 0; i2 < TILE_SIZE; i2++) {
+
+          float baseHeight = originalMap.getIntHeight(i1, i2);
+          float offset = addHeight - baseHeight;
+          int rowStart = i1 * resolution;
+          int colStart = i2 * resolution;
+
           for (int i3 = 0; i3 < resolution; i3++) {
             for (int i4 = 0; i4 < resolution; i4++) {
-              int x = resolution * i1 + i3;
-              int y = resolution * i2 + i4;
-              differenceMap[x][y] = (upscaledMap[x][y] - originalMap[i1][i2] + addHeight) * resolution;
+              int x = rowStart + i3;
+              int y = colStart + i4;
+              buffer[x][y] = (upscaledMap[x][y] + offset) * resolution;
             }
           }
         }
       }
     }
-
-    return differenceMap;
   }
 
   /**
@@ -85,21 +91,16 @@ public final class Utils {
    * @param tile      the tile to get the heightmap from.
    * @param dimension the dimension the tile belongs to.
    * @param pad       the padding on each side.
-   * @return the heightmap as a float array.
+   * @param buffer    the scratch array.
    */
-  public static float[][] padTile(Tile tile, Dimension dimension, int pad) {
+  public static void padTile(Tile tile, Dimension dimension, int pad, float[][] buffer) {
     int tileX = tile.getX();
     int tileY = tile.getY();
-
-    // Padding is on each side
-    int paddedSize = TILE_SIZE + 2 * pad;
-
-    float[][] padded = new float[paddedSize][paddedSize];
 
     // Fill center from current tile
     for (int x = 0; x < TILE_SIZE; x++) {
       for (int y = 0; y < TILE_SIZE; y++) {
-        padded[x + pad][y + pad] = tile.getHeight(x, y);
+        buffer[x + pad][y + pad] = tile.getHeight(x, y);
       }
     }
 
@@ -114,10 +115,10 @@ public final class Utils {
         Tile neighborTile = dimension.getTile(tileX + dx, tileY + dy);
 
         int xStart = (dx < 0) ? 0 : (dx == 0 ? pad : TILE_SIZE + pad);
-        int xEnd = (dx < 0) ? pad : (dx == 0 ? TILE_SIZE + pad : paddedSize);
+        int xEnd = (dx < 0) ? pad : (dx == 0 ? TILE_SIZE + pad : PADDED_SIZE);
 
         int yStart = (dy < 0) ? 0 : (dy == 0 ? pad : TILE_SIZE + pad);
-        int yEnd = (dy < 0) ? pad : (dy == 0 ? TILE_SIZE + pad : paddedSize);
+        int yEnd = (dy < 0) ? pad : (dy == 0 ? TILE_SIZE + pad : PADDED_SIZE);
 
         for (int px = xStart; px < xEnd; px++) {
           for (int py = yStart; py < yEnd; py++) {
@@ -125,19 +126,17 @@ public final class Utils {
               // Map padded index back to neighbor local index
               int nx = px - (dx * TILE_SIZE + pad);
               int ny = py - (dy * TILE_SIZE + pad);
-              padded[px][py] = neighborTile.getHeight(nx, ny);
+              buffer[px][py] = neighborTile.getHeight(nx, ny);
             } else {
               // Clamp to the center tile
               int cx = Math.max(pad, Math.min(TILE_SIZE + pad - 1, px));
               int cy = Math.max(pad, Math.min(TILE_SIZE + pad - 1, py));
-              padded[px][py] = padded[cx][cy];
+              buffer[px][py] = buffer[cx][cy];
             }
           }
         }
       }
     }
-
-    return padded;
   }
 
   /**
@@ -148,28 +147,28 @@ public final class Utils {
    * @param method     the interpolation method to use. The method must be either
    *                   {@link Interpolation#BICUBIC} or {@link Interpolation#BILINEAR}.
    * @param resolution the amount of upscaling needed, must be a power of 2.
-   * @return the upscaled heightmap as a float array.
+   * @param buffer     the buffer.
    */
-  public static float[][] upscaleTile(Tile tile, Dimension dimension, Interpolation method, int resolution) {
+  public static void upscaleTile(Tile tile, Dimension dimension, Interpolation method, int resolution, float[][] buffer) {
     // Resolution must be a power of two: 1, 2, 4, 8, etc.
     if (resolution == 0 || (resolution & (resolution - 1)) != 0) {
       throw new IllegalArgumentException("Resolution must be a power of two");
     }
 
-    float[][] padded = padTile(tile, dimension, Constants.TILE_PADDING);
-    float[][] upscaled = upscale(padded, resolution, method);
+    float[][] paddedBuffer = PADDED_BUFFER.get();
+    float[][] upscaleBuffer = UPSCALE_BUFFER.get();
 
-    return trimPadding(upscaled, resolution, Constants.TILE_PADDING);
+    padTile(tile, dimension, Constants.TILE_PADDING, paddedBuffer);
+    upscale(paddedBuffer, resolution, method, upscaleBuffer);
+    trimPadding(upscaleBuffer, resolution, Constants.TILE_PADDING, buffer);
   }
 
-  private static float[][] upscale(float[][] input, int scale, Interpolation type) {
+  private static void upscale(float[][] input, int scale, Interpolation type, float[][] buffer) {
     int inH = input.length;
     int inW = input[0].length;
 
     int outH = inH * scale;
     int outW = inW * scale;
-
-    float[][] output = new float[outH][outW];
 
     for (int y = 0; y < outH; y++) {
       // Standard center-alignment: maps the center of the output pixel
@@ -180,14 +179,12 @@ public final class Utils {
         float srcX = ((x + 0.5f) / scale) - 0.5f;
 
         if (type == Interpolation.BILINEAR) {
-          output[y][x] = bilinearSample(input, srcX, srcY);
+          buffer[y][x] = bilinearSample(input, srcX, srcY);
         } else { // Interpolation.BICUBIC
-          output[y][x] = bicubicSample(input, srcX, srcY);
+          buffer[y][x] = bicubicSample(input, srcX, srcY);
         }
       }
     }
-
-    return output;
   }
 
   private static float bilinearSample(float[][] img, float x, float y) {
@@ -280,16 +277,13 @@ public final class Utils {
     return 0;
   }
 
-  private static float[][] trimPadding(float[][] input, int scale, int pad) {
-    int trim = pad * scale;
-    int h = input.length - 2 * trim;
-    int w = input[0].length - 2 * trim;
+  private static void trimPadding(float[][] buffer, int scale, int pad, float[][] outBuffer) {
+    int finalSize = TILE_SIZE * scale;
+    int offset = pad * scale;
 
-    float[][] out = new float[h][w];
-    for (int y = 0; y < h; y++) {
-      System.arraycopy(input[y + trim], trim, out[y], 0, w);
+    for (int y = 0; y < finalSize; y++) {
+      System.arraycopy(buffer[y + offset], offset, outBuffer[y], 0, finalSize);
     }
-    return out;
   }
 
   public static int filter(int[] arr, Set<Integer> allowed) {
@@ -300,6 +294,6 @@ public final class Utils {
     }
 
     // This should not happen
-    return 0;
+    return -1;
   }
 }

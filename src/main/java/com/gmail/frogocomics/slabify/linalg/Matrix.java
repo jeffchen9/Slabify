@@ -50,27 +50,6 @@ public interface Matrix extends Cloneable {
   void sub(float value);
 
   /**
-   * Subtract a matrix.
-   *
-   * @param b the matrix to subtract.
-   */
-  void sub(Matrix b);
-
-  /**
-   * Elementwise power.
-   *
-   * @param a the power to raise all elements to.
-   */
-  void pow(double a);
-
-  /**
-   * Get the sum of all elements in the matrix.
-   *
-   * @return the sum.
-   */
-  float sum();
-
-  /**
    * Get the size of either dimension.
    *
    * @return the size of either dimension.
@@ -94,5 +73,13 @@ public interface Matrix extends Cloneable {
   Matrix rotate(int degrees);
 
   Matrix clone();
+
+  /**
+   * Get the loss metric.
+   *
+   * @param arr The array to compare against; it is assumed the sizes are compatible.
+   * @return the loss, as mean absolute error (MAE).
+   */
+  float getLoss(float[] arr);
 }
 

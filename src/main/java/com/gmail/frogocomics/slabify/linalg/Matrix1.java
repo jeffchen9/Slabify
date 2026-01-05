@@ -36,25 +36,6 @@ public final class Matrix1 implements Matrix {
   }
 
   @Override
-  public void sub(Matrix b) {
-    if (b.getSize() != 1) {
-      throw new IllegalArgumentException("Matrix sizes are incompatible");
-    }
-
-    m -= b.get(0);
-  }
-
-  @Override
-  public void pow(double a) {
-    m = (float) Math.pow(Math.abs(m), a);
-  }
-
-  @Override
-  public float sum() {
-    return m;
-  }
-
-  @Override
   public int getSize() {
     return 1;
   }
@@ -94,5 +75,10 @@ public final class Matrix1 implements Matrix {
     Matrix1 copy = new Matrix1();
     copy.m = m;
     return copy;
+  }
+
+  @Override
+  public float getLoss(float[] arr) {
+    return Math.abs(m - arr[0]);
   }
 }

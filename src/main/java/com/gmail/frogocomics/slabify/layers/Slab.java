@@ -45,7 +45,7 @@ import java.util.Map;
 public final class Slab extends CustomLayer {
 
   /**
-   * This class is serialised in the .world file when it is saved, so it must be stable.
+   * This class is serialized in the .world file when it is saved, so it must be stable.
    * <ul>
    *   <li>1 for {@code 1.0.0-SNAPSHOT-6} and before</li>
    *   <li>2 for {@code 1.0.0-SNAPSHOT-7} and after</li>
@@ -73,7 +73,7 @@ public final class Slab extends CustomLayer {
     // Create default properties
     Map<String, Options> shapes = new HashMap<>();
 
-    for (Shape shape : Shapes.SHAPES.values()) {
+    for (Shape shape : Shapes.shapesList) {
       if (shape.isVanilla()) {
         shapes.put(shape.getName(), Options.ENABLE);
       } else {

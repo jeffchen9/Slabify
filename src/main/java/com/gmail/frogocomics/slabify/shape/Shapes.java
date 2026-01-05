@@ -20,6 +20,8 @@ package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.linalg.Matrix;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import org.jspecify.annotations.Nullable;
 import org.pepsoft.worldpainter.Configuration;
 
@@ -27,27 +29,16 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.stream.IntStream;
 
 /**
- * Utility class for assigning the most appropriate shape to use to add detail to terrain. A "cut"
- * refers to the replacing of an existing block while a "fill" refers to the addition of an extra
- * block on top of the existing block.
- *
- * <p>Each shape is represented by an array of length 4. Position 1 represents the top left height,
- * position 2 represents the top right height, position 3 represents the bottom left height, and
- * position 4 represents the bottom right height. "1" corresponds to <i>0.5</i> blocks, "2"
- * corresponds to <i>1.0</i> blocks, etc. In this representation, north would be the top, so the
- * side containing positions 1 and 2.
+ * Utility class for assigning the most appropriate shape to use to add detail to terrain.
  */
 public final class Shapes {
-
-  public static final Map<String, Shape> SHAPES = new LinkedHashMap<>();
-  private static final List<String> shapesList = new ArrayList<>();
-  private static final Map<String, Integer> shapesListInv = new HashMap<>();
+  public static final List<Shape> shapesList = new ArrayList<>();
+  public static final BiMap<Integer, String> shapesMap = HashBiMap.create();
 
   // Key: block, Values: block for each shape
-  private static final Map<String, String[]> mapping = new HashMap<>();
+  private static final Map<String, String[]> mappings = new HashMap<>();
 
   private Shapes() {
     // Prevent instantiation
@@ -55,22 +46,20 @@ public final class Shapes {
 
   public static void init() {
     // Populate shapes list
-    SHAPES.put(SlabShape.NAME, new SlabShape());
-    SHAPES.put(StairShape.NAME, new StairShape());
-    SHAPES.put(LayerShape.NAME, new LayerShape());
-    SHAPES.put(AltLayerShape.NAME, new AltLayerShape());
-    SHAPES.put(VerticalCornerShape.NAME, new VerticalCornerShape());
-    SHAPES.put(QuarterSlabShape.NAME, new QuarterSlabShape());
-    SHAPES.put(VerticalQuarterShape.NAME, new VerticalQuarterShape());
-    SHAPES.put(CornerSlabShape.NAME, new CornerSlabShape());
-    SHAPES.put(VerticalCornerSlabShape.NAME, new VerticalCornerSlabShape());
-    SHAPES.put(EighthSlabShape.NAME, new EighthSlabShape());
-    SHAPES.put(VerticalSlabShape.NAME, new VerticalSlabShape());
-    shapesList.addAll(SHAPES.keySet());
+    shapesList.add(new SlabShape());
+    shapesList.add(new StairShape());
+    shapesList.add(new LayerShape());
+    shapesList.add(new AltLayerShape());
+    shapesList.add(new VerticalCornerShape());
+    shapesList.add(new QuarterSlabShape());
+    shapesList.add(new VerticalQuarterShape());
+    shapesList.add(new CornerSlabShape());
+    shapesList.add(new VerticalCornerSlabShape());
+    shapesList.add(new EighthSlabShape());
+    shapesList.add(new VerticalSlabShape());
 
-    // Create inverse
     for (int i = 0; i < shapesList.size(); i++) {
-      shapesListInv.put(shapesList.get(i), i);
+      shapesMap.put(i, shapesList.get(i).getName());
     }
 
     // Get the block mapping list
@@ -78,7 +67,6 @@ public final class Shapes {
     File mappingFile = new File(configDir, "mappings.csv");
     if (!mappingFile.exists()) {
       // Create the default file
-
       try (InputStream stream = Shapes.class.getClassLoader().getResourceAsStream("mappings.csv")) {
         if (stream != null) {
           Files.copy(stream, mappingFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -116,7 +104,7 @@ public final class Shapes {
 
     for (int i = 1; i < shapes.length; i++) {
       // Skip first element
-      indices[i] = shapesList.indexOf(shapes[i]);
+      indices[i] = shapesMap.inverse().get(shapes[i]);
     }
 
     for (String[] row : rows) {
@@ -132,55 +120,66 @@ public final class Shapes {
         }
       }
 
-      mapping.put(baseMaterial, arr);
+      mappings.put(baseMaterial, arr);
     }
   }
 
-  public static int[][][] findMostSimilarShapes(float[][] differenceMap, int resolution, List<Matrix> shapeMatrices, double exponent) {
+  public static int[][][] findMostSimilarShapes(float[][] differenceMap, int resolution, List<Matrix> shapeMatrices) {
     int height = differenceMap.length / resolution;
     int width = differenceMap[0].length / resolution;
+    int resolutionSquared = resolution * resolution;
 
     int[][][] shapeMap = new int[height][width][shapeMatrices.size()];
+    float[] scratch = new float[resolutionSquared];
+    long[] scratch2 = new long[shapeMatrices.size()];
 
     for (int x = 0; x < height; x++) {
+      int rowBase = x * resolution;
       for (int y = 0; y < width; y++) {
-
-        float[][] difference = new float[resolution][resolution];
+        int colBase = y * resolution;
 
         for (int i1 = 0; i1 < resolution; i1++) {
-          System.arraycopy(differenceMap[x * resolution + i1], y * resolution, difference[i1], 0, resolution);
+          System.arraycopy(
+              differenceMap[rowBase + i1],
+              colBase,
+              scratch,
+              i1 * resolution,
+              resolution
+          );
         }
 
-        shapeMap[x][y] = findMostSimilarShape(difference, shapeMatrices, exponent);
+        findMostSimilarShape(shapeMap[x][y], scratch, shapeMatrices, scratch2);
       }
     }
 
     return shapeMap;
   }
 
-  public static int[] findMostSimilarShape(float[][] difference, List<Matrix> shapeMatrices, double exponent) {
-    Matrix differenceMatrix = Matrix.of(difference);
+  public static void findMostSimilarShape(int[] target, float[] difference, List<Matrix> shapeMatrices, long[] scratch) {
+    int size = shapeMatrices.size();
 
-    float[] lossArr = new float[shapeMatrices.size()];
-
-    for (int i = 0; i < shapeMatrices.size(); i++) {
-      Matrix lossMatrix = differenceMatrix.clone();
-      lossMatrix.sub(shapeMatrices.get(i));
-      lossMatrix.pow(exponent);
-      lossArr[i] = lossMatrix.sum();
+    for (int i = 0; i < size; i++) {
+      float loss = shapeMatrices.get(i).getLoss(difference);
+      scratch[i] = ((long) Float.floatToRawIntBits(loss) << 32) | (i & 0xFFFFFFFFL);
     }
+    Arrays.sort(scratch);
 
-    return IntStream.range(0, lossArr.length)
-        .boxed()
-        .sorted(Comparator.comparingDouble(i -> lossArr[i]))
-        .mapToInt(i -> i)
-        .toArray();
+    for (int i = 0; i < size; i++) {
+      target[i] = (int) (scratch[i] & 0xFFFFFFFFL);
+    }
   }
 
   @Nullable
   public static String getMaterial(Shape shape, String baseMaterial) {
-    return mapping.containsKey(baseMaterial) && shapesListInv.containsKey(shape.getName()) ?
-        mapping.get(baseMaterial)[shapesListInv.get(shape.getName())] : null;
+
+    String[] row = mappings.get(baseMaterial);
+
+    if (row == null) {
+      return null;
+    }
+
+    Integer index = shapesMap.inverse().get(shape.getName());
+    return index != null ? row[index] : null;
   }
 
   /**
@@ -196,12 +195,12 @@ public final class Shapes {
     availableShapes.add(EmptyShape.NAME);
     availableShapes.add(FullShape.NAME);
 
-    if (mapping.containsKey(baseMaterial)) {
-      String[] s = mapping.get(baseMaterial);
+    if (mappings.containsKey(baseMaterial)) {
+      String[] s = mappings.get(baseMaterial);
 
       for (int i = 0; i < s.length; i++) {
         if (s[i] != null) {
-          availableShapes.add(shapesList.get(i));
+          availableShapes.add(shapesMap.get(i));
         }
       }
     }

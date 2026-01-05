@@ -6,7 +6,7 @@
 
     <groupId>com.gmail.frogocomics.slabify</groupId>
     <artifactId>SlabifyPlugin</artifactId>
-    <version>1.0.0-SNAPSHOT-7</version>
+    <version>1.0.0-SNAPSHOT-8</version>
 
     <parent>
         <groupId>org.pepsoft.worldpainter</groupId>
@@ -73,8 +73,6 @@
                 <dependency>
                     <groupId>org.pepsoft.worldpainter</groupId>
                     <artifactId>WPGUI</artifactId>
-                    <!-- Update this to the version of WorldPainter you wish to test with: -->
-                    <!--2.21.2-SNAPSHOT-->
                     <version>LATEST</version>
                     <scope>compile</scope>
                 </dependency>

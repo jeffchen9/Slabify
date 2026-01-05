@@ -26,6 +26,8 @@ import com.gmail.frogocomics.slabify.shape.Shape;
 import com.gmail.frogocomics.slabify.shape.Shape.Options;
 import com.gmail.frogocomics.slabify.shape.Shapes;
 import com.gmail.frogocomics.slabify.utils.Utils;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
 import org.javatuples.Quartet;
 import org.pepsoft.minecraft.Chunk;
 import org.pepsoft.minecraft.Material;
@@ -50,15 +52,22 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
   private static final Logger logger = LoggerFactory.getLogger(SlabCustomLayerExporter.class);
 
-  private final Map<String, Options> shapes;
   private final List<Matrix> shapeMatrices = new ArrayList<>();
   // Shape, id, layer (0 if cut, 1+ if fill), option associated with shape
-  // Originally true if fill, false if cut
-  private final List<Quartet<Shape, Integer, Integer, Options>> shapeIndices = new ArrayList<>();
+  private Shape[] listShapes;
+  private int[] listLocalIds;
+  private int[] listHeights; // 0 if cut, 1+ if fill
+  private Options[] listOptions; // Option corresponding to shape
+
   private final Map<String, Set<Integer>> availableIndices = new HashMap<>();
-  private final Map<Tile, Shapemap> shapemaps = new HashMap<>();
+  private final Map<Tile, int[][][]> shapemaps = new HashMap<>();
+  private final Multiset<Tile> tileCounter = HashMultiset.create();
   private int resolution = 1;
   private Map<String, Material> mapping;
+
+  // Buffers
+  private float[][] heightmapBuffer;
+  private float[][] differenceBuffer;
 
   private boolean disable = false;
 
@@ -77,8 +86,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     }
 
     // Disable if all shapes are disabled
-    this.shapes = layer.getShapes();
-    if (shapes.values().stream().allMatch(options -> options == Options.DISABLE)) {
+    if (layer.getShapes().values().stream().allMatch(options -> options == Options.DISABLE)) {
       disable = true;
     } else {
       // If there are shapes that are enabled, get a list of the shapes
@@ -86,12 +94,15 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       // First, get the resolution
       for (Entry<String, Options> entry : layer.getShapes().entrySet()) {
         if (entry.getValue() != Options.DISABLE) {
-          resolution = Math.max(resolution, Shapes.SHAPES.get(entry.getKey()).getMinResolution(entry.getValue()));
+          resolution = Math.max(resolution,
+              Shapes.shapesList.get(Shapes.shapesMap.inverse().get(entry.getKey())).getMinResolution(entry.getValue()));
         }
       }
 
+      List<Quartet<Shape, Integer, Integer, Options>> shapeIndices = new ArrayList<>();
+
       for (Entry<String, Options> entry : layer.getShapes().entrySet()) {
-        Shape shape = Shapes.SHAPES.get(entry.getKey());
+        Shape shape = Shapes.shapesList.get(Shapes.shapesMap.inverse().get(entry.getKey()));
         Optional<List<Matrix>> optBakedShapes = shape.getShapeMatrices(entry.getValue(), resolution);
 
         if (optBakedShapes.isPresent()) {
@@ -136,6 +147,23 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       shapeIndices.add(Quartet.with(FullShape.getInstance(), 0, 1, null));
       shapeMatrices.addAll(EmptyShape.getInstance().getShapeMatrices(null, resolution).get());
       shapeIndices.add(Quartet.with(EmptyShape.getInstance(), 0, 1, null));
+
+      listShapes = new Shape[shapeMatrices.size()];
+      listLocalIds = new int[shapeMatrices.size()];
+      listHeights = new int[shapeMatrices.size()];
+      listOptions = new Options[shapeMatrices.size()];
+
+      for (int i = 0; i < shapeIndices.size(); i++) {
+        Quartet<Shape, Integer, Integer, Options> q = shapeIndices.get(i);
+        listShapes[i] = q.getValue0();
+        listLocalIds[i] = q.getValue1();
+        listHeights[i] = q.getValue2();
+        listOptions[i] = q.getValue3();
+      }
+
+      // Create buffers
+      heightmapBuffer = new float[TILE_SIZE * resolution][TILE_SIZE * resolution];
+      differenceBuffer = new float[TILE_SIZE * resolution][TILE_SIZE * resolution];
     }
   }
 
@@ -172,36 +200,24 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       // Create shape map and difference map
       if (shapemaps.containsKey(tile)) {
         // The tile was already created
-        shapemap = shapemaps.get(tile).map;
+        shapemap = shapemaps.get(tile);
       } else {
-
-        float[][] doubleHeightMap;
         logger.debug("Upscaling tile: {}, {}", tile.getX(), tile.getY());
 
         if (resolution == 1) {
           // No upscaling, just copy over everything.
-          doubleHeightMap = new float[TILE_SIZE][TILE_SIZE];
           for (int x = 0; x < TILE_SIZE; x++) {
             for (int y = 0; y < TILE_SIZE; y++) {
-              doubleHeightMap[x][y] = tile.getHeight(x, y);
+              heightmapBuffer[x][y] = tile.getHeight(x, y);
             }
           }
         } else {
-          doubleHeightMap = Utils.upscaleTile(tile, dimension, layer.getInterpolation(), resolution);
+          Utils.upscaleTile(tile, dimension, layer.getInterpolation(), resolution, heightmapBuffer);
         }
 
-        // We need to create a difference map
-        int[][] originalMap = new int[TILE_SIZE][TILE_SIZE];
-        for (int x = 0; x < TILE_SIZE; x++) {
-          for (int y = 0; y < TILE_SIZE; y++) {
-            originalMap[x][y] = tile.getIntHeight(x, y);
-          }
-        }
-
-        float[][] differenceMap = Utils.getDifference(doubleHeightMap, originalMap, layer.getHeight());
-
-        shapemap = Shapes.findMostSimilarShapes(differenceMap, resolution, shapeMatrices, Constants.LOSS_EXPONENT);
-        shapemaps.put(tile, new Shapemap(shapemap));
+        Utils.getDifference(heightmapBuffer, tile, layer.getHeight(), differenceBuffer);
+        shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices);
+        shapemaps.put(tile, shapemap);
       }
 
       for (int x = 0; x < 16; x++) {
@@ -239,7 +255,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             continue;
           }
 
-          String materialStr = blockBelow.namespace + ":" + blockBelow.simpleName;
+          String materialStr = blockBelow.name;
 
           // Do not place anything if there is no slab material specified for the underlying block
           if (layer.mimicsTerrain() && !mapping.containsKey(materialStr)) {
@@ -255,8 +271,9 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             availableIndices.put(baseMaterial.name, getAvailableIndices(baseMaterial.name));
           }
 
-          Quartet<Shape, Integer, Integer, Options> q = shapeIndices.get(Utils.filter(shapemapI, availableIndices.get(baseMaterial.name)));
-          Material slabMaterial = q.getValue0().getMaterial(baseMaterial, q.getValue1(), q.getValue3());
+          int idx = Utils.filter(shapemapI, availableIndices.get(baseMaterial.name));
+
+          Material slabMaterial = listShapes[idx].getMaterial(baseMaterial, listLocalIds[idx], listOptions[idx]);
 
           // If material is empty, skip
           if (slabMaterial == Material.AIR) {
@@ -268,7 +285,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             continue;
           }
 
-          int height = q.getValue2();
+          int height = listHeights[idx];
 
           if (height >= 1 && blockAbove == null) {
             continue;
@@ -277,7 +294,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
           if (height == 1) {
 
             // Full blocks will replace everything no matter what
-            if (!(q.getValue0() instanceof FullShape)) {
+            if (!(listShapes[idx] instanceof FullShape)) {
               if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
                 continue;
               }
@@ -294,7 +311,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
                 blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
                 || blockAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
-              if (!(q.getValue0() instanceof FullShape)) {
+              if (!(listShapes[idx] instanceof FullShape)) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
             }
@@ -309,7 +326,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             }
 
             // Full blocks will replace everything no matter what
-            if (!(q.getValue0() instanceof FullShape)) {
+            if (!(listShapes[idx] instanceof FullShape)) {
               if (layer.replacesNonSolidBlocks() && blockTwoAbove.solid) {
                 continue;
               }
@@ -326,7 +343,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             if (blockTwoAbove == Material.STATIONARY_WATER || blockTwoAbove == Material.WATER ||
                 blockTwoAbove == Material.FALLING_WATER || blockTwoAbove == Material.FLOWING_WATER
                 || blockTwoAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
-              if (!(q.getValue0() instanceof FullShape)) {
+              if (!(listShapes[idx] instanceof FullShape)) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
             }
@@ -349,6 +366,15 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
           }
         }
       }
+
+      tileCounter.add(tile);
+
+      // 64 chunks per tile (8*8)
+      // Remove shapemap to save memory when all chunks in particular tile have been fully processed
+      if (tileCounter.count(tile) == 64) {
+        shapemaps.remove(tile);
+        tileCounter.remove(tile, 64);
+      }
     }
   }
 
@@ -356,11 +382,12 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     List<String> availableShapes = Shapes.getAvailableShapes(baseMaterial);
     Set<Integer> availableIndices = new HashSet<>();
 
-    for (int i = 0; i < shapeIndices.size(); i++) {
+    for (int i = 0; i < listShapes.length; i++) {
 
-      Shape shape = shapeIndices.get(i).getValue0();
+      Shape shape = listShapes[i];
       if (availableShapes.contains(shape.getName())) {
-        if (layer.allowConquest() || (Shapes.getMaterial(shape, baseMaterial) != null && Shapes.getMaterial(shape, baseMaterial).startsWith(Constants.MC_NAMESPACE))) {
+        if (layer.allowConquest() || (Shapes.getMaterial(shape, baseMaterial) != null &&
+            !Shapes.getMaterial(shape, baseMaterial).startsWith(Constants.CQ_NAMESPACE))) {
           availableIndices.add(i);
         } else if (shape instanceof FullShape || shape instanceof EmptyShape) {
           availableIndices.add(i);
@@ -369,14 +396,5 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     }
 
     return availableIndices;
-  }
-
-  private static class Shapemap {
-
-    private final int[][][] map;
-
-    private Shapemap(int[][][] map) {
-      this.map = map;
-    }
   }
 }

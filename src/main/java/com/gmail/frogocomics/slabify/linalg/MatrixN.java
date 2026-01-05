@@ -55,35 +55,6 @@ public final class MatrixN implements Matrix {
   }
 
   @Override
-  public void sub(Matrix b) {
-    if (size != b.getSize()) {
-      throw new IllegalArgumentException("Matrix sizes are incompatible");
-    }
-
-    for (int i = 0; i < data.length; i++) {
-      data[i] -= b.get(i);
-    }
-  }
-
-  @Override
-  public void pow(double a) {
-    for (int i = 0; i < data.length; i++) {
-      data[i] = (float) Math.pow(Math.abs(data[i]), a);
-    }
-  }
-
-  @Override
-  public float sum() {
-    float sum = 0;
-
-    for (float v : data) {
-      sum += v;
-    }
-
-    return sum;
-  }
-
-  @Override
   public int getSize() {
     return size;
   }
@@ -153,6 +124,17 @@ public final class MatrixN implements Matrix {
     MatrixN copy = new MatrixN(size);
     System.arraycopy(data, 0, copy.data, 0, data.length);
     return copy;
+  }
+
+  @Override
+  public float getLoss(float[] arr) {
+    float loss = 0;
+
+    for (int i = 0; i < size * size; i++) {
+      loss += Math.abs(data[i] - arr[i]);
+    }
+
+    return loss;
   }
 }
 
