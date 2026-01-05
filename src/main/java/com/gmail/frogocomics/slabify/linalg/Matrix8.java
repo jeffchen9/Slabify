@@ -1,14 +1,33 @@
+/*
+ *     A plugin for WorldPainter that adds additional shape detail to terrain.
+ *     Copyright (C) 2026  Jeff Chen
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.gmail.frogocomics.slabify.linalg;
 
-import static java.lang.Math.abs;
-
+/**
+ * Implementation of a 8x8 matrix.
+ */
 public final class Matrix8 implements Matrix {
 
   float m00, m01, m02, m03, m04, m05, m06, m07, m10, m11, m12, m13, m14, m15, m16, m17, m20, m21, m22, m23, m24,
       m25, m26, m27, m30, m31, m32, m33, m34, m35, m36, m37, m40, m41, m42, m43, m44, m45, m46, m47, m50, m51, m52, m53,
       m54, m55, m56, m57, m60, m61, m62, m63, m64, m65, m66, m67, m70, m71, m72, m73, m74, m75, m76, m77;
 
-  public Matrix8() {
+  Matrix8() {
   }
 
   public Matrix8(float[] data) {
@@ -788,18 +807,27 @@ public final class Matrix8 implements Matrix {
 
   @Override
   public float getLoss(float[] arr) {
-    return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m04 - arr[4]) +
-        abs(m05 - arr[5]) + abs(m06 - arr[6]) + abs(m07 - arr[7]) + abs(m10 - arr[8]) + abs(m11 - arr[9]) +
-        abs(m12 - arr[10]) + abs(m13 - arr[11]) + abs(m14 - arr[12]) + abs(m15 - arr[13]) + abs(m16 - arr[14]) +
-        abs(m17 - arr[15]) + abs(m20 - arr[16]) + abs(m21 - arr[17]) + abs(m22 - arr[18]) + abs(m23 - arr[19]) +
-        abs(m24 - arr[20]) + abs(m25 - arr[21]) + abs(m26 - arr[22]) + abs(m27 - arr[23]) + abs(m30 - arr[24]) +
-        abs(m31 - arr[25]) + abs(m32 - arr[26]) + abs(m33 - arr[27]) + abs(m34 - arr[28]) + abs(m35 - arr[29]) +
-        abs(m36 - arr[30]) + abs(m37 - arr[31]) + abs(m40 - arr[32]) + abs(m41 - arr[33]) + abs(m42 - arr[34]) +
-        abs(m43 - arr[35]) + abs(m44 - arr[36]) + abs(m45 - arr[37]) + abs(m46 - arr[38]) + abs(m47 - arr[39]) +
-        abs(m50 - arr[40]) + abs(m51 - arr[41]) + abs(m52 - arr[42]) + abs(m53 - arr[43]) + abs(m54 - arr[44]) +
-        abs(m55 - arr[45]) + abs(m56 - arr[46]) + abs(m57 - arr[47]) + abs(m60 - arr[48]) + abs(m61 - arr[49]) +
-        abs(m62 - arr[50]) + abs(m63 - arr[51]) + abs(m64 - arr[52]) + abs(m65 - arr[53]) + abs(m66 - arr[54]) +
-        abs(m67 - arr[55]) + abs(m70 - arr[56]) + abs(m71 - arr[57]) + abs(m72 - arr[58]) + abs(m73 - arr[59]) +
-        abs(m74 - arr[60]) + abs(m75 - arr[61]) + abs(m76 - arr[62]) + abs(m77 - arr[63]);
+    return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m02 - arr[2]) * (m02 - arr[2]) +
+        (m03 - arr[3]) * (m03 - arr[3]) + (m04 - arr[4]) * (m04 - arr[4]) + (m05 - arr[5]) * (m05 - arr[5]) +
+        (m06 - arr[6]) * (m06 - arr[6]) + (m07 - arr[7]) * (m07 - arr[7]) + (m10 - arr[8]) * (m10 - arr[8]) +
+        (m11 - arr[9]) * (m11 - arr[9]) + (m12 - arr[10]) * (m12 - arr[10]) + (m13 - arr[11]) * (m13 - arr[11]) +
+        (m14 - arr[12]) * (m14 - arr[12]) + (m15 - arr[13]) * (m15 - arr[13]) + (m16 - arr[14]) * (m16 - arr[14]) +
+        (m17 - arr[15]) * (m17 - arr[15]) + (m20 - arr[16]) * (m20 - arr[16]) + (m21 - arr[17]) * (m21 - arr[17]) +
+        (m22 - arr[18]) * (m22 - arr[18]) + (m23 - arr[19]) * (m23 - arr[19]) + (m24 - arr[20]) * (m24 - arr[20]) +
+        (m25 - arr[21]) * (m25 - arr[21]) + (m26 - arr[22]) * (m26 - arr[22]) + (m27 - arr[23]) * (m27 - arr[23]) +
+        (m30 - arr[24]) * (m30 - arr[24]) + (m31 - arr[25]) * (m31 - arr[25]) + (m32 - arr[26]) * (m32 - arr[26]) +
+        (m33 - arr[27]) * (m33 - arr[27]) + (m34 - arr[28]) * (m34 - arr[28]) + (m35 - arr[29]) * (m35 - arr[29]) +
+        (m36 - arr[30]) * (m36 - arr[30]) + (m37 - arr[31]) * (m37 - arr[31]) + (m40 - arr[32]) * (m40 - arr[32]) +
+        (m41 - arr[33]) * (m41 - arr[33]) + (m42 - arr[34]) * (m42 - arr[34]) + (m43 - arr[35]) * (m43 - arr[35]) +
+        (m44 - arr[36]) * (m44 - arr[36]) + (m45 - arr[37]) * (m45 - arr[37]) + (m46 - arr[38]) * (m46 - arr[38]) +
+        (m47 - arr[39]) * (m47 - arr[39]) + (m50 - arr[40]) * (m50 - arr[40]) + (m51 - arr[41]) * (m51 - arr[41]) +
+        (m52 - arr[42]) * (m52 - arr[42]) + (m53 - arr[43]) * (m53 - arr[43]) + (m54 - arr[44]) * (m54 - arr[44]) +
+        (m55 - arr[45]) * (m55 - arr[45]) + (m56 - arr[46]) * (m56 - arr[46]) + (m57 - arr[47]) * (m57 - arr[47]) +
+        (m60 - arr[48]) * (m60 - arr[48]) + (m61 - arr[49]) * (m61 - arr[49]) + (m62 - arr[50]) * (m62 - arr[50]) +
+        (m63 - arr[51]) * (m63 - arr[51]) + (m64 - arr[52]) * (m64 - arr[52]) + (m65 - arr[53]) * (m65 - arr[53]) +
+        (m66 - arr[54]) * (m66 - arr[54]) + (m67 - arr[55]) * (m67 - arr[55]) + (m70 - arr[56]) * (m70 - arr[56]) +
+        (m71 - arr[57]) * (m71 - arr[57]) + (m72 - arr[58]) * (m72 - arr[58]) + (m73 - arr[59]) * (m73 - arr[59]) +
+        (m74 - arr[60]) * (m74 - arr[60]) + (m75 - arr[61]) * (m75 - arr[61]) + (m76 - arr[62]) * (m76 - arr[62]) +
+        (m77 - arr[63]) * (m77 - arr[63]);
   }
 }

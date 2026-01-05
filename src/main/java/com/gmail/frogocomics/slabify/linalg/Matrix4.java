@@ -1,12 +1,31 @@
+/*
+ *     A plugin for WorldPainter that adds additional shape detail to terrain.
+ *     Copyright (C) 2026  Jeff Chen
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.gmail.frogocomics.slabify.linalg;
 
-import static java.lang.Math.abs;
-
+/**
+ * Implementation of a 4x4 matrix.
+ */
 public final class Matrix4 implements Matrix {
 
   float m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33;
 
-  public Matrix4() {
+  Matrix4() {
   }
 
   public Matrix4(float[] data) {
@@ -374,9 +393,11 @@ public final class Matrix4 implements Matrix {
 
   @Override
   public float getLoss(float[] arr) {
-    return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m10 - arr[4]) +
-        abs(m11 - arr[5]) + abs(m12 - arr[6]) + abs(m13 - arr[7]) + abs(m20 - arr[8]) + abs(m21 - arr[9]) +
-        abs(m22 - arr[10]) + abs(m23 - arr[11]) + abs(m30 - arr[12]) + abs(m31 - arr[13]) + abs(m32 - arr[14]) +
-        abs(m33 - arr[15]);
+    return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m02 - arr[2]) * (m02 - arr[2]) +
+        (m03 - arr[3]) * (m03 - arr[3]) + (m10 - arr[4]) * (m10 - arr[4]) + (m11 - arr[5]) * (m11 - arr[5]) +
+        (m12 - arr[6]) * (m12 - arr[6]) + (m13 - arr[7]) * (m13 - arr[7]) + (m20 - arr[8]) * (m20 - arr[8]) +
+        (m21 - arr[9]) * (m21 - arr[9]) + (m22 - arr[10]) * (m22 - arr[10]) + (m23 - arr[11]) * (m23 - arr[11]) +
+        (m30 - arr[12]) * (m30 - arr[12]) + (m31 - arr[13]) * (m31 - arr[13]) + (m32 - arr[14]) * (m32 - arr[14]) +
+        (m33 - arr[15]) * (m33 - arr[15]);
   }
 }

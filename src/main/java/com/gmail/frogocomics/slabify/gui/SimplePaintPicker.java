@@ -1,6 +1,6 @@
 /*
- *     A plugin for WorldPainter that adds slab and stair detail to terrain.
- *     Copyright (C) 2025  Jeff Chen
+ *     A plugin for WorldPainter that adds additional shape detail to terrain.
+ *     Copyright (C) 2026  Jeff Chen
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.gmail.frogocomics.slabify.gui;

@@ -1,10 +1,31 @@
+/*
+ *     A plugin for WorldPainter that adds additional shape detail to terrain.
+ *     Copyright (C) 2026  Jeff Chen
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.gmail.frogocomics.slabify.linalg;
 
+/**
+ * Implementation of a 2x2 matrix.
+ */
 public final class Matrix2 implements Matrix {
 
   private float m00, m01, m10, m11;
 
-  public Matrix2() {
+  Matrix2() {
   }
 
   public Matrix2(float[] data) {
@@ -276,6 +297,7 @@ public final class Matrix2 implements Matrix {
 
   @Override
   public float getLoss(float[] arr) {
-    return Math.abs(m00 - arr[0]) + Math.abs(m01 - arr[1]) + Math.abs(m10 - arr[2]) + Math.abs(m11 - arr[3]);
+    return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m10 - arr[2]) * (m10 - arr[2]) +
+        (m11 - arr[3]) * (m11 - arr[3]);
   }
 }
