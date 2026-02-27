@@ -18,14 +18,22 @@
 
 package com.gmail.frogocomics.slabify.utils;
 
+import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
+
 import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.layers.Slab.Interpolation;
+import com.gmail.frogocomics.slabify.shape.Shapes;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import org.javatuples.Pair;
+import org.pepsoft.worldpainter.Configuration;
 import org.pepsoft.worldpainter.Dimension;
 import org.pepsoft.worldpainter.Tile;
-
-import java.util.Set;
-
-import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
 /**
  * Utility class.
@@ -33,8 +41,10 @@ import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 public final class Utils {
 
   private static final int PADDED_SIZE = TILE_SIZE + 2 * Constants.TILE_PADDING;
-  private static final ThreadLocal<float[][]> PADDED_BUFFER = ThreadLocal.withInitial(() -> new float[PADDED_SIZE][PADDED_SIZE]);
-  private static final ThreadLocal<float[][]> UPSCALE_BUFFER = ThreadLocal.withInitial(() -> new float[PADDED_SIZE * Constants.MAX_UPSCALE_RESOLUTION][PADDED_SIZE * Constants.MAX_UPSCALE_RESOLUTION]);
+  private static final ThreadLocal<float[][]> PADDED_BUFFER =
+      ThreadLocal.withInitial(() -> new float[PADDED_SIZE][PADDED_SIZE]);
+  private static final ThreadLocal<float[][]> UPSCALE_BUFFER =
+      ThreadLocal.withInitial(() -> new float[PADDED_SIZE * Constants.MAX_UPSCALE_RESOLUTION][PADDED_SIZE * Constants.MAX_UPSCALE_RESOLUTION]);
 
   private Utils() {
     // Prevent instantiation
@@ -50,7 +60,7 @@ public final class Utils {
    */
   public static void getDifference(float[][] upscaledMap, Tile originalMap, float addHeight, float[][] buffer) {
 
-    int resolution = upscaledMap.length / org.pepsoft.worldpainter.Constants.TILE_SIZE;
+    int resolution = upscaledMap.length / TILE_SIZE;
 
     // Resolution must be a power of two: 1, 2, 4, 8, etc.
     if (resolution == 0 || (resolution & (resolution - 1)) != 0) {
@@ -77,7 +87,7 @@ public final class Utils {
             for (int i4 = 0; i4 < resolution; i4++) {
               int x = rowStart + i3;
               int y = colStart + i4;
-              buffer[x][y] = (upscaledMap[x][y] + offset) * resolution;
+              buffer[x][y] = upscaledMap[x][y] + offset;
             }
           }
         }
@@ -295,5 +305,131 @@ public final class Utils {
 
     // This should not happen
     return -1;
+  }
+
+  public static Pair<Float, Float> findMinAndMax(float[][] arr) {
+    float min = Integer.MAX_VALUE;
+    float max = Integer.MIN_VALUE;
+
+    for (int i = 0; i < arr.length; i++) {
+      for (int j = 0; j < arr[i].length; j++) {
+        if (arr[i][j] < min) {
+          min = arr[i][j];
+        }
+
+        if (arr[i][j] > max) {
+          max = arr[i][j];
+        }
+      }
+    }
+
+    return new Pair<>(max, min);
+  }
+
+  /**
+   * Check whether all values the array is equal to 0.
+   *
+   * @param arr the array.
+   * @return {@code true} if all values are equal to 0.
+   */
+  public static boolean allZeros(float[] arr) {
+    for (float v : arr) {
+      if (v != 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Check whether all values the array is equal to 1.
+   *
+   * @param arr the array.
+   * @return {@code true} if all values are equal to 1.
+   */
+  public static boolean allOnes(float[] arr) {
+    for (float v : arr) {
+      if (v != 1) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  public static void writeArrayToCsv(float[][] array, String fileName) {
+    try (PrintWriter writer = new PrintWriter(fileName)) {
+      for (float[] row : array) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < row.length; i++) {
+          sb.append(row[i]);
+          // Add comma if it's not the last element in the row
+          if (i < row.length - 1) {
+            sb.append(",");
+          }
+        }
+        writer.println(sb);
+      }
+      System.out.println("Successfully wrote to " + fileName);
+    } catch (IOException e) {
+      System.err.println("Error writing to CSV: " + e.getMessage());
+    }
+  }
+
+  public static float[][] loadCsvToFloatArray(String filePath) throws IOException {
+    List<String> lines = Files.readAllLines(Paths.get(filePath));
+    if (lines.isEmpty()) {
+      return new float[0][0];
+    }
+
+    int rowCount = lines.size();
+    // Split the first line to find the number of columns
+    int colCount = lines.get(0).split(",").length;
+
+    float[][] data = new float[rowCount][colCount];
+
+    for (int i = 0; i < rowCount; i++) {
+      String[] values = lines.get(i).split(",");
+      for (int j = 0; j < values.length; j++) {
+        try {
+          data[i][j] = Float.parseFloat(values[j].trim());
+        } catch (NumberFormatException e) {
+          // Handle non-numeric data (like headers) or empty cells
+          data[i][j] = 0.0f;
+        }
+      }
+    }
+
+    return data;
+  }
+
+  public static File addFileToAppData(String fileName) {
+    File configDir = Configuration.getConfigDir();
+    File mappingFile = new File(configDir, fileName);
+    if (!mappingFile.exists()) {
+      // Create the default file
+      try (InputStream stream = Shapes.class.getClassLoader().getResourceAsStream(fileName)) {
+        if (stream != null) {
+          Files.copy(stream, mappingFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } else {
+          throw new IOException(fileName + " not found");
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    return mappingFile;
+  }
+
+  public static List<String[]> readCsv(File file) throws IOException {
+    List<String[]> rows = new ArrayList<>();
+    BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath())));
+    String line;
+    while ((line = reader.readLine()) != null) {
+      rows.add(line.split(","));
+    }
+    return rows;
   }
 }

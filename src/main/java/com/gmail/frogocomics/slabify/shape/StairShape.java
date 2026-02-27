@@ -37,20 +37,20 @@ public class StairShape extends Shape {
 
   private final Map<String, Material[]> materials = new HashMap<>();
   private final Matrix stairShape = Matrix.of(new float[][]{
-      {2, 2},
-      {1, 1}
+      {1, 1},
+      {0.5f, 0.5f}
   });
   private final Matrix insideStairShape = Matrix.of(new float[][]{
-      {1, 2},
-      {2, 2}
+      {0.5f, 1},
+      {1, 1}
   });
   private final Matrix outsideStairShape = Matrix.of(new float[][]{
-      {2, 1},
-      {1, 1}
+      {1, 0.5f},
+      {0.5f, 0.5f}
   });
 
   public StairShape() {
-    super("Stairs", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 2);
+    super("Stairs", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 2, true, false);
   }
 
   @Override

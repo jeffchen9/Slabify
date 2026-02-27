@@ -38,7 +38,7 @@ public class EmptyShape extends Shape {
   private final Matrix shape = Matrix.of(new float[][]{{0}});
 
   public EmptyShape() {
-    super(null, NAME, new Options[]{}, true, 1);
+    super(null, NAME, new Options[]{}, true, 1, false, true);
   }
 
   public static EmptyShape getInstance() {
@@ -47,7 +47,7 @@ public class EmptyShape extends Shape {
 
   @Override
   public Optional<List<Matrix>> getShapeMatrices(Options selectedOption, int resolution) {
-    return Optional.of(Collections.singletonList(shape.upscale(resolution / getMinResolution(null))));
+    return Optional.of(Collections.singletonList(shape.upscale(resolution)));
   }
 
   @Override

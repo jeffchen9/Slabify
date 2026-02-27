@@ -18,17 +18,22 @@
 
 package com.gmail.frogocomics.slabify.layers;
 
-import com.gmail.frogocomics.slabify.Constants;
+import static com.gmail.frogocomics.slabify.Constants.CHUNK_SIZE;
+import static com.gmail.frogocomics.slabify.Constants.CQ_NAMESPACE;
+import static org.pepsoft.minecraft.Constants.*;
+import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
+import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
+
 import com.gmail.frogocomics.slabify.linalg.Matrix;
-import com.gmail.frogocomics.slabify.shape.EmptyShape;
-import com.gmail.frogocomics.slabify.shape.FullShape;
-import com.gmail.frogocomics.slabify.shape.Shape;
+import com.gmail.frogocomics.slabify.shape.*;
 import com.gmail.frogocomics.slabify.shape.Shape.Options;
-import com.gmail.frogocomics.slabify.shape.Shapes;
 import com.gmail.frogocomics.slabify.utils.Utils;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import java.util.*;
+import java.util.Map.Entry;
 import org.javatuples.Quartet;
+import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Chunk;
 import org.pepsoft.minecraft.Material;
 import org.pepsoft.worldpainter.Dimension;
@@ -41,29 +46,35 @@ import org.pepsoft.worldpainter.exporting.SecondPassLayerExporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.Map.Entry;
-
-import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
-import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
-
 public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> implements
     FirstPassLayerExporter {
 
   private static final Logger logger = LoggerFactory.getLogger(SlabCustomLayerExporter.class);
 
   private final List<Matrix> shapeMatrices = new ArrayList<>();
+  private int fullIdx;
+  private int fullIdxStacked;
+  private int emptyIdx;
   // Shape, id, layer (0 if cut, 1+ if fill), option associated with shape
   private Shape[] listShapes;
   private int[] listLocalIds;
   private int[] listHeights; // 0 if cut, 1+ if fill
   private Options[] listOptions; // Option corresponding to shape
 
+  private final List<Matrix> shapeMatricesStacked = new ArrayList<>();
+  private Shape[] listShapesStacked;
+  private int[] listLocalIdsStacked;
+  private Options[] listOptionsStacked;
+
   private final Map<String, Set<Integer>> availableIndices = new HashMap<>();
-  private final Map<Tile, int[][][]> shapemaps = new HashMap<>();
+  private final Set<Integer> layerIndices = new HashSet<>();
+  private final Map<String, Set<Integer>> availableIndicesNoLayer = new HashMap<>();
+  private final Map<String, Set<Integer>> availableIndicesStacked = new HashMap<>();
+  private final Map<Tile, Shapemap> shapemaps = new HashMap<>();
   private final Multiset<Tile> tileCounter = HashMultiset.create();
   private int resolution = 1;
   private Map<String, Material> mapping;
+  private boolean stacking;
 
   // Buffers
   private float[][] heightmapBuffer;
@@ -75,6 +86,8 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     super(dimension, platform, null, layer);
 
     logger.debug("Creating {}", getClass().getName());
+
+    stacking = layer.supportsStacking() && layer.allowConquest();
 
     if (layer.mimicsTerrain()) {
       mapping = layer.getMapping();
@@ -100,6 +113,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       }
 
       List<Quartet<Shape, Integer, Integer, Options>> shapeIndices = new ArrayList<>();
+      List<Quartet<Shape, Integer, Integer, Options>> shapeIndicesStacked = new ArrayList<>();
 
       for (Entry<String, Options> entry : layer.getShapes().entrySet()) {
         Shape shape = Shapes.shapesList.get(Shapes.shapesMap.inverse().get(entry.getKey()));
@@ -111,33 +125,40 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
           // Fill + 1
           shapeMatrices.addAll(bakedShapes);
 
-          // Fill + 2
-          for (Matrix m : bakedShapes) {
-            Matrix copyM = m.clone();
-            copyM.add(resolution);
-            shapeMatrices.add(copyM);
-          }
-
-          // Cut + 0
-          for (Matrix m : bakedShapes) {
-            Matrix copyM = m.clone();
-            copyM.sub(resolution);
-            shapeMatrices.add(copyM);
-          }
-
-          // Fill + 1
           for (int i = 0; i < bakedShapes.size(); i++) {
             shapeIndices.add(Quartet.with(shape, i, 1, entry.getValue()));
           }
 
-          // Fill + 2
-          for (int i = 0; i < bakedShapes.size(); i++) {
-            shapeIndices.add(Quartet.with(shape, i, 2, entry.getValue()));
+          if (shape.supportsStacking()) {
+            shapeMatricesStacked.addAll(bakedShapes);
+
+            for (int i = 0; i < bakedShapes.size(); i++) {
+              shapeIndicesStacked.add(Quartet.with(shape, i, 1, entry.getValue()));
+            }
           }
 
-          // Cut + 0
-          for (int i = 0; i < bakedShapes.size(); i++) {
-            shapeIndices.add(Quartet.with(shape, i, 0, entry.getValue()));
+          if (!stacking) {
+            // Fill + 2
+            for (Matrix m : bakedShapes) {
+              Matrix copyM = m.clone();
+              copyM.add(1);
+              shapeMatrices.add(copyM);
+            }
+
+            for (int i = 0; i < bakedShapes.size(); i++) {
+              shapeIndices.add(Quartet.with(shape, i, 2, entry.getValue()));
+            }
+
+            // Cut + 0
+            for (Matrix m : bakedShapes) {
+              Matrix copyM = m.clone();
+              copyM.sub(1);
+              shapeMatrices.add(copyM);
+            }
+
+            for (int i = 0; i < bakedShapes.size(); i++) {
+              shapeIndices.add(Quartet.with(shape, i, 0, entry.getValue()));
+            }
           }
         }
       }
@@ -148,10 +169,22 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       shapeMatrices.addAll(EmptyShape.getInstance().getShapeMatrices(null, resolution).get());
       shapeIndices.add(Quartet.with(EmptyShape.getInstance(), 0, 1, null));
 
+      shapeMatricesStacked.addAll(FullShape.getInstance().getShapeMatrices(null, resolution).get());
+      shapeIndicesStacked.add(Quartet.with(FullShape.getInstance(), 0, 1, null));
+      shapeMatricesStacked.addAll(EmptyShape.getInstance().getShapeMatrices(null, resolution).get());
+      shapeIndicesStacked.add(Quartet.with(EmptyShape.getInstance(), 0, 1, null));
+
+      fullIdx = shapeMatrices.size() - 2;
+      fullIdxStacked = shapeMatricesStacked.size() - 2;
+      emptyIdx = shapeMatrices.size() - 1;
+
       listShapes = new Shape[shapeMatrices.size()];
       listLocalIds = new int[shapeMatrices.size()];
       listHeights = new int[shapeMatrices.size()];
       listOptions = new Options[shapeMatrices.size()];
+      listShapesStacked = new Shape[shapeMatricesStacked.size()];
+      listLocalIdsStacked = new int[shapeMatricesStacked.size()];
+      listOptionsStacked = new Options[shapeMatricesStacked.size()];
 
       for (int i = 0; i < shapeIndices.size(); i++) {
         Quartet<Shape, Integer, Integer, Options> q = shapeIndices.get(i);
@@ -159,6 +192,19 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
         listLocalIds[i] = q.getValue1();
         listHeights[i] = q.getValue2();
         listOptions[i] = q.getValue3();
+      }
+
+      for (int i = 0; i < shapeIndicesStacked.size(); i++) {
+        Quartet<Shape, Integer, Integer, Options> q = shapeIndicesStacked.get(i);
+        listShapesStacked[i] = q.getValue0();
+        listLocalIdsStacked[i] = q.getValue1();
+        listOptionsStacked[i] = q.getValue3();
+      }
+
+      for (int i = 0; i < listShapes.length; i++) {
+        if (listShapes[i] instanceof LayerShape || listShapes[i] instanceof AltLayerShape) {
+          layerIndices.add(i);
+        }
       }
 
       // Create buffers
@@ -195,7 +241,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       MixedMaterial mixedMaterial = layer.getMaterial();
       long seed = dimension.getSeed();
 
-      int[][][] shapemap;
+      Shapemap shapemap;
 
       // Create shape map and difference map
       if (shapemaps.containsKey(tile)) {
@@ -216,153 +262,277 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
         }
 
         Utils.getDifference(heightmapBuffer, tile, layer.getHeight(), differenceBuffer);
-        shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices);
+        shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, stacking);
         shapemaps.put(tile, shapemap);
       }
 
-      for (int x = 0; x < 16; x++) {
+      int minZ = shapemap.getMinZ();
+      int range = shapemap.getRange();
+
+      for (int x = 0; x < CHUNK_SIZE; x++) {
         int localX = xOffset + x;
         int worldX = (chunk.getxPos() << 4) + x;
 
-        for (int z = 0; z < 16; z++) {
-
-          int localY = zOffset + z;
-          int worldY = (chunk.getzPos() << 4) + z;
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+          int localZ = zOffset + z;
+          int worldZ = (chunk.getzPos() << 4) + z;
 
           // Do not place anything if the layer is not present
-          if (!tile.getBitLayerValue(layer, localX, localY)) {
+          if (!tile.getBitLayerValue(layer, localX, localZ)) {
             continue;
           }
 
           // Note: z is vertical direction in this case.
-          int terrainHeight = tile.getIntHeight(localX, localY);
+          int terrainHeight = tile.getIntHeight(localX, localZ);
 
-          // Get blocks
-          Material blockBelow =
-              ((terrainHeight >= minHeight) && (terrainHeight < maxHeight)) ? chunk.getMaterial(x,
-                  terrainHeight, z) : Material.AIR;
+          // Block stacking
+          if (stacking) {
+            Material blockBelow = chunk.getMaterial(x, terrainHeight, z);
 
-          Material blockAbove =
-              (terrainHeight < maxHeight - 1) ? chunk.getMaterial(x, terrainHeight + 1, z)
-                  : null;
-
-          Material blockTwoAbove =
-              (terrainHeight < maxHeight - 2) ? chunk.getMaterial(x, terrainHeight + 2, z)
-                  : null;
-
-          // Do not place anything if the block below is not solid
-          if (!blockBelow.solid) {
-            continue;
-          }
-
-          String materialStr = blockBelow.name;
-
-          // Do not place anything if there is no slab material specified for the underlying block
-          if (layer.mimicsTerrain() && !mapping.containsKey(materialStr)) {
-            continue;
-          }
-
-          Material baseMaterial = layer.mimicsTerrain() ? mapping.get(materialStr)
-              : mixedMaterial.getMaterial(seed, worldX, worldY, terrainHeight + 1);
-
-          int[] shapemapI = shapemap[localX][localY];
-
-          if (!availableIndices.containsKey(baseMaterial.name)) {
-            availableIndices.put(baseMaterial.name, getAvailableIndices(baseMaterial.name));
-          }
-
-          int idx = Utils.filter(shapemapI, availableIndices.get(baseMaterial.name));
-
-          Material slabMaterial = listShapes[idx].getMaterial(baseMaterial, listLocalIds[idx], listOptions[idx]);
-
-          // If material is empty, skip
-          if (slabMaterial == Material.AIR) {
-            continue;
-          }
-
-          // If material is Conquest and the layer does not allow Conquest, skip
-          if (slabMaterial.namespace.equals(Constants.CQ_NAMESPACE) && !layer.allowConquest()) {
-            continue;
-          }
-
-          int height = listHeights[idx];
-
-          if (height >= 1 && blockAbove == null) {
-            continue;
-          }
-
-          if (height == 1) {
-
-            // Full blocks will replace everything no matter what
-            if (!(listShapes[idx] instanceof FullShape)) {
-              if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
-                continue;
-              }
-
-              if (!layer.replacesNonSolidBlocks() && (blockAbove != Material.AIR) && (blockAbove
-                  != Material.STATIONARY_WATER) && (blockAbove != Material.WATER) && (blockAbove
-                  != Material.FALLING_WATER)
-                  && (blockAbove != Material.FLOWING_WATER) && !blockAbove.containsWater()) {
-                continue;
-              }
-            }
-
-            // Check for waterlogging
-            if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
-                blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
-                || blockAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
-              if (!(listShapes[idx] instanceof FullShape)) {
-                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-              }
-            }
-
-            chunk.setMaterial(x, terrainHeight + 1, z, slabMaterial);
-          } else if (height == 2) {
-            // Set the base material
-            chunk.setMaterial(x, terrainHeight + 1, z, baseMaterial);
-
-            if (blockTwoAbove == null) {
+            // Do not place anything if there is no slab material specified for the underlying block
+            if (layer.mimicsTerrain() && !mapping.containsKey(blockBelow.name)) {
               continue;
             }
 
-            // Full blocks will replace everything no matter what
-            if (!(listShapes[idx] instanceof FullShape)) {
-              if (layer.replacesNonSolidBlocks() && blockTwoAbove.solid) {
-                continue;
-              }
+            Material baseMaterial = layer.mimicsTerrain() ? mapping.get(blockBelow.name)
+                : mixedMaterial.getMaterial(seed, worldX, worldZ, terrainHeight + 1);
 
-              if (!layer.replacesNonSolidBlocks() && (blockTwoAbove != Material.AIR) && (blockTwoAbove
-                  != Material.STATIONARY_WATER) && (blockTwoAbove != Material.WATER) && (blockTwoAbove
-                  != Material.FALLING_WATER)
-                  && (blockTwoAbove != Material.FLOWING_WATER) && !blockTwoAbove.containsWater()) {
-                continue;
-              }
+            if (!availableIndices.containsKey(baseMaterial.name)) {
+              availableIndices.put(baseMaterial.name, getAvailableIndices(baseMaterial.name, false));
             }
 
-            // Check for waterlogging
-            if (blockTwoAbove == Material.STATIONARY_WATER || blockTwoAbove == Material.WATER ||
-                blockTwoAbove == Material.FALLING_WATER || blockTwoAbove == Material.FLOWING_WATER
-                || blockTwoAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
+            Set<Integer> availableIndex = availableIndices.get(baseMaterial.name);
+
+            if (!availableIndicesNoLayer.containsKey(baseMaterial.name)) {
+              Set<Integer> s = new HashSet<>(availableIndex);
+              s.removeAll(layerIndices);
+              availableIndicesNoLayer.put(baseMaterial.name, s);
+            }
+
+            if (!availableIndicesStacked.containsKey(baseMaterial.name)) {
+              availableIndicesStacked.put(baseMaterial.name, getAvailableIndices(baseMaterial.name, true));
+            }
+
+            Set<Integer> availableIndexNoLayer = availableIndicesNoLayer.get(baseMaterial.name);
+            Set<Integer> availableIndexStacked = availableIndicesStacked.get(baseMaterial.name);
+
+            boolean top = true;
+
+            for (int relZ = range - 1; relZ >= 0; relZ--) {
+              boolean updateTop = true;
+              int idx = shapemap.getIndexAt(localX, localZ, relZ, top ? availableIndex : availableIndexStacked);
+
+              if (top && layerIndices.contains(idx) && relZ >= 1) {
+                // Index indicates a layer shape; ensure that layer shapes only end up on full blocks
+                int belowIdx = shapemap.getIndexAt(localX, localZ, relZ - 1, availableIndexStacked);
+
+                // Block below layer is NOT full block
+                if (belowIdx != fullIdxStacked) {
+                  idx = shapemap.getIndexAt(localX, localZ, relZ, availableIndexNoLayer);
+
+                  if (idx == emptyIdx) {
+                    updateTop = false;
+                  }
+                }
+              }
+
+              Material slabMaterial = top ? listShapes[idx].getMaterial(baseMaterial, listLocalIds[idx], listOptions[idx]) :
+                  listShapesStacked[idx].getMaterial(baseMaterial, listLocalIdsStacked[idx], listOptionsStacked[idx]);
+
+              // If material is empty, skip
+              if (slabMaterial == Material.AIR) {
+                continue;
+              }
+
+              if (idx == (top ? fullIdx : fullIdxStacked) && relZ + minZ + 1 <= 0) {
+                continue;
+              }
+
+//              // If material is Conquest and the layer does not allow Conquest, skip
+//              if (slabMaterial.namespace.equals(Constants.CQ_NAMESPACE) && !layer.allowConquest()) {
+//                continue;
+//              }
+
+              Material blockAbove = chunk.getMaterial(x, terrainHeight + relZ + minZ + 2, z);
+
+              // Full blocks will replace everything no matter what
+//              if (relZ + minZ + 1 > 0 && !(listShapes[idx] instanceof FullShape)) {
+//                if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
+//                  continue;
+//                }
+//
+//                if (!layer.replacesNonSolidBlocks() && (blockAbove != Material.AIR) && (blockAbove
+//                    != Material.STATIONARY_WATER) && (blockAbove != Material.WATER) && (blockAbove
+//                    != Material.FALLING_WATER)
+//                    && (blockAbove != Material.FLOWING_WATER) && !blockAbove.containsWater()) {
+//                  continue;
+//                }
+//              }
+
+              // Check for waterlogging
+              if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
+                  blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
+                  || blockAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
+                if (top) {
+                  if (!(listShapes[idx] instanceof FullShape)) {
+                    slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+                  }
+                } else {
+                  if (!(listShapesStacked[idx] instanceof FullShape)) {
+                    slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+                  }
+                }
+
+              }
+
+              listShapesStacked[idx].place(worldX, terrainHeight + relZ + minZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+
+              if (updateTop) {
+                top = false;
+              }
+            }
+          } else { // No block stacking
+            // Get blocks
+            Material blockBelow =
+                ((terrainHeight >= minHeight) && (terrainHeight < maxHeight)) ? chunk.getMaterial(x,
+                    terrainHeight, z) : Material.AIR;
+            String materialStr = blockBelow.name;
+
+            // Do not place anything if the block below is not solid
+            if (!blockBelow.solid) {
+              continue;
+            }
+
+            // Do not place anything if there is no slab material specified for the underlying block
+            if (layer.mimicsTerrain() && !mapping.containsKey(materialStr)) {
+              continue;
+            }
+
+            Material blockAbove =
+                (terrainHeight < maxHeight - 1) ? chunk.getMaterial(x, terrainHeight + 1, z)
+                    : null;
+
+            Material blockTwoAbove =
+                (terrainHeight < maxHeight - 2) ? chunk.getMaterial(x, terrainHeight + 2, z)
+                    : null;
+
+            Material blockThreeAbove =
+                (terrainHeight < maxHeight - 3) ? chunk.getMaterial(x, terrainHeight + 3, z)
+                    : null;
+
+            Material baseMaterial = layer.mimicsTerrain() ? mapping.get(materialStr)
+                : mixedMaterial.getMaterial(seed, worldX, worldZ, terrainHeight + 1);
+
+            if (!availableIndices.containsKey(baseMaterial.name)) {
+              availableIndices.put(baseMaterial.name, getAvailableIndices(baseMaterial.name, false));
+            }
+
+            int idx = shapemap.getIndexAt(localX, localZ, -1, availableIndices.get(baseMaterial.name));
+            Material slabMaterial = listShapes[idx].getMaterial(baseMaterial, listLocalIds[idx], listOptions[idx]);
+
+            // If material is empty, skip
+            if (slabMaterial == Material.AIR) {
+              continue;
+            }
+
+            // If material is Conquest and the layer does not allow Conquest, skip
+            if (slabMaterial.namespace.equals(CQ_NAMESPACE) && !layer.allowConquest()) {
+              continue;
+            }
+
+            int height = listHeights[idx];
+
+            if (height >= 1 && blockAbove == null) {
+              continue;
+            }
+
+            if (height == 1) {
+              // Full blocks will replace everything no matter what
               if (!(listShapes[idx] instanceof FullShape)) {
+                if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
+                  continue;
+                }
+
+                if (!layer.replacesNonSolidBlocks() && (blockAbove != Material.AIR) && (blockAbove
+                    != Material.STATIONARY_WATER) && (blockAbove != Material.WATER) && (blockAbove
+                    != Material.FALLING_WATER)
+                    && (blockAbove != Material.FLOWING_WATER) && !blockAbove.containsWater()) {
+                  continue;
+                }
+              }
+
+              // Check for waterlogging
+              if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
+                  blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
+                  || blockAbove.containsWater()) {
+                if (!(listShapes[idx] instanceof FullShape)) {
+                  slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+                }
+              }
+
+              // Place the block
+              listShapes[idx].place(worldX, terrainHeight + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+
+              if (isDoubleBlock(blockAbove, blockTwoAbove)) {
+                chunk.setMaterial(x, terrainHeight + 2, z, Material.AIR);
+              }
+            } else if (height == 2) {
+              // Set the base material
+              chunk.setMaterial(x, terrainHeight + 1, z, baseMaterial);
+
+              if (blockTwoAbove == null) {
+                continue;
+              }
+
+              // Full blocks will replace everything no matter what
+              if (!(listShapes[idx] instanceof FullShape)) {
+                if (layer.replacesNonSolidBlocks() && blockTwoAbove.solid) {
+                  continue;
+                }
+
+                if (!layer.replacesNonSolidBlocks() && (blockTwoAbove != Material.AIR) && (blockTwoAbove
+                    != Material.STATIONARY_WATER) && (blockTwoAbove != Material.WATER) && (blockTwoAbove
+                    != Material.FALLING_WATER)
+                    && (blockTwoAbove != Material.FLOWING_WATER) && !blockTwoAbove.containsWater()) {
+                  continue;
+                }
+              }
+
+              // Check for waterlogging
+              if (blockTwoAbove == Material.STATIONARY_WATER || blockTwoAbove == Material.WATER ||
+                  blockTwoAbove == Material.FALLING_WATER || blockTwoAbove == Material.FLOWING_WATER
+                  || blockTwoAbove.containsWater()) {
+                if (!(listShapes[idx] instanceof FullShape)) {
+                  slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+                }
+              }
+
+              // Place the block
+              listShapes[idx].place(worldX, terrainHeight + 2, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+
+              if (isDoubleBlock(blockTwoAbove, blockThreeAbove)) {
+                chunk.setMaterial(x, terrainHeight + 3, z, Material.AIR);
+              }
+            } else { // Cut, height == 0
+              // Check for waterlogging
+              if (blockBelow == Material.STATIONARY_WATER ||
+                  blockBelow == Material.WATER || blockBelow == Material.FALLING_WATER ||
+                  blockBelow == Material.FLOWING_WATER || blockBelow.containsWater() ||
+                  tile.getWaterLevel(localX, localZ) == terrainHeight) {
+                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+              } else if (blockAbove != null && (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
+                  blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
+                  || blockAbove.containsWater())) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
-            }
 
-            chunk.setMaterial(x, terrainHeight + 2, z, slabMaterial);
-          } else { // Cut, height == 0
-            // Check for waterlogging
-            if (blockBelow == Material.STATIONARY_WATER ||
-                blockBelow == Material.WATER || blockBelow == Material.FALLING_WATER ||
-                blockBelow == Material.FLOWING_WATER || blockBelow.containsWater() ||
-                tile.getWaterLevel(localX, localY) == terrainHeight) {
-              slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-            } else if (blockAbove != null && (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
-                blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
-                || blockAbove.containsWater())) {
-              slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-            }
+              // Place the block
+              listShapes[idx].place(worldX, terrainHeight, worldZ, x, z, chunk, slabMaterial, baseMaterial);
 
-            chunk.setMaterial(x, terrainHeight, z, slabMaterial);
+              if (isDoubleBlock(blockBelow, blockAbove)) {
+                chunk.setMaterial(x, terrainHeight + 1, z, Material.AIR);
+              }
+            }
           }
         }
       }
@@ -378,16 +548,18 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     }
   }
 
-  private Set<Integer> getAvailableIndices(String baseMaterial) {
+  private Set<Integer> getAvailableIndices(String baseMaterial, boolean stacked) {
     List<String> availableShapes = Shapes.getAvailableShapes(baseMaterial);
     Set<Integer> availableIndices = new HashSet<>();
 
-    for (int i = 0; i < listShapes.length; i++) {
+    Shape[] arr = stacked ? listShapesStacked : listShapes;
 
-      Shape shape = listShapes[i];
+    for (int i = 0; i < arr.length; i++) {
+
+      Shape shape = arr[i];
       if (availableShapes.contains(shape.getName())) {
         if (layer.allowConquest() || (Shapes.getMaterial(shape, baseMaterial) != null &&
-            !Shapes.getMaterial(shape, baseMaterial).startsWith(Constants.CQ_NAMESPACE))) {
+            !Shapes.getMaterial(shape, baseMaterial).startsWith(CQ_NAMESPACE))) {
           availableIndices.add(i);
         } else if (shape instanceof FullShape || shape instanceof EmptyShape) {
           availableIndices.add(i);
@@ -396,5 +568,17 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     }
 
     return availableIndices;
+  }
+
+  /**
+   * Check whether two blocks form a double-height block such as tall grass.
+   *
+   * @param lower the lower block.
+   * @param upper the upper block.
+   * @return {@code true} if the two blocks for a double-height block.
+   */
+  private boolean isDoubleBlock(@Nullable Material lower, @Nullable Material upper) {
+      return lower != null && upper != null && lower.hasProperty(MC_HALF) && lower.getProperty(MC_HALF).equals("lower") &&
+          upper.hasProperty(MC_HALF) && upper.getProperty(MC_HALF).equals("upper") && lower.name.equals(upper.name);
   }
 }

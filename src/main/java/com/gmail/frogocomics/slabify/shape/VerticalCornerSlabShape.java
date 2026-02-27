@@ -39,16 +39,16 @@ public class VerticalCornerSlabShape extends Shape {
 
   private final Map<String, Material[]> materials = new HashMap<>();
   private final Matrix leftStairShape = Matrix.of(new float[][]{
-      {2, 0},
-      {1, 0}
+      {1, 0},
+      {0.5f, 0}
   });
   private final Matrix rightStairShape = Matrix.of(new float[][]{
-      {0, 2},
-      {0, 1}
+      {0, 1},
+      {0, 0.5f}
   });
 
   public VerticalCornerSlabShape() {
-    super("Vertical Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2);
+    super("Vertical Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, true, false);
   }
 
   @Override

@@ -18,6 +18,9 @@
 
 package com.gmail.frogocomics.slabify.linalg;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+
 /**
  * Implementation of a 4x4 matrix.
  */
@@ -174,88 +177,88 @@ public final class Matrix4 implements Matrix {
       float v;
 
       // Row 0 of Matrix4 -> Rows 0 & 1 of Matrix8
-      v = m00 * scale;
+      v = m00;
       result.m00 = v;
       result.m01 = v;
       result.m10 = v;
       result.m11 = v;
-      v = m01 * scale;
+      v = m01;
       result.m02 = v;
       result.m03 = v;
       result.m12 = v;
       result.m13 = v;
-      v = m02 * scale;
+      v = m02;
       result.m04 = v;
       result.m05 = v;
       result.m14 = v;
       result.m15 = v;
-      v = m03 * scale;
+      v = m03;
       result.m06 = v;
       result.m07 = v;
       result.m16 = v;
       result.m17 = v;
 
       // Row 1 of Matrix4 -> Rows 2 & 3 of Matrix8
-      v = m10 * scale;
+      v = m10;
       result.m20 = v;
       result.m21 = v;
       result.m30 = v;
       result.m31 = v;
-      v = m11 * scale;
+      v = m11;
       result.m22 = v;
       result.m23 = v;
       result.m32 = v;
       result.m33 = v;
-      v = m12 * scale;
+      v = m12;
       result.m24 = v;
       result.m25 = v;
       result.m34 = v;
       result.m35 = v;
-      v = m13 * scale;
+      v = m13;
       result.m26 = v;
       result.m27 = v;
       result.m36 = v;
       result.m37 = v;
 
       // Row 2 of Matrix4 -> Rows 4 & 5 of Matrix8
-      v = m20 * scale;
+      v = m20;
       result.m40 = v;
       result.m41 = v;
       result.m50 = v;
       result.m51 = v;
-      v = m21 * scale;
+      v = m21;
       result.m42 = v;
       result.m43 = v;
       result.m52 = v;
       result.m53 = v;
-      v = m22 * scale;
+      v = m22;
       result.m44 = v;
       result.m45 = v;
       result.m54 = v;
       result.m55 = v;
-      v = m23 * scale;
+      v = m23;
       result.m46 = v;
       result.m47 = v;
       result.m56 = v;
       result.m57 = v;
 
       // Row 3 of Matrix4 -> Rows 6 & 7 of Matrix8
-      v = m30 * scale;
+      v = m30;
       result.m60 = v;
       result.m61 = v;
       result.m70 = v;
       result.m71 = v;
-      v = m31 * scale;
+      v = m31;
       result.m62 = v;
       result.m63 = v;
       result.m72 = v;
       result.m73 = v;
-      v = m32 * scale;
+      v = m32;
       result.m64 = v;
       result.m65 = v;
       result.m74 = v;
       result.m75 = v;
-      v = m33 * scale;
+      v = m33;
       result.m66 = v;
       result.m67 = v;
       result.m76 = v;
@@ -270,7 +273,7 @@ public final class Matrix4 implements Matrix {
 
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
-        float value = get(i * 4 + j) * scale;
+        float value = get(i * 4 + j);
 
         for (int k = 0; k < scale; k++) {
           int rowOffset = (i * scale + k) * newSize + (j * scale);
@@ -392,12 +395,32 @@ public final class Matrix4 implements Matrix {
   }
 
   @Override
-  public float getLoss(float[] arr) {
-    return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m02 - arr[2]) * (m02 - arr[2]) +
-        (m03 - arr[3]) * (m03 - arr[3]) + (m10 - arr[4]) * (m10 - arr[4]) + (m11 - arr[5]) * (m11 - arr[5]) +
-        (m12 - arr[6]) * (m12 - arr[6]) + (m13 - arr[7]) * (m13 - arr[7]) + (m20 - arr[8]) * (m20 - arr[8]) +
-        (m21 - arr[9]) * (m21 - arr[9]) + (m22 - arr[10]) * (m22 - arr[10]) + (m23 - arr[11]) * (m23 - arr[11]) +
-        (m30 - arr[12]) * (m30 - arr[12]) + (m31 - arr[13]) * (m31 - arr[13]) + (m32 - arr[14]) * (m32 - arr[14]) +
-        (m33 - arr[15]) * (m33 - arr[15]);
+  public float getLoss(float[] arr, double exponent) {
+    if (exponent == 2) {
+      return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m02 - arr[2]) * (m02 - arr[2]) +
+          (m03 - arr[3]) * (m03 - arr[3]) + (m10 - arr[4]) * (m10 - arr[4]) + (m11 - arr[5]) * (m11 - arr[5]) +
+          (m12 - arr[6]) * (m12 - arr[6]) + (m13 - arr[7]) * (m13 - arr[7]) + (m20 - arr[8]) * (m20 - arr[8]) +
+          (m21 - arr[9]) * (m21 - arr[9]) + (m22 - arr[10]) * (m22 - arr[10]) + (m23 - arr[11]) * (m23 - arr[11]) +
+          (m30 - arr[12]) * (m30 - arr[12]) + (m31 - arr[13]) * (m31 - arr[13]) + (m32 - arr[14]) * (m32 - arr[14]) +
+          (m33 - arr[15]) * (m33 - arr[15]);
+    } else if (exponent == 1) {
+      return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m10 - arr[4]) +
+          abs(m11 - arr[5]) + abs(m12 - arr[6]) + abs(m13 - arr[7]) + abs(m20 - arr[8]) + abs(m21 - arr[9]) +
+          abs(m22 - arr[10]) + abs(m23 - arr[11]) + abs(m30 - arr[12]) + abs(m31 - arr[13]) + abs(m32 - arr[14]) +
+          abs(m33 - arr[15]);
+    } else {
+      return (float) (pow(abs(m00 - arr[0]), exponent) + pow(abs(m01 - arr[1]), exponent) +
+          pow(abs(m02 - arr[2]), exponent) + pow(abs(m03 - arr[3]), exponent) + pow(abs(m10 - arr[4]), exponent) +
+          pow(abs(m11 - arr[5]), exponent) + pow(abs(m12 - arr[6]), exponent) + pow(abs(m13 - arr[7]), exponent) +
+          pow(abs(m20 - arr[8]), exponent) + pow(abs(m21 - arr[9]), exponent) + pow(abs(m22 - arr[10]), exponent) +
+          pow(abs(m23 - arr[11]), exponent) + pow(abs(m30 - arr[12]), exponent) + pow(abs(m31 - arr[13]), exponent) +
+          pow(abs(m32 - arr[14]), exponent) + pow(abs(m33 - arr[15]), exponent));
+    }
+
+  }
+
+  @Override
+  public String toString() {
+    return "[4x4]:  [" + m00 + ", " + m01 + ", " + m02 + ", " + m03 + ", " + m10 + ", " + m11 + ", " + m12 + ", " + m13 + ", " + m20 + ", " + m21 + ", " + m22 + ", " + m23 + ", " + m30 + ", " + m31 + ", " + m32 + ", " + m33 + "]";
   }
 }

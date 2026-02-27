@@ -38,7 +38,7 @@ public class VerticalSlabShape extends Shape {
 
   private final Map<String, Material[]> materials = new HashMap<>();
   private final Matrix slab1 = Matrix.of(new float[][]{
-      {8, 8, 8, 8, 8, 8, 8, 8},
+      {1, 1, 1, 1, 1, 1, 1, 1},
       {0, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
@@ -48,25 +48,25 @@ public class VerticalSlabShape extends Shape {
       {0, 0, 0, 0, 0, 0, 0, 0}
   });
   private final Matrix slab2 = Matrix.of(new float[][]{
-      {4, 4, 4, 4},
+      {1, 1, 1, 1},
       {0, 0, 0, 0},
       {0, 0, 0, 0},
       {0, 0, 0, 0}
   });
   private final Matrix slab3 = Matrix.of(new float[][]{
-      {2, 2},
+      {1, 1},
       {0, 0}
   });
   private final Matrix slab4 = Matrix.of(new float[][]{
-      {4, 4, 4, 4},
-      {4, 4, 4, 4},
-      {4, 4, 4, 4},
+      {1, 1, 1, 1},
+      {1, 1, 1, 1},
+      {1, 1, 1, 1},
       {0, 0, 0, 0}
   });
 
   public VerticalSlabShape() {
     super("Vertical Slab", NAME, new Options[]{Options.DISABLE, Options.EIGHTHS, Options.QUARTERS,
-        Options.HALVES}, false, -1);
+        Options.HALVES}, false, -1, true, false);
   }
 
   @Override

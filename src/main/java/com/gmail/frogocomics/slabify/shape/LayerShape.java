@@ -37,7 +37,7 @@ public class LayerShape extends Shape {
   private final Map<String, Material[]> materials = new HashMap<>();
 
   public LayerShape() {
-    super("Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, true, 1);
+    super("Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, true, 1, false, false, false);
   }
 
   @Override
@@ -61,6 +61,10 @@ public class LayerShape extends Shape {
     if (!materials.containsKey(baseMaterial.name)) {
       // Create materials if does not exist
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
+
+      if (materialName == null) {
+        return Material.AIR;
+      }
 
       Material[] layerMaterials = new Material[7];
 

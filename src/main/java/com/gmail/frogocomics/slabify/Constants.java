@@ -27,11 +27,32 @@ public final class Constants {
   public static final String DEFAULT_BLOCK = Material.STONE.simpleName;
   public static final int TILE_PADDING = 2;
   public static final int MAX_UPSCALE_RESOLUTION = 8;
+  public static final int CHUNK_SIZE = 16;
 
   public static final String CQ_HINGE = "hinge";
   public static final String CQ_LAYER = "layer";
+  public static double LOSS_EXPONENT = 2;
+
+  // File names
+  public static final String MAPPING_NAME = "mappings.csv";
+  public static final String HEAD_MAPPING_NAME = "head_mappings.csv";
 
   private Constants() {
     // Prevent instantiation
+  }
+
+  /**
+   * Initialized in {@link SlabifyWPPlugin}.
+   */
+  static void init() {
+    String s = System.getProperty("com.gmail.frogocomics.exponent");
+
+    if (s != null) {
+      try {
+        LOSS_EXPONENT = Double.parseDouble(s);
+      } catch (NumberFormatException ignored) {
+        // Keep default of 2
+      }
+    }
   }
 }

@@ -60,6 +60,7 @@ public final class Slab extends CustomLayer {
   private Map<String, Material> mapping = new LinkedHashMap<>();
   private Map<String, Options> shapes;
   private Interpolation interpolation = Interpolation.BILINEAR;
+  private boolean stacking = false;
 
   public Slab(String name, MixedMaterial material) {
     // Load slab icon from resources
@@ -144,6 +145,7 @@ public final class Slab extends CustomLayer {
     clone.setAllowConquest(conquest);
     clone.setMapping(mapping);
     clone.setShapes(shapes);
+    clone.setStacking(stacking);
     clone.setInterpolation(interpolation);
     MixedMaterialManager.getInstance().register(clone.material);
     
@@ -282,6 +284,24 @@ public final class Slab extends CustomLayer {
    */
   public void setInterpolation(Interpolation interpolation) {
     this.interpolation = interpolation;
+  }
+
+  /**
+   * Set whether the layer supports shape stacking.
+   *
+   * @param stacking {@code true} if the layer allows shape stacking.
+   */
+  public void setStacking(boolean stacking) {
+    this.stacking = stacking;
+  }
+
+  /**
+   * Get whether the layer supports shape stacking.
+   *
+   * @return {@code true} if the layer allows shape stacking.
+   */
+  public boolean supportsStacking() {
+    return stacking;
   }
 
   /**

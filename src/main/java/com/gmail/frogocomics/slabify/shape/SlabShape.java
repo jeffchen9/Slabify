@@ -24,7 +24,7 @@ import org.pepsoft.minecraft.Material;
 
 import java.util.*;
 
-import static org.pepsoft.minecraft.Constants.MC_HALF;
+import static org.pepsoft.minecraft.Constants.MC_TYPE;
 
 /**
  *
@@ -39,7 +39,7 @@ public class SlabShape extends Shape {
   private final Matrix shape;
 
   public SlabShape() {
-    super("Slab", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 1);
+    super("Slab", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 1, false, false);
     shape = Matrix.of(new float[][]{{0.5f}});
   }
 
@@ -63,7 +63,7 @@ public class SlabShape extends Shape {
       return Material.AIR;
     }
 
-    Material newMaterial = Material.get(materialName, MC_HALF, "bottom");
+    Material newMaterial = Material.get(materialName, MC_TYPE, "bottom");
     materials.put(baseMaterial.name, newMaterial);
 
     return newMaterial;

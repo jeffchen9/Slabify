@@ -48,6 +48,9 @@ public final class SlabifyWPPlugin extends AbstractPlugin implements CustomLayer
   public SlabifyWPPlugin() {
     super(NAME, VERSION);
     Shapes.init();
+
+    // Read from worldpainter.vmoptions
+    Constants.init();
   }
 
   @Override

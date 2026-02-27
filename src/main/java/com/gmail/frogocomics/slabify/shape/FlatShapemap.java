@@ -18,40 +18,26 @@
 
 package com.gmail.frogocomics.slabify.shape;
 
-import com.gmail.frogocomics.slabify.linalg.Matrix;
-import org.jspecify.annotations.Nullable;
-import org.pepsoft.minecraft.Material;
+public class FlatShapemap implements Shapemap {
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+  public final int[][][] map;
 
-/**
- *
- *
- * This shape is available in Vanilla.
- */
-public class FullShape extends Shape {
-
-  public static final String NAME = "full";
-  private static final FullShape instance = new FullShape();
-  private final Matrix shape = Matrix.of(new float[][]{{1}});
-
-  public FullShape() {
-    super(null, NAME, new Options[]{}, true, 1, true, true);
-  }
-
-  public static FullShape getInstance() {
-    return instance;
+  public FlatShapemap(int[][][] map) {
+    this.map = map;
   }
 
   @Override
-  public Optional<List<Matrix>> getShapeMatrices(Options selectedOption, int resolution) {
-    return Optional.of(Collections.singletonList(shape.upscale(resolution)));
+  public int[] getIndicesAt(int x, int y, int relativeZ) {
+    return map[x][y];
   }
 
   @Override
-  public Material getMaterial(Material baseMaterial, int i, @Nullable Options option) {
-    return baseMaterial;
+  public int getMinZ() {
+    return 0;
+  }
+
+  @Override
+  public int getMaxZ() {
+    return 2;
   }
 }

@@ -98,7 +98,7 @@ public final class MatrixN implements Matrix {
     for (int i = 0; i < size; i++) {
       for (int j = 0; j < size; j++) {
 
-        float value = data[i * size + j] * scale;
+        float value = data[i * size + j];
 
         for (int k = 0; k < scale; k++) {
           int rowOffset = (i * scale + k) * newSize;
@@ -148,14 +148,24 @@ public final class MatrixN implements Matrix {
   }
 
   @Override
-  public float getLoss(float[] arr) {
-    float loss = 0;
+  public float getLoss(float[] arr, double exponent) {
+    double loss = 0;
 
-    for (int i = 0; i < size * size; i++) {
-      loss += (data[i] - arr[i]) * (data[i] - arr[i]);
+    if (exponent == 2) {
+      for (int i = 0; i < size * size; i++) {
+        loss += (data[i] - arr[i]) * (data[i] - arr[i]);
+      }
+    } else if (exponent == 1) {
+      for (int i = 0; i < size * size; i++) {
+        loss += Math.abs(data[i] - arr[i]);
+      }
+    } else {
+      for (int i = 0; i < size * size; i++) {
+        loss += Math.pow(Math.abs(data[i] - arr[i]), exponent);
+      }
     }
 
-    return loss;
+    return (float) loss;
   }
 }
 

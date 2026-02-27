@@ -95,9 +95,10 @@ public interface Matrix extends Cloneable {
   /**
    * Get the loss metric.
    *
-   * @param arr The array to compare against; it is assumed the sizes are compatible.
-   * @return the loss, as mean absolute error (MAE).
+   * @param arr      The array to compare against; it is assumed the sizes are compatible.
+   * @param exponent 2 for MSE, 1 for MAE (but other values greater than 1 are acceptable).
+   * @return the loss.
    */
-  float getLoss(float[] arr);
+  float getLoss(float[] arr, double exponent);
 }
 

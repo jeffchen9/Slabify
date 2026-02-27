@@ -98,7 +98,9 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
   // Layer color
   private JLabel paintLabel;
   private SimplePaintPicker paintPicker;
+  // Shapes
   private JPanel shapesPanel;
+  private JCheckBox stackingCheckBox;
   // Frame
   private JFrame frame;
 
@@ -205,8 +207,6 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
   @Override
   public void reset() {
-
-
     nameField.setText(layer.getName());
     paintPicker.setPaint((Color) layer.getPaint());
     paintPicker.setOpacity(layer.getOpacity());
@@ -299,6 +299,7 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     }
 
     layer.setShapes(newShapes);
+    layer.setStacking(stackingCheckBox.isSelected());
     layer.setInterpolation((Interpolation) interpolationBox.getSelectedItem());
   }
 
@@ -749,10 +750,13 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
         gbc.gridy++;
       }
     }
+
+    if (stackingCheckBox == null) {
+      stackingCheckBox = new JCheckBox();
+    }
   }
 
   private void updateShapesDialog(Map<String, Options> shapes) {
-
     if (shapesPanel != null) {
       for (Entry<String, Options> entry : shapes.entrySet()) {
         String k = entry.getKey();
@@ -769,11 +773,16 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
         }
       }
     }
+
+    if (stackingCheckBox != null) {
+      stackingCheckBox.setSelected(layer.supportsStacking());
+    }
   }
 
   private void openShapesDialog() {
     JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
     JDialog dialog = new JDialog(parentFrame, "Select allowed shapes", true);
+    dialog.setResizable(false);
     dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
     dialog.setLocationRelativeTo(parentFrame);
 
@@ -783,10 +792,25 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
     dialog.add(shapesPanel, BorderLayout.CENTER);
 
+    JPanel southPanel = new JPanel();
+    southPanel.setLayout(new BoxLayout(southPanel, BoxLayout.Y_AXIS));
+    southPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
+
+    JPanel checkboxRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+    JLabel label3 = new JLabel("Enable Conquest shape stacking (slow)*");
+    label3.setFont(label3.getFont().deriveFont(Font.BOLD));
+    checkboxRow.add(label3);
+    checkboxRow.add(stackingCheckBox);
+    checkboxRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
     JLabel label2 = new JLabel("* Conquest only");
     label2.setFont(label2.getFont().deriveFont(Font.BOLD));
-    label2.setBorder(new EmptyBorder(5, 10, 5, 10));
-    dialog.add(label2, BorderLayout.SOUTH);
+
+    southPanel.add(checkboxRow);
+    southPanel.add(Box.createVerticalStrut(5));
+    southPanel.add(label2);
+
+    dialog.add(southPanel, BorderLayout.SOUTH);
 
     dialog.pack();
     dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),

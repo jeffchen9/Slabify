@@ -20,6 +20,7 @@ package com.gmail.frogocomics.slabify.shape;
 
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
+import org.pepsoft.minecraft.Chunk;
 import org.pepsoft.minecraft.Material;
 
 import java.util.List;
@@ -36,13 +37,25 @@ public abstract class Shape {
   private final List<Options> availableOptions;
   private final boolean vanilla;
   private final int minResolution;
+  private final boolean supportsStacking;
+  private final boolean alwaysActive;
+  private final boolean defaultEnable;
 
-  public Shape(String displayName, String name, Options[] availableOptions, boolean vanilla, int minResolution) {
+  public Shape(String displayName, String name, Options[] availableOptions, boolean vanilla, int minResolution,
+               boolean supportsStacking, boolean alwaysActive) {
+    this(displayName, name, availableOptions, vanilla, minResolution, supportsStacking, alwaysActive, vanilla);
+  }
+
+  public Shape(String displayName, String name, Options[] availableOptions, boolean vanilla, int minResolution,
+               boolean supportsStacking, boolean alwaysActive, boolean defaultEnable) {
     this.displayName = displayName;
     this.name = name;
     this.availableOptions = List.of(availableOptions);
     this.vanilla = vanilla;
     this.minResolution = minResolution;
+    this.supportsStacking = supportsStacking;
+    this.alwaysActive = alwaysActive;
+    this.defaultEnable = defaultEnable;
   }
 
   /**
@@ -66,7 +79,7 @@ public abstract class Shape {
   /**
    * Check if the shape is vanilla. If not, the shape is available only in Conquest.
    *
-   * @return <code>true</code> if the shape is vanilla.
+   * @return {@code true} if the shape is vanilla.
    */
   public boolean isVanilla() {
     return vanilla;
@@ -81,6 +94,51 @@ public abstract class Shape {
    */
   public int getMinResolution(@Nullable Options option) {
     return minResolution;
+  }
+
+  /**
+   * Get whether the shape supports stacking. If it does not support stacking, it will only be used for the top shape
+   * in a stack.
+   *
+   * @return {@code true} if the shape supports stacking.
+   */
+  public boolean supportsStacking() {
+    return supportsStacking;
+  }
+
+  /**
+   * Get whether the shape is always active regardless of whether it is available in the mappings for a material. This
+   * could be so if the shape does not rely on the base material.
+   *
+   * @return {@code true} if the shape is always active.
+   */
+  public boolean isAlwaysActive() {
+    return alwaysActive;
+  }
+
+  /**
+   * Get whether the shape is enabled by default.
+   *
+   * @return {@code true} if the shape is enabled by default.
+   */
+  public boolean enabledByDefault() {
+    return defaultEnable;
+  }
+
+  /**
+   * Place the shape in a chunk.
+   *
+   * @param worldX       the global X coordinate.
+   * @param worldY       the global Y coordinate.
+   * @param worldZ       the global Z coordinate.
+   * @param localX       the chunk X coordinate.
+   * @param localZ       the chunk Z coordinate.
+   * @param chunk        the chunk.
+   * @param material     the material for the shape.
+   * @param baseMaterial the base material.
+   */
+  public void place(int worldX, int worldY, int worldZ, int localX, int localZ, Chunk chunk, Material material, Material baseMaterial) {
+    chunk.setMaterial(localX, worldY, localZ, material);
   }
 
   /**

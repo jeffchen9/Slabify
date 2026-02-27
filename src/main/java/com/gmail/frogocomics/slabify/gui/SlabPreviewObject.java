@@ -18,6 +18,8 @@
 
 package com.gmail.frogocomics.slabify.gui;
 
+import com.gmail.frogocomics.slabify.shape.Shape;
+import com.gmail.frogocomics.slabify.shape.Shapes;
 import org.pepsoft.minecraft.Entity;
 import org.pepsoft.minecraft.Material;
 import org.pepsoft.minecraft.TileEntity;
@@ -55,19 +57,21 @@ public final class SlabPreviewObject implements WPObject {
 
     int i = 0;
 
+    Shape slabShape = Shapes.shapesList.get(0); // Slab shape
+
     for (Entry<String, Material> entry : mapping.entrySet()) {
-      Material underlyingBlock = Material.getPrototype(entry.getKey());
-      Material slabBlock = entry.getValue();
+      Material baseMaterial = Material.getPrototype(entry.getKey());
+      Material slabBlock = slabShape.getMaterial(baseMaterial, 0, null);
 
       // Set underlying block
       for (int j = 0; j < width; j++) {
-        blocks[i][j][0] = underlyingBlock;
+        blocks[i][j][0] = baseMaterial;
       }
 
-      blocks[i][4][1] = underlyingBlock;
-      blocks[i][5][1] = underlyingBlock;
-      blocks[i][6][1] = underlyingBlock;
-      blocks[i][6][2] = underlyingBlock;
+      blocks[i][4][1] = baseMaterial;
+      blocks[i][5][1] = baseMaterial;
+      blocks[i][6][1] = baseMaterial;
+      blocks[i][6][2] = baseMaterial;
 
       // Set slab block
       blocks[i][2][1] = slabBlock;

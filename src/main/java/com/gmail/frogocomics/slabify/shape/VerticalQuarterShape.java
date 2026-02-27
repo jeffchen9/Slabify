@@ -38,7 +38,7 @@ public class VerticalQuarterShape extends Shape {
 
   private final Map<String, Material[]> materials = new HashMap<>();
   private final Matrix quarter1 = Matrix.of(new float[][]{
-      {8, 0, 0, 0, 0, 0, 0, 0},
+      {1, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
@@ -48,25 +48,25 @@ public class VerticalQuarterShape extends Shape {
       {0, 0, 0, 0, 0, 0, 0, 0}
   });
   private final Matrix quarter2 = Matrix.of(new float[][]{
-      {4, 0, 0, 0},
+      {1, 0, 0, 0},
       {0, 0, 0, 0},
       {0, 0, 0, 0},
       {0, 0, 0, 0}
   });
   private final Matrix quarter3 = Matrix.of(new float[][]{
-      {2, 0},
+      {1, 0},
       {0, 0}
   });
   private final Matrix quarter4 = Matrix.of(new float[][]{
-      {4, 4, 4, 0},
-      {4, 4, 4, 0},
-      {4, 4, 4, 0},
+      {1, 1, 1, 0},
+      {1, 1, 1, 0},
+      {1, 1, 1, 0},
       {0, 0, 0, 0}
   });
 
   public VerticalQuarterShape() {
     super("Vertical Quarter", NAME, new Options[]{Options.DISABLE, Options.EIGHTHS, Options.QUARTERS,
-        Options.HALVES}, false, -1);
+        Options.HALVES}, false, -1, true, false);
   }
 
   @Override

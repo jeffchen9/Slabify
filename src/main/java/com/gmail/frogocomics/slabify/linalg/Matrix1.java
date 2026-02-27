@@ -30,6 +30,10 @@ public final class Matrix1 implements Matrix {
   Matrix1() {
   }
 
+  public Matrix1(float data) {
+    m00 = data;
+  }
+
   public Matrix1(float[][] data) {
     if (data.length != 1 || data[0].length != 1) {
       throw new IllegalArgumentException("Array must be 1x1");
@@ -72,7 +76,7 @@ public final class Matrix1 implements Matrix {
     }
 
     float[] arr = new float[scale * scale];
-    Arrays.fill(arr, m00 * scale);
+    Arrays.fill(arr, m00);
 
     switch (scale) {
       case 2:
@@ -99,7 +103,18 @@ public final class Matrix1 implements Matrix {
   }
 
   @Override
-  public float getLoss(float[] arr) {
-    return (m00 - arr[0]) * (m00 - arr[0]);
+  public float getLoss(float[] arr, double exponent) {
+    if (exponent == 2) {
+      return (m00 - arr[0]) * (m00 - arr[0]);
+    } else if (exponent == 1) {
+      return Math.abs(m00 - arr[0]);
+    } else {
+      return (float) Math.pow(Math.abs(m00 - arr[0]), exponent);
+    }
+  }
+
+  @Override
+  public String toString() {
+    return "[1x1]:  [" + m00 + "]";
   }
 }

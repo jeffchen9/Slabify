@@ -38,12 +38,12 @@ public class CornerSlabShape extends Shape {
 
   private final Map<String, Material[]> materials = new HashMap<>();
   private final Matrix shape = Matrix.of(new float[][]{
-      {1, 1},
-      {1, 0}
+      {0.5f, 0.5f},
+      {0.5f, 0}
   });
 
   public CornerSlabShape() {
-    super("Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2);
+    super("Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, false, false);
   }
 
   @Override

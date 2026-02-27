@@ -39,24 +39,24 @@ public class QuarterSlabShape extends Shape {
 
   private final Map<String, Material[]> materials = new HashMap<>();
   private final Matrix quarter1 = Matrix.of(new float[][]{
-      {1, 1, 1, 1},
+      {0.25f, 0.25f, 0.25f, 0.25f},
       {0, 0, 0, 0},
       {0, 0, 0, 0},
       {0, 0, 0, 0}
   });
   private final Matrix quarter2 = Matrix.of(new float[][]{
-      {1, 1},
+      {0.5f, 0.5f},
       {0, 0}
   });
   private final Matrix quarter3 = Matrix.of(new float[][]{
-      {3, 3, 3, 3},
-      {3, 3, 3, 3},
-      {3, 3, 3, 3},
+      {0.75f, 0.75f, 0.75f, 0.75f},
+      {0.75f, 0.75f, 0.75f, 0.75f},
+      {0.75f, 0.75f, 0.75f, 0.75f},
       {0, 0, 0, 0}
   });
 
   public QuarterSlabShape() {
-    super("Quarter Slab", NAME, new Options[]{Options.DISABLE, Options.QUARTERS, Options.HALVES}, false, -1);
+    super("Quarter Slab", NAME, new Options[]{Options.DISABLE, Options.QUARTERS, Options.HALVES}, false, -1, false, false);
   }
 
   @Override

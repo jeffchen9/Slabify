@@ -18,6 +18,9 @@
 
 package com.gmail.frogocomics.slabify.linalg;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+
 /**
  * Implementation of a 2x2 matrix.
  */
@@ -100,22 +103,22 @@ public final class Matrix2 implements Matrix {
       Matrix4 result = new Matrix4();
       float v;
 
-      v = m00 * scale;
+      v = m00;
       result.m00 = v;
       result.m01 = v;
       result.m10 = v;
       result.m11 = v;
-      v = m01 * scale;
+      v = m01;
       result.m02 = v;
       result.m03 = v;
       result.m12 = v;
       result.m13 = v;
-      v = m10 * scale;
+      v = m10;
       result.m20 = v;
       result.m21 = v;
       result.m30 = v;
       result.m31 = v;
-      v = m11 * scale;
+      v = m11;
       result.m22 = v;
       result.m23 = v;
       result.m32 = v;
@@ -129,7 +132,7 @@ public final class Matrix2 implements Matrix {
       float v;
 
       // Top-Left 4x4 block (m00)
-      v = m00 * scale;
+      v = m00;
       result.m00 = v;
       result.m01 = v;
       result.m02 = v;
@@ -148,7 +151,7 @@ public final class Matrix2 implements Matrix {
       result.m33 = v;
 
       // Top-Right 4x4 block (m01)
-      v = m01 * scale;
+      v = m01;
       result.m04 = v;
       result.m05 = v;
       result.m06 = v;
@@ -167,7 +170,7 @@ public final class Matrix2 implements Matrix {
       result.m37 = v;
 
       // Bottom-Left 4x4 block (m10)
-      v = m10 * scale;
+      v = m10;
       result.m40 = v;
       result.m41 = v;
       result.m42 = v;
@@ -186,7 +189,7 @@ public final class Matrix2 implements Matrix {
       result.m73 = v;
 
       // Bottom-Right 4x4 block (m11)
-      v = m11 * scale;
+      v = m11;
       result.m44 = v;
       result.m45 = v;
       result.m46 = v;
@@ -213,7 +216,7 @@ public final class Matrix2 implements Matrix {
 
     float v;
     // Source m00
-    v = m00 * scale;
+    v = m00;
     for (int k = 0; k < scale; k++) {
       int offset = k * newSize;
       for (int l = 0; l < scale; l++) {
@@ -221,7 +224,7 @@ public final class Matrix2 implements Matrix {
       }
     }
     // Source m01
-    v = m01 * scale;
+    v = m01;
     for (int k = 0; k < scale; k++) {
       int offset = k * newSize + scale;
       for (int l = 0; l < scale; l++) {
@@ -229,7 +232,7 @@ public final class Matrix2 implements Matrix {
       }
     }
     // Source m10
-    v = m10 * scale;
+    v = m10;
     for (int k = 0; k < scale; k++) {
       int offset = (scale + k) * newSize;
       for (int l = 0; l < scale; l++) {
@@ -237,7 +240,7 @@ public final class Matrix2 implements Matrix {
       }
     }
     // Source m11
-    v = m11 * scale;
+    v = m11;
     for (int k = 0; k < scale; k++) {
       int offset = (scale + k) * newSize + scale;
       for (int l = 0; l < scale; l++) {
@@ -296,8 +299,20 @@ public final class Matrix2 implements Matrix {
   }
 
   @Override
-  public float getLoss(float[] arr) {
-    return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m10 - arr[2]) * (m10 - arr[2]) +
-        (m11 - arr[3]) * (m11 - arr[3]);
+  public float getLoss(float[] arr, double exponent) {
+    if (exponent == 2) {
+      return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m10 - arr[2]) * (m10 - arr[2]) +
+          (m11 - arr[3]) * (m11 - arr[3]);
+    } else if (exponent == 1) {
+      return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m10 - arr[2]) + abs(m11 - arr[3]);
+    } else {
+      return (float) (pow(abs(m00 - arr[0]), exponent) + pow(abs(m01 - arr[1]), exponent) +
+          pow(abs(m10 - arr[2]), exponent) + pow(abs(m11 - arr[3]), exponent));
+    }
+  }
+
+  @Override
+  public String toString() {
+    return "[2x2]:  [" + m00 + ", " + m01 + ", " + m10 + ", " + m11 + "]";
   }
 }

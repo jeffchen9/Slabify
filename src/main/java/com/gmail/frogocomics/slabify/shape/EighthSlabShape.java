@@ -41,25 +41,25 @@ public class EighthSlabShape extends Shape {
 
   private final Map<String, Material[]> materials = new HashMap<>();
   private final Matrix southShape = Matrix.of(new float[][]{
-      {1, 0},
+      {0.5f, 0},
       {0, 0}
   });
   private final Matrix eastShape = Matrix.of(new float[][]{
-      {0, 1},
+      {0, 0.5f},
       {0, 0}
   });
   private final Matrix northShape = Matrix.of(new float[][]{
       {0, 0},
-      {0, 1}
+      {0, 0.5f}
   });
   private final Matrix westShape = Matrix.of(new float[][]{
       {0, 0},
-      {1, 0}
+      {0.5f, 0}
   });
 
 
   public EighthSlabShape() {
-    super("Eighth Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2);
+    super("Eighth Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, false, false);
   }
 
   @Override

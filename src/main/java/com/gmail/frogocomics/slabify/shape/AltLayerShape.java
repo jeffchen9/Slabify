@@ -39,7 +39,7 @@ public class AltLayerShape extends Shape {
   private final float[] heights = new float[]{0.125f, 0.25f, 0.5f, 0.75f};
 
   public AltLayerShape() {
-    super("Alt Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 1);
+    super("Alt Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 1, false, false);
   }
 
   @Override
@@ -63,6 +63,10 @@ public class AltLayerShape extends Shape {
     if (!materials.containsKey(baseMaterial.name)) {
       // Create materials if does not exist
       String materialName = Shapes.getMaterial(this, baseMaterial.name);
+
+      if (materialName == null) {
+        return Material.AIR;
+      }
 
       Material[] layerMaterials = new Material[heights.length];
 
