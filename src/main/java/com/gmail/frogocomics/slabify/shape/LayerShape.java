@@ -37,7 +37,7 @@ public class LayerShape extends Shape {
   private final Map<String, Material[]> materials = new HashMap<>();
 
   public LayerShape() {
-    super("Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, true, 1, false, false, false);
+    super("Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, true, 1, false, false, Options.DISABLE);
   }
 
   @Override

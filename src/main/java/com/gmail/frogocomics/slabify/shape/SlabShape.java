@@ -39,7 +39,7 @@ public class SlabShape extends Shape {
   private final Matrix shape;
 
   public SlabShape() {
-    super("Slab", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 1, false, false);
+    super("Slab", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 1, false, false, Options.ENABLE);
     shape = Matrix.of(new float[][]{{0.5f}});
   }
 

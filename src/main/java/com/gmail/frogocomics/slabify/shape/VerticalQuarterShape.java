@@ -66,7 +66,7 @@ public class VerticalQuarterShape extends Shape {
 
   public VerticalQuarterShape() {
     super("Vertical Quarter", NAME, new Options[]{Options.DISABLE, Options.EIGHTHS, Options.QUARTERS,
-        Options.HALVES}, false, -1, true, false);
+        Options.HALVES}, false, -1, true, false, Options.DISABLE);
   }
 
   @Override

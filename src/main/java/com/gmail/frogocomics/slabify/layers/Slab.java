@@ -32,6 +32,8 @@ import org.pepsoft.worldpainter.layers.exporters.ExporterSettings;
 import org.pepsoft.worldpainter.layers.renderers.LayerRenderer;
 
 import java.awt.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -75,14 +77,23 @@ public final class Slab extends CustomLayer {
     Map<String, Options> shapes = new HashMap<>();
 
     for (Shape shape : Shapes.shapesList) {
-      if (shape.isVanilla()) {
-        shapes.put(shape.getName(), Options.ENABLE);
-      } else {
-        shapes.put(shape.getName(), Options.DISABLE);
-      }
+      shapes.put(shape.getName(), shape.getDefaultOption());
     }
 
     this.shapes = shapes;
+  }
+
+  private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+    stream.defaultReadObject();
+
+    // For shapes that do not exist in the shapes list add default option
+    for (Shape shape : Shapes.shapesList) {
+      String shapeName = shape.getName();
+
+      if (!shapes.containsKey(shapeName)) {
+        shapes.put(shapeName, shape.getDefaultOption());
+      }
+    }
   }
 
   @Override

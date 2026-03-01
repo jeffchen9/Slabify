@@ -48,7 +48,7 @@ public class VerticalCornerSlabShape extends Shape {
   });
 
   public VerticalCornerSlabShape() {
-    super("Vertical Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, true, false);
+    super("Vertical Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, true, false, Options.DISABLE);
   }
 
   @Override

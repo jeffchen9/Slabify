@@ -59,7 +59,7 @@ public class EighthSlabShape extends Shape {
 
 
   public EighthSlabShape() {
-    super("Eighth Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, false, false);
+    super("Eighth Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, false, false, Options.DISABLE);
   }
 
   @Override

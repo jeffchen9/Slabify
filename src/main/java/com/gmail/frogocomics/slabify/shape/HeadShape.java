@@ -50,7 +50,7 @@ public class HeadShape extends Shape {
   });
 
   public HeadShape() {
-    super("Head ", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 4, false, false, false);
+    super("Head ", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 4, false, false, Options.DISABLE);
 
     // Populate heads array
     File mappingFile = Utils.addFileToAppData(Constants.HEAD_MAPPING_NAME);

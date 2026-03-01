@@ -38,7 +38,7 @@ public class FullShape extends Shape {
   private final Matrix shape = Matrix.of(new float[][]{{1}});
 
   public FullShape() {
-    super(null, NAME, new Options[]{}, true, 1, true, true);
+    super(null, NAME, new Options[]{}, true, 1, true, true, null);
   }
 
   public static FullShape getInstance() {
@@ -53,5 +53,10 @@ public class FullShape extends Shape {
   @Override
   public Material getMaterial(Material baseMaterial, int i, @Nullable Options option) {
     return baseMaterial;
+  }
+
+  @Override
+  public Options getDefaultOption() {
+    throw new IllegalStateException("This should not be invoked!");
   }
 }

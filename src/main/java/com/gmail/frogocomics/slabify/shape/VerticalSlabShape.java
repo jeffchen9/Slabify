@@ -66,7 +66,7 @@ public class VerticalSlabShape extends Shape {
 
   public VerticalSlabShape() {
     super("Vertical Slab", NAME, new Options[]{Options.DISABLE, Options.EIGHTHS, Options.QUARTERS,
-        Options.HALVES}, false, -1, true, false);
+        Options.HALVES}, false, -1, true, false, Options.DISABLE);
   }
 
   @Override

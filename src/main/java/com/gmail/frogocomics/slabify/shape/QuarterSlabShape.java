@@ -56,7 +56,7 @@ public class QuarterSlabShape extends Shape {
   });
 
   public QuarterSlabShape() {
-    super("Quarter Slab", NAME, new Options[]{Options.DISABLE, Options.QUARTERS, Options.HALVES}, false, -1, false, false);
+    super("Quarter Slab", NAME, new Options[]{Options.DISABLE, Options.QUARTERS, Options.HALVES}, false, -1, false, false, Options.DISABLE);
   }
 
   @Override

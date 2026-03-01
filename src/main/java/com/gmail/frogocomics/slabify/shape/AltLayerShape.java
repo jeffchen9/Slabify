@@ -39,7 +39,7 @@ public class AltLayerShape extends Shape {
   private final float[] heights = new float[]{0.125f, 0.25f, 0.5f, 0.75f};
 
   public AltLayerShape() {
-    super("Alt Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 1, false, false);
+    super("Alt Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 1, false, false, Options.DISABLE);
   }
 
   @Override

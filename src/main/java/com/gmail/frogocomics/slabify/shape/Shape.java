@@ -39,15 +39,10 @@ public abstract class Shape {
   private final int minResolution;
   private final boolean supportsStacking;
   private final boolean alwaysActive;
-  private final boolean defaultEnable;
+  private final Options defaultOption;
 
   public Shape(String displayName, String name, Options[] availableOptions, boolean vanilla, int minResolution,
-               boolean supportsStacking, boolean alwaysActive) {
-    this(displayName, name, availableOptions, vanilla, minResolution, supportsStacking, alwaysActive, vanilla);
-  }
-
-  public Shape(String displayName, String name, Options[] availableOptions, boolean vanilla, int minResolution,
-               boolean supportsStacking, boolean alwaysActive, boolean defaultEnable) {
+               boolean supportsStacking, boolean alwaysActive, Options defaultOption) {
     this.displayName = displayName;
     this.name = name;
     this.availableOptions = List.of(availableOptions);
@@ -55,7 +50,7 @@ public abstract class Shape {
     this.minResolution = minResolution;
     this.supportsStacking = supportsStacking;
     this.alwaysActive = alwaysActive;
-    this.defaultEnable = defaultEnable;
+    this.defaultOption = defaultOption;
   }
 
   /**
@@ -117,12 +112,12 @@ public abstract class Shape {
   }
 
   /**
-   * Get whether the shape is enabled by default.
+   * Get the default option.
    *
-   * @return {@code true} if the shape is enabled by default.
+   * @return the default option.
    */
-  public boolean enabledByDefault() {
-    return defaultEnable;
+  public Options getDefaultOption() {
+    return defaultOption;
   }
 
   /**

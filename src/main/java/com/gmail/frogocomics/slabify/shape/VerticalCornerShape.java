@@ -66,7 +66,7 @@ public class VerticalCornerShape extends Shape {
 
   public VerticalCornerShape() {
     super("Vertical Corner", NAME, new Options[]{Options.DISABLE, Options.EIGHTHS, Options.QUARTERS,
-        Options.HALVES}, false, -1, true, false);
+        Options.HALVES}, false, -1, true, false, Options.DISABLE);
   }
 
   @Override

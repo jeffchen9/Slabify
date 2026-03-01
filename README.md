@@ -4,7 +4,7 @@
 </h1>
 
 This is a _WorldPainter_ plugin designed to add slab and stair detail to terrain and increase
-the effective resolution of the terrain. **Current version: 1.0.1 (Snapshot 1)**
+the effective resolution of the terrain. **Current version: 1.0.1 (Snapshot 2)**
 
 
 <h2>

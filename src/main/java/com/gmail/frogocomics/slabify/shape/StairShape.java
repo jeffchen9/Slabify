@@ -50,7 +50,7 @@ public class StairShape extends Shape {
   });
 
   public StairShape() {
-    super("Stairs", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 2, true, false);
+    super("Stairs", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 2, true, false, Options.ENABLE);
   }
 
   @Override

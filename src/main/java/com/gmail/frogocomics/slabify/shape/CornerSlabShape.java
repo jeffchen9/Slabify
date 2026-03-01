@@ -43,7 +43,7 @@ public class CornerSlabShape extends Shape {
   });
 
   public CornerSlabShape() {
-    super("Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, false, false);
+    super("Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, false, false, Options.DISABLE);
   }
 
   @Override
