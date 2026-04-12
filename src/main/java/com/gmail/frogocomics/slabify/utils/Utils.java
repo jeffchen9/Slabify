@@ -18,22 +18,22 @@
 
 package com.gmail.frogocomics.slabify.utils;
 
-import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
-
 import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.layers.Slab.Interpolation;
 import com.gmail.frogocomics.slabify.shape.Shapes;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import org.javatuples.Pair;
 import org.pepsoft.worldpainter.Configuration;
 import org.pepsoft.worldpainter.Dimension;
 import org.pepsoft.worldpainter.Tile;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
 /**
  * Utility class.
@@ -356,52 +356,6 @@ public final class Utils {
     }
 
     return true;
-  }
-
-  public static void writeArrayToCsv(float[][] array, String fileName) {
-    try (PrintWriter writer = new PrintWriter(fileName)) {
-      for (float[] row : array) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < row.length; i++) {
-          sb.append(row[i]);
-          // Add comma if it's not the last element in the row
-          if (i < row.length - 1) {
-            sb.append(",");
-          }
-        }
-        writer.println(sb);
-      }
-      System.out.println("Successfully wrote to " + fileName);
-    } catch (IOException e) {
-      System.err.println("Error writing to CSV: " + e.getMessage());
-    }
-  }
-
-  public static float[][] loadCsvToFloatArray(String filePath) throws IOException {
-    List<String> lines = Files.readAllLines(Paths.get(filePath));
-    if (lines.isEmpty()) {
-      return new float[0][0];
-    }
-
-    int rowCount = lines.size();
-    // Split the first line to find the number of columns
-    int colCount = lines.get(0).split(",").length;
-
-    float[][] data = new float[rowCount][colCount];
-
-    for (int i = 0; i < rowCount; i++) {
-      String[] values = lines.get(i).split(",");
-      for (int j = 0; j < values.length; j++) {
-        try {
-          data[i][j] = Float.parseFloat(values[j].trim());
-        } catch (NumberFormatException e) {
-          // Handle non-numeric data (like headers) or empty cells
-          data[i][j] = 0.0f;
-        }
-      }
-    }
-
-    return data;
   }
 
   public static File addFileToAppData(String fileName) {

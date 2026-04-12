@@ -23,12 +23,10 @@ import org.jnbt.ListTag;
 import org.jnbt.StringTag;
 import org.jnbt.Tag;
 import org.jspecify.annotations.Nullable;
+import org.pepsoft.minecraft.Constants;
 import org.pepsoft.minecraft.TileEntity;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Represents the player head tile entity.
@@ -39,8 +37,8 @@ public class Skull extends TileEntity {
 
   private final String texture;
 
-  public Skull(@Nullable String texture) {
-    super("minecraft:skull");
+  public Skull(@Nullable String texture, int x, int y, int z) {
+    super(Constants.ID_SKULL);
     this.texture = texture;
 
     if (texture != null) {
@@ -53,15 +51,9 @@ public class Skull extends TileEntity {
       profileMap.put("properties", new ListTag<>("properties", CompoundTag.class, l));
       setMap("profile", profileMap);
     }
-  }
 
-  /**
-   * Get the texture of the skull.
-   *
-   * @return the texture.
-   */
-  @Nullable
-  public String getTexture() {
-    return texture;
+    setX(x);
+    setY(y);
+    setZ(z);
   }
 }

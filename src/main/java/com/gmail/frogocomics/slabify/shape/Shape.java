@@ -38,18 +38,16 @@ public abstract class Shape {
   private final boolean vanilla;
   private final int minResolution;
   private final boolean supportsStacking;
-  private final boolean alwaysActive;
   private final Options defaultOption;
 
   public Shape(String displayName, String name, Options[] availableOptions, boolean vanilla, int minResolution,
-               boolean supportsStacking, boolean alwaysActive, Options defaultOption) {
+               boolean supportsStacking, @Nullable Options defaultOption) {
     this.displayName = displayName;
     this.name = name;
     this.availableOptions = List.of(availableOptions);
     this.vanilla = vanilla;
     this.minResolution = minResolution;
     this.supportsStacking = supportsStacking;
-    this.alwaysActive = alwaysActive;
     this.defaultOption = defaultOption;
   }
 
@@ -102,20 +100,11 @@ public abstract class Shape {
   }
 
   /**
-   * Get whether the shape is always active regardless of whether it is available in the mappings for a material. This
-   * could be so if the shape does not rely on the base material.
-   *
-   * @return {@code true} if the shape is always active.
-   */
-  public boolean isAlwaysActive() {
-    return alwaysActive;
-  }
-
-  /**
    * Get the default option.
    *
    * @return the default option.
    */
+  @Nullable
   public Options getDefaultOption() {
     return defaultOption;
   }

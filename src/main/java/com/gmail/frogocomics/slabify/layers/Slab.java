@@ -67,7 +67,7 @@ public final class Slab extends CustomLayer {
   public Slab(String name, MixedMaterial material) {
     // Load slab icon from resources
     super(name, "A layer of " + material.getName() + " slab on top of the terrain", DataSize.BIT,
-        65, Color.RED);
+        30, Color.RED);
 
     // Make sure the material is registered, in case it's new
     MixedMaterialManager.getInstance().register(material);
@@ -77,7 +77,9 @@ public final class Slab extends CustomLayer {
     Map<String, Options> shapes = new HashMap<>();
 
     for (Shape shape : Shapes.shapesList) {
-      shapes.put(shape.getName(), shape.getDefaultOption());
+      if (shape.getDefaultOption() != null) {
+        shapes.put(shape.getName(), shape.getDefaultOption());
+      }
     }
 
     this.shapes = shapes;
@@ -90,7 +92,7 @@ public final class Slab extends CustomLayer {
     for (Shape shape : Shapes.shapesList) {
       String shapeName = shape.getName();
 
-      if (!shapes.containsKey(shapeName)) {
+      if (!shapes.containsKey(shapeName) && shape.getDefaultOption() != null) {
         shapes.put(shapeName, shape.getDefaultOption());
       }
     }

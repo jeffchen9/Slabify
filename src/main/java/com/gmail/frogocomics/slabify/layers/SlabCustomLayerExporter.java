@@ -18,20 +18,13 @@
 
 package com.gmail.frogocomics.slabify.layers;
 
-import static com.gmail.frogocomics.slabify.Constants.CHUNK_SIZE;
-import static com.gmail.frogocomics.slabify.Constants.CQ_NAMESPACE;
-import static org.pepsoft.minecraft.Constants.*;
-import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
-import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
-
+import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.linalg.Matrix;
 import com.gmail.frogocomics.slabify.shape.*;
 import com.gmail.frogocomics.slabify.shape.Shape.Options;
 import com.gmail.frogocomics.slabify.utils.Utils;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
-import java.util.*;
-import java.util.Map.Entry;
 import org.javatuples.Quartet;
 import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Chunk;
@@ -45,6 +38,15 @@ import org.pepsoft.worldpainter.exporting.FirstPassLayerExporter;
 import org.pepsoft.worldpainter.exporting.SecondPassLayerExporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.Map.Entry;
+
+import static com.gmail.frogocomics.slabify.Constants.CHUNK_SIZE;
+import static com.gmail.frogocomics.slabify.Constants.CQ_NAMESPACE;
+import static org.pepsoft.minecraft.Constants.MC_HALF;
+import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
+import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
 public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> implements
     FirstPassLayerExporter {
@@ -74,7 +76,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
   private final Multiset<Tile> tileCounter = HashMultiset.create();
   private int resolution = 1;
   private Map<String, Material> mapping;
-  private boolean stacking;
+  private final boolean stacking;
 
   // Buffers
   private float[][] heightmapBuffer;
@@ -232,7 +234,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
    * @param chunk The {@code Chunk} that is currently being created. Apply your changes to this
    *              object.
    */
-  @Override
   public void render(Tile tile, Chunk chunk) {
 
     if (!disable) {
@@ -353,7 +354,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 //                continue;
 //              }
 
-              Material blockAbove = chunk.getMaterial(x, terrainHeight + relZ + minZ + 2, z);
+              Material blockAbove = (terrainHeight + relZ + minZ + 2 < maxHeight) ? chunk.getMaterial(x, terrainHeight + relZ + minZ + 2, z) : Material.AIR;
 
               // Full blocks will replace everything no matter what
 //              if (relZ + minZ + 1 > 0 && !(listShapes[idx] instanceof FullShape)) {
@@ -385,7 +386,11 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
               }
 
-              listShapesStacked[idx].place(worldX, terrainHeight + relZ + minZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+              if (top) {
+                listShapes[idx].place(worldX, terrainHeight + relZ + minZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+              } else {
+                listShapesStacked[idx].place(worldX, terrainHeight + relZ + minZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+              }
 
               if (updateTop) {
                 top = false;
@@ -393,10 +398,10 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             }
           } else { // No block stacking
             // Get blocks
-            Material blockBelow =
-                ((terrainHeight >= minHeight) && (terrainHeight < maxHeight)) ? chunk.getMaterial(x,
-                    terrainHeight, z) : Material.AIR;
+            Material blockBelow = chunk.getMaterial(x, terrainHeight, z);
             String materialStr = blockBelow.name;
+            Material blockAbove =
+                (terrainHeight < maxHeight - 1) ? chunk.getMaterial(x, terrainHeight + 1, z) : null;
 
             // Do not place anything if the block below is not solid
             if (!blockBelow.solid) {
@@ -407,10 +412,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             if (layer.mimicsTerrain() && !mapping.containsKey(materialStr)) {
               continue;
             }
-
-            Material blockAbove =
-                (terrainHeight < maxHeight - 1) ? chunk.getMaterial(x, terrainHeight + 1, z)
-                    : null;
 
             Material blockTwoAbove =
                 (terrainHeight < maxHeight - 2) ? chunk.getMaterial(x, terrainHeight + 2, z)
@@ -473,7 +474,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               // Place the block
               listShapes[idx].place(worldX, terrainHeight + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
 
-              if (isDoubleBlock(blockAbove, blockTwoAbove)) {
+              if (Constants.CORRECT && isDoubleBlock(blockAbove, blockTwoAbove)) {
                 chunk.setMaterial(x, terrainHeight + 2, z, Material.AIR);
               }
             } else if (height == 2) {
@@ -510,7 +511,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               // Place the block
               listShapes[idx].place(worldX, terrainHeight + 2, worldZ, x, z, chunk, slabMaterial, baseMaterial);
 
-              if (isDoubleBlock(blockTwoAbove, blockThreeAbove)) {
+              if (Constants.CORRECT && isDoubleBlock(blockTwoAbove, blockThreeAbove)) {
                 chunk.setMaterial(x, terrainHeight + 3, z, Material.AIR);
               }
             } else { // Cut, height == 0
@@ -529,7 +530,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               // Place the block
               listShapes[idx].place(worldX, terrainHeight, worldZ, x, z, chunk, slabMaterial, baseMaterial);
 
-              if (isDoubleBlock(blockBelow, blockAbove)) {
+              if (Constants.CORRECT && isDoubleBlock(blockBelow, blockAbove)) {
                 chunk.setMaterial(x, terrainHeight + 1, z, Material.AIR);
               }
             }

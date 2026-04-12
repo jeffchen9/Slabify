@@ -38,7 +38,7 @@ public class FullShape extends Shape {
   private final Matrix shape = Matrix.of(new float[][]{{1}});
 
   public FullShape() {
-    super(null, NAME, new Options[]{}, true, 1, true, true, null);
+    super(null, NAME, new Options[]{}, true, 1, true, null);
   }
 
   public static FullShape getInstance() {

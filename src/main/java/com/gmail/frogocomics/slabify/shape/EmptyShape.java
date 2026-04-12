@@ -38,7 +38,7 @@ public class EmptyShape extends Shape {
   private final Matrix shape = Matrix.of(new float[][]{{0}});
 
   public EmptyShape() {
-    super(null, NAME, new Options[]{}, true, 1, false, true, null);
+    super(null, NAME, new Options[]{}, true, 1, false, null);
   }
 
   public static EmptyShape getInstance() {

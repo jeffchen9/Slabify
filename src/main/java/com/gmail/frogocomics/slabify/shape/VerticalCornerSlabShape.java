@@ -48,7 +48,7 @@ public class VerticalCornerSlabShape extends Shape {
   });
 
   public VerticalCornerSlabShape() {
-    super("Vertical Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, true, false, Options.DISABLE);
+    super("Vertical Corner Slab", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, false, 2, true, Options.DISABLE);
   }
 
   @Override
@@ -102,10 +102,6 @@ public class VerticalCornerSlabShape extends Shape {
       slabMaterials[5] = Material.get(materialName, MC_FACING, "west", CQ_HINGE, "left", MC_HALF, "bottom");
       slabMaterials[6] = Material.get(materialName, MC_FACING, "south", CQ_HINGE, "left", MC_HALF, "bottom");
       slabMaterials[1] = Material.get(materialName, MC_FACING, "east", CQ_HINGE, "left", MC_HALF, "bottom");
-
-      // NOrth right / north left
-      // East right / east left
-
 
       materials.put(baseMaterial.name, slabMaterials);
     }

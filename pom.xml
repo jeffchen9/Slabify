@@ -24,7 +24,7 @@
 
     <groupId>com.gmail.frogocomics.slabify</groupId>
     <artifactId>SlabifyPlugin</artifactId>
-    <version>1.0.1-SNAPSHOT-2</version>
+    <version>1.0.1-SNAPSHOT-3</version>
 
     <parent>
         <groupId>org.pepsoft.worldpainter</groupId>
@@ -43,7 +43,7 @@
         <dependency>
             <groupId>org.pepsoft.worldpainter</groupId>
             <artifactId>WPGUI</artifactId>
-            <version>LATEST</version>
+            <version>2.24.2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

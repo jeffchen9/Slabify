@@ -20,8 +20,10 @@ package com.gmail.frogocomics.slabify;
 
 import org.pepsoft.minecraft.Material;
 
+/**
+ * Contains constants
+ */
 public final class Constants {
-
   public static final String MC_NAMESPACE = "minecraft";
   public static final String CQ_NAMESPACE = "conquest";
   public static final String DEFAULT_BLOCK = Material.STONE.simpleName;
@@ -32,6 +34,7 @@ public final class Constants {
   public static final String CQ_HINGE = "hinge";
   public static final String CQ_LAYER = "layer";
   public static double LOSS_EXPONENT = 2;
+  public static boolean CORRECT = false;
 
   // File names
   public static final String MAPPING_NAME = "mappings.csv";
@@ -41,10 +44,7 @@ public final class Constants {
     // Prevent instantiation
   }
 
-  /**
-   * Initialized in {@link SlabifyWPPlugin}.
-   */
-  static void init() {
+  static {
     String s = System.getProperty("com.gmail.frogocomics.exponent");
 
     if (s != null) {
@@ -52,6 +52,16 @@ public final class Constants {
         LOSS_EXPONENT = Double.parseDouble(s);
       } catch (NumberFormatException ignored) {
         // Keep default of 2
+      }
+    }
+
+    s = System.getProperty("com.gmail.frogocomics.slabify.correct");
+
+    if (s != null) {
+      try {
+        CORRECT = Boolean.parseBoolean(s);
+      } catch (NumberFormatException ignored) {
+        // Keep default of false
       }
     }
   }

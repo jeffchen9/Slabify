@@ -50,7 +50,7 @@ public class HeadShape extends Shape {
   });
 
   public HeadShape() {
-    super("Head ", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 4, false, false, Options.DISABLE);
+    super("Head ", NAME, new Options[]{Options.ENABLE, Options.DISABLE}, true, 4, false, Options.DISABLE);
 
     // Populate heads array
     File mappingFile = Utils.addFileToAppData(Constants.HEAD_MAPPING_NAME);
@@ -88,11 +88,8 @@ public class HeadShape extends Shape {
     String s = heads.get(baseMaterial.name);
 
     if (s != null) {
-      Skull skull = new Skull(s);
+      Skull skull = new Skull(s, worldX, worldY, worldZ);
       chunk.setMaterial(localX, worldY, localZ, headMaterial);
-      skull.setX(worldX);
-      skull.setY(worldY);
-      skull.setZ(worldZ);
       chunk.getTileEntities().add(skull);
     }
   }
