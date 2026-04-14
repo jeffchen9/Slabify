@@ -76,15 +76,12 @@ public class QuarterSlabShape extends Shape {
     assert resolution >= getMinResolution(selectedOption);
 
     if (selectedOption != Options.DISABLE) {
-      // Upscale shapes if needed
-      Matrix upscaled1 = quarter1.upscale(resolution / 4);
-      Matrix upscaled2 = quarter2.upscale(resolution / 2);
-      Matrix upscaled3 = quarter3.upscale(resolution / 4);
-
       int[] angles = {90, 180, 270};
       List<Matrix> shapes = new ArrayList<>();
 
       if (selectedOption == Options.HALVES) {
+        Matrix upscaled2 = quarter2.upscale(resolution / 2);
+
         shapes.add(upscaled2);
         for (int angle : angles) {
           shapes.add(upscaled2.rotate(angle));
@@ -92,6 +89,10 @@ public class QuarterSlabShape extends Shape {
 
         return Optional.of(shapes);
       } else if (selectedOption == Options.QUARTERS) {
+        Matrix upscaled1 = quarter1.upscale(resolution / 4);
+        Matrix upscaled2 = quarter2.upscale(resolution / 2);
+        Matrix upscaled3 = quarter3.upscale(resolution / 4);
+
         shapes.add(upscaled1);
         for (int angle : angles) {
           shapes.add(upscaled1.rotate(angle));

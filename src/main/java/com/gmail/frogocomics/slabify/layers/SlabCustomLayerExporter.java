@@ -386,9 +386,9 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
               }
 
-              if (top) {
+              if (top && terrainHeight + relZ + minZ + 1 < maxHeight) {
                 listShapes[idx].place(worldX, terrainHeight + relZ + minZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
-              } else {
+              } else if (terrainHeight + relZ + minZ + 1 < maxHeight) {
                 listShapesStacked[idx].place(worldX, terrainHeight + relZ + minZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
               }
 

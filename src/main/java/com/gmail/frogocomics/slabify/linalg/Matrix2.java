@@ -92,7 +92,7 @@ public final class Matrix2 implements Matrix {
   @Override
   public Matrix upscale(int scale) {
     if (scale < 1) {
-      throw new IllegalArgumentException("Invalid scale");
+      throw new IllegalArgumentException("Invalid scale: " + scale);
     }
 
     if (scale == 1) {

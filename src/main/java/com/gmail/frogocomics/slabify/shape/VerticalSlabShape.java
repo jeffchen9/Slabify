@@ -86,23 +86,24 @@ public class VerticalSlabShape extends Shape {
     assert resolution >= getMinResolution(selectedOption);
 
     if (selectedOption != Options.DISABLE) {
-      // Upscale shapes if needed
-      Matrix upscaled1 = slab1.upscale(resolution / 8);
-      Matrix upscaled2 = slab2.upscale(resolution / 4);
-      Matrix upscaled3 = slab3.upscale(resolution / 2);
-      Matrix upscaled4 = slab4.upscale(resolution / 4);
-
       int[] angles = {90, 180, 270};
       List<Matrix> shapes = new ArrayList<>();
 
       switch (selectedOption) {
-        case HALVES:
+        case HALVES: {
+          Matrix upscaled3 = slab3.upscale(resolution / 2);
+
           shapes.add(upscaled3);
           for (int angle : angles) {
             shapes.add(upscaled3.rotate(angle));
           }
           break;
-        case QUARTERS:
+        }
+        case QUARTERS: {
+          Matrix upscaled2 = slab2.upscale(resolution / 4);
+          Matrix upscaled3 = slab3.upscale(resolution / 2);
+          Matrix upscaled4 = slab4.upscale(resolution / 4);
+
           shapes.add(upscaled3);
           for (int angle : angles) {
             shapes.add(upscaled3.rotate(angle));
@@ -118,7 +119,13 @@ public class VerticalSlabShape extends Shape {
             shapes.add(upscaled4.rotate(angle));
           }
           break;
-        case EIGHTHS:
+        }
+        case EIGHTHS: {
+          Matrix upscaled1 = slab1.upscale(resolution / 8);
+          Matrix upscaled2 = slab2.upscale(resolution / 4);
+          Matrix upscaled3 = slab3.upscale(resolution / 2);
+          Matrix upscaled4 = slab4.upscale(resolution / 4);
+
           shapes.add(upscaled3);
           for (int angle : angles) {
             shapes.add(upscaled3.rotate(angle));
@@ -139,6 +146,7 @@ public class VerticalSlabShape extends Shape {
             shapes.add(upscaled1.rotate(angle));
           }
           break;
+        }
       }
 
       return Optional.of(shapes);
