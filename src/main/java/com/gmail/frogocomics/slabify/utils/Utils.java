@@ -326,37 +326,11 @@ public final class Utils {
   }
 
   /**
-   * Check whether all values the array is equal to 0.
+   * Check whether all values of the array are at or below 0.
    *
    * @param arr the array.
-   * @return {@code true} if all values are equal to 0.
+   * @return {@code true} if all values are at or below 0.
    */
-  public static boolean allZeros(float[] arr) {
-    for (float v : arr) {
-      if (v != 0) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Check whether all values the array is equal to 1.
-   *
-   * @param arr the array.
-   * @return {@code true} if all values are equal to 1.
-   */
-  public static boolean allOnes(float[] arr) {
-    for (float v : arr) {
-      if (v != 1) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   public static boolean allAtOrBelowZero(float[] arr) {
     for (float v : arr) {
       if (v > 0) {
@@ -367,6 +341,12 @@ public final class Utils {
     return true;
   }
 
+  /**
+   * Check whether all values of the array are at or above 1.
+   *
+   * @param arr the array.
+   * @return {@code true} if all values are at or above 1.
+   */
   public static boolean allAtOrAboveOne(float[] arr) {
     for (float v : arr) {
       if (v < 1) {

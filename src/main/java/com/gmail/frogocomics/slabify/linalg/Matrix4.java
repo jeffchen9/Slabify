@@ -397,12 +397,24 @@ public final class Matrix4 implements Matrix {
   @Override
   public float getLoss(float[] arr, double exponent) {
     if (exponent == 2) {
-      return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m02 - arr[2]) * (m02 - arr[2]) +
-          (m03 - arr[3]) * (m03 - arr[3]) + (m10 - arr[4]) * (m10 - arr[4]) + (m11 - arr[5]) * (m11 - arr[5]) +
-          (m12 - arr[6]) * (m12 - arr[6]) + (m13 - arr[7]) * (m13 - arr[7]) + (m20 - arr[8]) * (m20 - arr[8]) +
-          (m21 - arr[9]) * (m21 - arr[9]) + (m22 - arr[10]) * (m22 - arr[10]) + (m23 - arr[11]) * (m23 - arr[11]) +
-          (m30 - arr[12]) * (m30 - arr[12]) + (m31 - arr[13]) * (m31 - arr[13]) + (m32 - arr[14]) * (m32 - arr[14]) +
-          (m33 - arr[15]) * (m33 - arr[15]);
+      float l00 = m00 - arr[0];
+      float l01 = m01 - arr[1];
+      float l02 = m02 - arr[2];
+      float l03 = m03 - arr[3];
+      float l10 = m10 - arr[4];
+      float l11 = m11 - arr[5];
+      float l12 = m12 - arr[6];
+      float l13 = m13 - arr[7];
+      float l20 = m20 - arr[8];
+      float l21 = m21 - arr[9];
+      float l22 = m22 - arr[10];
+      float l23 = m23 - arr[11];
+      float l30 = m30 - arr[12];
+      float l31 = m31 - arr[13];
+      float l32 = m32 - arr[14];
+      float l33 = m33 - arr[15];
+      return l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03 + l10 * l10 + l11 * l11 + l12 * l12 + l13 * l13 + l20 * l20
+          + l21 * l21 + l22 * l22 + l23 * l23 + l30 * l30 + l31 * l31 + l32 * l32 + l33 * l33;
     } else if (exponent == 1) {
       return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m10 - arr[4]) +
           abs(m11 - arr[5]) + abs(m12 - arr[6]) + abs(m13 - arr[7]) + abs(m20 - arr[8]) + abs(m21 - arr[9]) +

@@ -156,7 +156,8 @@ public final class MatrixN implements Matrix {
 
     if (exponent == 2) {
       for (int i = 0; i < size * size; i++) {
-        loss += (data[i] - arr[i]) * (data[i] - arr[i]);
+        float l = data[i] - arr[i];
+        loss += l * l;
       }
     } else if (exponent == 1) {
       for (int i = 0; i < size * size; i++) {

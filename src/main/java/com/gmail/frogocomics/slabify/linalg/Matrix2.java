@@ -301,8 +301,11 @@ public final class Matrix2 implements Matrix {
   @Override
   public float getLoss(float[] arr, double exponent) {
     if (exponent == 2) {
-      return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m10 - arr[2]) * (m10 - arr[2]) +
-          (m11 - arr[3]) * (m11 - arr[3]);
+      float l00 = m00 - arr[0];
+      float l01 = m01 - arr[1];
+      float l10 = m10 - arr[2];
+      float l11 = m11 - arr[3];
+      return l00 * l00 + l01 * l01 + l10 * l10 + l11 * l11;
     } else if (exponent == 1) {
       return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m10 - arr[2]) + abs(m11 - arr[3]);
     } else {

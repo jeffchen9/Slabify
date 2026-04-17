@@ -809,11 +809,115 @@ public final class Matrix8 implements Matrix {
   @Override
   public float getLoss(float[] arr, double exponent) {
     if (exponent == 2) {
-      return (m00 - arr[0]) * (m00 - arr[0]) + (m01 - arr[1]) * (m01 - arr[1]) + (m02 - arr[2]) * (m02 - arr[2]) + (m03 - arr[3]) * (m03 - arr[3]) + (m04 - arr[4]) * (m04 - arr[4]) + (m05 - arr[5]) * (m05 - arr[5]) + (m06 - arr[6]) * (m06 - arr[6]) + (m07 - arr[7]) * (m07 - arr[7]) + (m10 - arr[8]) * (m10 - arr[8]) + (m11 - arr[9]) * (m11 - arr[9]) + (m12 - arr[10]) * (m12 - arr[10]) + (m13 - arr[11]) * (m13 - arr[11]) + (m14 - arr[12]) * (m14 - arr[12]) + (m15 - arr[13]) * (m15 - arr[13]) + (m16 - arr[14]) * (m16 - arr[14]) + (m17 - arr[15]) * (m17 - arr[15]) + (m20 - arr[16]) * (m20 - arr[16]) + (m21 - arr[17]) * (m21 - arr[17]) + (m22 - arr[18]) * (m22 - arr[18]) + (m23 - arr[19]) * (m23 - arr[19]) + (m24 - arr[20]) * (m24 - arr[20]) + (m25 - arr[21]) * (m25 - arr[21]) + (m26 - arr[22]) * (m26 - arr[22]) + (m27 - arr[23]) * (m27 - arr[23]) + (m30 - arr[24]) * (m30 - arr[24]) + (m31 - arr[25]) * (m31 - arr[25]) + (m32 - arr[26]) * (m32 - arr[26]) + (m33 - arr[27]) * (m33 - arr[27]) + (m34 - arr[28]) * (m34 - arr[28]) + (m35 - arr[29]) * (m35 - arr[29]) + (m36 - arr[30]) * (m36 - arr[30]) + (m37 - arr[31]) * (m37 - arr[31]) + (m40 - arr[32]) * (m40 - arr[32]) + (m41 - arr[33]) * (m41 - arr[33]) + (m42 - arr[34]) * (m42 - arr[34]) + (m43 - arr[35]) * (m43 - arr[35]) + (m44 - arr[36]) * (m44 - arr[36]) + (m45 - arr[37]) * (m45 - arr[37]) + (m46 - arr[38]) * (m46 - arr[38]) + (m47 - arr[39]) * (m47 - arr[39]) + (m50 - arr[40]) * (m50 - arr[40]) + (m51 - arr[41]) * (m51 - arr[41]) + (m52 - arr[42]) * (m52 - arr[42]) + (m53 - arr[43]) * (m53 - arr[43]) + (m54 - arr[44]) * (m54 - arr[44]) + (m55 - arr[45]) * (m55 - arr[45]) + (m56 - arr[46]) * (m56 - arr[46]) + (m57 - arr[47]) * (m57 - arr[47]) + (m60 - arr[48]) * (m60 - arr[48]) + (m61 - arr[49]) * (m61 - arr[49]) + (m62 - arr[50]) * (m62 - arr[50]) + (m63 - arr[51]) * (m63 - arr[51]) + (m64 - arr[52]) * (m64 - arr[52]) + (m65 - arr[53]) * (m65 - arr[53]) + (m66 - arr[54]) * (m66 - arr[54]) + (m67 - arr[55]) * (m67 - arr[55]) + (m70 - arr[56]) * (m70 - arr[56]) + (m71 - arr[57]) * (m71 - arr[57]) + (m72 - arr[58]) * (m72 - arr[58]) + (m73 - arr[59]) * (m73 - arr[59]) + (m74 - arr[60]) * (m74 - arr[60]) + (m75 - arr[61]) * (m75 - arr[61]) + (m76 - arr[62]) * (m76 - arr[62]) + (m77 - arr[63]) * (m77 - arr[63]);
+      float l00 = m00 - arr[0];
+      float l01 = m01 - arr[1];
+      float l02 = m02 - arr[2];
+      float l03 = m03 - arr[3];
+      float l04 = m04 - arr[4];
+      float l05 = m05 - arr[5];
+      float l06 = m06 - arr[6];
+      float l07 = m07 - arr[7];
+      float l10 = m10 - arr[8];
+      float l11 = m11 - arr[9];
+      float l12 = m12 - arr[10];
+      float l13 = m13 - arr[11];
+      float l14 = m14 - arr[12];
+      float l15 = m15 - arr[13];
+      float l16 = m16 - arr[14];
+      float l17 = m17 - arr[15];
+      float l20 = m20 - arr[16];
+      float l21 = m21 - arr[17];
+      float l22 = m22 - arr[18];
+      float l23 = m23 - arr[19];
+      float l24 = m24 - arr[20];
+      float l25 = m25 - arr[21];
+      float l26 = m26 - arr[22];
+      float l27 = m27 - arr[23];
+      float l30 = m30 - arr[24];
+      float l31 = m31 - arr[25];
+      float l32 = m32 - arr[26];
+      float l33 = m33 - arr[27];
+      float l34 = m34 - arr[28];
+      float l35 = m35 - arr[29];
+      float l36 = m36 - arr[30];
+      float l37 = m37 - arr[31];
+      float l40 = m40 - arr[32];
+      float l41 = m41 - arr[33];
+      float l42 = m42 - arr[34];
+      float l43 = m43 - arr[35];
+      float l44 = m44 - arr[36];
+      float l45 = m45 - arr[37];
+      float l46 = m46 - arr[38];
+      float l47 = m47 - arr[39];
+      float l50 = m50 - arr[40];
+      float l51 = m51 - arr[41];
+      float l52 = m52 - arr[42];
+      float l53 = m53 - arr[43];
+      float l54 = m54 - arr[44];
+      float l55 = m55 - arr[45];
+      float l56 = m56 - arr[46];
+      float l57 = m57 - arr[47];
+      float l60 = m60 - arr[48];
+      float l61 = m61 - arr[49];
+      float l62 = m62 - arr[50];
+      float l63 = m63 - arr[51];
+      float l64 = m64 - arr[52];
+      float l65 = m65 - arr[53];
+      float l66 = m66 - arr[54];
+      float l67 = m67 - arr[55];
+      float l70 = m70 - arr[56];
+      float l71 = m71 - arr[57];
+      float l72 = m72 - arr[58];
+      float l73 = m73 - arr[59];
+      float l74 = m74 - arr[60];
+      float l75 = m75 - arr[61];
+      float l76 = m76 - arr[62];
+      float l77 = m77 - arr[63];
+      return l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03 + l04 * l04 + l05 * l05 + l06 * l06 + l07 * l07 + l10 * l10
+          + l11 * l11 + l12 * l12 + l13 * l13 + l14 * l14 + l15 * l15 + l16 * l16 + l17 * l17 + l20 * l20 + l21 * l21 +
+          l22 * l22 + l23 * l23 + l24 * l24 + l25 * l25 + l26 * l26 + l27 * l27 + l30 * l30 + l31 * l31 + l32 * l32 +
+          l33 * l33 + l34 * l34 + l35 * l35 + l36 * l36 + l37 * l37 + l40 * l40 + l41 * l41 + l42 * l42 + l43 * l43 +
+          l44 * l44 + l45 * l45 + l46 * l46 + l47 * l47 + l50 * l50 + l51 * l51 + l52 * l52 + l53 * l53 + l54 * l54 +
+          l55 * l55 + l56 * l56 + l57 * l57 + l60 * l60 + l61 * l61 + l62 * l62 + l63 * l63 + l64 * l64 + l65 * l65 +
+          l66 * l66 + l67 * l67 + l70 * l70 + l71 * l71 + l72 * l72 + l73 * l73 + l74 * l74 + l75 * l75 + l76 * l76 +
+          l77 * l77;
     } else if (exponent == 1) {
-      return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m04 - arr[4]) + abs(m05 - arr[5]) + abs(m06 - arr[6]) + abs(m07 - arr[7]) + abs(m10 - arr[8]) + abs(m11 - arr[9]) + abs(m12 - arr[10]) + abs(m13 - arr[11]) + abs(m14 - arr[12]) + abs(m15 - arr[13]) + abs(m16 - arr[14]) + abs(m17 - arr[15]) + abs(m20 - arr[16]) + abs(m21 - arr[17]) + abs(m22 - arr[18]) + abs(m23 - arr[19]) + abs(m24 - arr[20]) + abs(m25 - arr[21]) + abs(m26 - arr[22]) + abs(m27 - arr[23]) + abs(m30 - arr[24]) + abs(m31 - arr[25]) + abs(m32 - arr[26]) + abs(m33 - arr[27]) + abs(m34 - arr[28]) + abs(m35 - arr[29]) + abs(m36 - arr[30]) + abs(m37 - arr[31]) + abs(m40 - arr[32]) + abs(m41 - arr[33]) + abs(m42 - arr[34]) + abs(m43 - arr[35]) + abs(m44 - arr[36]) + abs(m45 - arr[37]) + abs(m46 - arr[38]) + abs(m47 - arr[39]) + abs(m50 - arr[40]) + abs(m51 - arr[41]) + abs(m52 - arr[42]) + abs(m53 - arr[43]) + abs(m54 - arr[44]) + abs(m55 - arr[45]) + abs(m56 - arr[46]) + abs(m57 - arr[47]) + abs(m60 - arr[48]) + abs(m61 - arr[49]) + abs(m62 - arr[50]) + abs(m63 - arr[51]) + abs(m64 - arr[52]) + abs(m65 - arr[53]) + abs(m66 - arr[54]) + abs(m67 - arr[55]) + abs(m70 - arr[56]) + abs(m71 - arr[57]) + abs(m72 - arr[58]) + abs(m73 - arr[59]) + abs(m74 - arr[60]) + abs(m75 - arr[61]) + abs(m76 - arr[62]) + abs(m77 - arr[63]);
+      return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m04 - arr[4]) +
+          abs(m05 - arr[5]) + abs(m06 - arr[6]) + abs(m07 - arr[7]) + abs(m10 - arr[8]) + abs(m11 - arr[9]) +
+          abs(m12 - arr[10]) + abs(m13 - arr[11]) + abs(m14 - arr[12]) + abs(m15 - arr[13]) + abs(m16 - arr[14]) +
+          abs(m17 - arr[15]) + abs(m20 - arr[16]) + abs(m21 - arr[17]) + abs(m22 - arr[18]) + abs(m23 - arr[19]) +
+          abs(m24 - arr[20]) + abs(m25 - arr[21]) + abs(m26 - arr[22]) + abs(m27 - arr[23]) + abs(m30 - arr[24]) +
+          abs(m31 - arr[25]) + abs(m32 - arr[26]) + abs(m33 - arr[27]) + abs(m34 - arr[28]) + abs(m35 - arr[29]) +
+          abs(m36 - arr[30]) + abs(m37 - arr[31]) + abs(m40 - arr[32]) + abs(m41 - arr[33]) + abs(m42 - arr[34]) +
+          abs(m43 - arr[35]) + abs(m44 - arr[36]) + abs(m45 - arr[37]) + abs(m46 - arr[38]) + abs(m47 - arr[39]) +
+          abs(m50 - arr[40]) + abs(m51 - arr[41]) + abs(m52 - arr[42]) + abs(m53 - arr[43]) + abs(m54 - arr[44]) +
+          abs(m55 - arr[45]) + abs(m56 - arr[46]) + abs(m57 - arr[47]) + abs(m60 - arr[48]) + abs(m61 - arr[49]) +
+          abs(m62 - arr[50]) + abs(m63 - arr[51]) + abs(m64 - arr[52]) + abs(m65 - arr[53]) + abs(m66 - arr[54]) +
+          abs(m67 - arr[55]) + abs(m70 - arr[56]) + abs(m71 - arr[57]) + abs(m72 - arr[58]) + abs(m73 - arr[59]) +
+          abs(m74 - arr[60]) + abs(m75 - arr[61]) + abs(m76 - arr[62]) + abs(m77 - arr[63]);
     } else {
-      return (float) (pow(abs(m00 - arr[0]), exponent) + pow(abs(m01 - arr[1]), exponent) + pow(abs(m02 - arr[2]), exponent) + pow(abs(m03 - arr[3]), exponent) + pow(abs(m04 - arr[4]), exponent) + pow(abs(m05 - arr[5]), exponent) + pow(abs(m06 - arr[6]), exponent) + pow(abs(m07 - arr[7]), exponent) + pow(abs(m10 - arr[8]), exponent) + pow(abs(m11 - arr[9]), exponent) + pow(abs(m12 - arr[10]), exponent) + pow(abs(m13 - arr[11]), exponent) + pow(abs(m14 - arr[12]), exponent) + pow(abs(m15 - arr[13]), exponent) + pow(abs(m16 - arr[14]), exponent) + pow(abs(m17 - arr[15]), exponent) + pow(abs(m20 - arr[16]), exponent) + pow(abs(m21 - arr[17]), exponent) + pow(abs(m22 - arr[18]), exponent) + pow(abs(m23 - arr[19]), exponent) + pow(abs(m24 - arr[20]), exponent) + pow(abs(m25 - arr[21]), exponent) + pow(abs(m26 - arr[22]), exponent) + pow(abs(m27 - arr[23]), exponent) + pow(abs(m30 - arr[24]), exponent) + pow(abs(m31 - arr[25]), exponent) + pow(abs(m32 - arr[26]), exponent) + pow(abs(m33 - arr[27]), exponent) + pow(abs(m34 - arr[28]), exponent) + pow(abs(m35 - arr[29]), exponent) + pow(abs(m36 - arr[30]), exponent) + pow(abs(m37 - arr[31]), exponent) + pow(abs(m40 - arr[32]), exponent) + pow(abs(m41 - arr[33]), exponent) + pow(abs(m42 - arr[34]), exponent) + pow(abs(m43 - arr[35]), exponent) + pow(abs(m44 - arr[36]), exponent) + pow(abs(m45 - arr[37]), exponent) + pow(abs(m46 - arr[38]), exponent) + pow(abs(m47 - arr[39]), exponent) + pow(abs(m50 - arr[40]), exponent) + pow(abs(m51 - arr[41]), exponent) + pow(abs(m52 - arr[42]), exponent) + pow(abs(m53 - arr[43]), exponent) + pow(abs(m54 - arr[44]), exponent) + pow(abs(m55 - arr[45]), exponent) + pow(abs(m56 - arr[46]), exponent) + pow(abs(m57 - arr[47]), exponent) + pow(abs(m60 - arr[48]), exponent) + pow(abs(m61 - arr[49]), exponent) + pow(abs(m62 - arr[50]), exponent) + pow(abs(m63 - arr[51]), exponent) + pow(abs(m64 - arr[52]), exponent) + pow(abs(m65 - arr[53]), exponent) + pow(abs(m66 - arr[54]), exponent) + pow(abs(m67 - arr[55]), exponent) + pow(abs(m70 - arr[56]), exponent) + pow(abs(m71 - arr[57]), exponent) + pow(abs(m72 - arr[58]), exponent) + pow(abs(m73 - arr[59]), exponent) + pow(abs(m74 - arr[60]), exponent) + pow(abs(m75 - arr[61]), exponent) + pow(abs(m76 - arr[62]), exponent) + pow(abs(m77 - arr[63]), exponent));
+      return (float) (pow(abs(m00 - arr[0]), exponent) + pow(abs(m01 - arr[1]), exponent) +
+          pow(abs(m02 - arr[2]), exponent) + pow(abs(m03 - arr[3]), exponent) + pow(abs(m04 - arr[4]), exponent) +
+          pow(abs(m05 - arr[5]), exponent) + pow(abs(m06 - arr[6]), exponent) + pow(abs(m07 - arr[7]), exponent) +
+          pow(abs(m10 - arr[8]), exponent) + pow(abs(m11 - arr[9]), exponent) + pow(abs(m12 - arr[10]), exponent) +
+          pow(abs(m13 - arr[11]), exponent) + pow(abs(m14 - arr[12]), exponent) + pow(abs(m15 - arr[13]), exponent) +
+          pow(abs(m16 - arr[14]), exponent) + pow(abs(m17 - arr[15]), exponent) + pow(abs(m20 - arr[16]), exponent) +
+          pow(abs(m21 - arr[17]), exponent) + pow(abs(m22 - arr[18]), exponent) + pow(abs(m23 - arr[19]), exponent) +
+          pow(abs(m24 - arr[20]), exponent) + pow(abs(m25 - arr[21]), exponent) + pow(abs(m26 - arr[22]), exponent) +
+          pow(abs(m27 - arr[23]), exponent) + pow(abs(m30 - arr[24]), exponent) + pow(abs(m31 - arr[25]), exponent) +
+          pow(abs(m32 - arr[26]), exponent) + pow(abs(m33 - arr[27]), exponent) + pow(abs(m34 - arr[28]), exponent) +
+          pow(abs(m35 - arr[29]), exponent) + pow(abs(m36 - arr[30]), exponent) + pow(abs(m37 - arr[31]), exponent) +
+          pow(abs(m40 - arr[32]), exponent) + pow(abs(m41 - arr[33]), exponent) + pow(abs(m42 - arr[34]), exponent) +
+          pow(abs(m43 - arr[35]), exponent) + pow(abs(m44 - arr[36]), exponent) + pow(abs(m45 - arr[37]), exponent) +
+          pow(abs(m46 - arr[38]), exponent) + pow(abs(m47 - arr[39]), exponent) + pow(abs(m50 - arr[40]), exponent) +
+          pow(abs(m51 - arr[41]), exponent) + pow(abs(m52 - arr[42]), exponent) + pow(abs(m53 - arr[43]), exponent) +
+          pow(abs(m54 - arr[44]), exponent) + pow(abs(m55 - arr[45]), exponent) + pow(abs(m56 - arr[46]), exponent) +
+          pow(abs(m57 - arr[47]), exponent) + pow(abs(m60 - arr[48]), exponent) + pow(abs(m61 - arr[49]), exponent) +
+          pow(abs(m62 - arr[50]), exponent) + pow(abs(m63 - arr[51]), exponent) + pow(abs(m64 - arr[52]), exponent) +
+          pow(abs(m65 - arr[53]), exponent) + pow(abs(m66 - arr[54]), exponent) + pow(abs(m67 - arr[55]), exponent) +
+          pow(abs(m70 - arr[56]), exponent) + pow(abs(m71 - arr[57]), exponent) + pow(abs(m72 - arr[58]), exponent) +
+          pow(abs(m73 - arr[59]), exponent) + pow(abs(m74 - arr[60]), exponent) + pow(abs(m75 - arr[61]), exponent) +
+          pow(abs(m76 - arr[62]), exponent) + pow(abs(m77 - arr[63]), exponent));
     }
   }
 
