@@ -91,7 +91,7 @@ public class VerticalSlabShape extends Shape {
 
       switch (selectedOption) {
         case HALVES: {
-          Matrix upscaled3 = slab3.upscale(resolution / 2);
+          Matrix upscaled3 = slab3.upscale(resolution / slab3.getSize());
 
           shapes.add(upscaled3);
           for (int angle : angles) {
@@ -100,9 +100,9 @@ public class VerticalSlabShape extends Shape {
           break;
         }
         case QUARTERS: {
-          Matrix upscaled2 = slab2.upscale(resolution / 4);
-          Matrix upscaled3 = slab3.upscale(resolution / 2);
-          Matrix upscaled4 = slab4.upscale(resolution / 4);
+          Matrix upscaled2 = slab2.upscale(resolution / slab2.getSize());
+          Matrix upscaled3 = slab3.upscale(resolution / slab3.getSize());
+          Matrix upscaled4 = slab4.upscale(resolution / slab4.getSize());
 
           shapes.add(upscaled3);
           for (int angle : angles) {
@@ -121,10 +121,10 @@ public class VerticalSlabShape extends Shape {
           break;
         }
         case EIGHTHS: {
-          Matrix upscaled1 = slab1.upscale(resolution / 8);
-          Matrix upscaled2 = slab2.upscale(resolution / 4);
-          Matrix upscaled3 = slab3.upscale(resolution / 2);
-          Matrix upscaled4 = slab4.upscale(resolution / 4);
+          Matrix upscaled1 = slab1.upscale(resolution / slab1.getSize());
+          Matrix upscaled2 = slab2.upscale(resolution / slab2.getSize());
+          Matrix upscaled3 = slab3.upscale(resolution / slab3.getSize());
+          Matrix upscaled4 = slab4.upscale(resolution / slab4.getSize());
 
           shapes.add(upscaled3);
           for (int angle : angles) {

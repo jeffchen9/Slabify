@@ -129,7 +129,9 @@ public final class Shapes {
     int resolutionSquared = resolution * resolution;
     float[] scratch = new float[resolutionSquared];
     float[] scratch2 = new float[resolutionSquared];
-    long[] scratch3 = new long[shapeMatrices.size()];
+    float[] scratch3 = new float[resolutionSquared];
+    float[] scratch4 = new float[resolutionSquared];
+    long[] scratch5 = new long[shapeMatrices.size()];
 
     if (stacking) {
       // Determine global bounds
@@ -168,16 +170,22 @@ public final class Shapes {
 
           for (int i = vertDiff - 1; i >= 0; i--) {
             for (int j = 0; j < resolutionSquared; j++) {
-              // Scratch should always be between 1 and 0
-              scratch2[j] = Math.max(i, Math.min(i + 1, scratch[j])) - i;
+              scratch2[j] = scratch[j] - i;
+              // differenceUnclip
+              // scratch2[j] = Math.max(i, Math.min(i + 1, scratch[j])) - i;
+              // differenceMin0
+              scratch3[j] = Math.max(i, scratch[j]) - i;
+              // differenceMax1
+              scratch4[j] = Math.min(i + 1, scratch[j]) - i;
             }
 
-            if (Utils.allZeros(scratch2)) {
+            if (Utils.allAtOrBelowZero(scratch2)) {
               shapeMap[x][y][i][0] = emptyIdx;
-            } else if (Utils.allOnes(scratch2)) {
+            } else if (Utils.allAtOrAboveOne(scratch2)) {
               shapeMap[x][y][i][0] = top ? fullIdx : fullStackedIdx;
             } else {
-              Shapes.findMostSimilarShape(shapeMap[x][y][i], scratch2, top ? shapeMatrices : shapeMatricesStacked, scratch3);
+              // differenceUnclip, differenceMin0, differenceMax1
+              Shapes.findMostSimilarShape(shapeMap[x][y][i], scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
             }
 
             if (shapeMap[x][y][i][0] != emptyIdx) {
@@ -207,7 +215,7 @@ public final class Shapes {
             );
           }
 
-          findMostSimilarShape(shapeMap[x][y], scratch, shapeMatrices, scratch3);
+          findMostSimilarShape(shapeMap[x][y], scratch, shapeMatrices, scratch5);
         }
       }
 
@@ -228,6 +236,20 @@ public final class Shapes {
 
     for (int i = 0; i < size; i++) {
       float loss = matrices.get(i).getLoss(difference, Constants.LOSS_EXPONENT);
+      scratch[i] = ((long) Float.floatToRawIntBits(loss) << 32) | (i & 0xFFFFFFFFL);
+    }
+    Arrays.sort(scratch, 0, size);
+
+    for (int i = 0; i < size; i++) {
+      target[i] = (int) (scratch[i] & 0xFFFFFFFFL);
+    }
+  }
+
+  public static void findMostSimilarShape(int[] target, float[] differenceUnclip, float[] differenceMin0, float[] differenceMax1, List<Matrix> matrices, long[] scratch) {
+    int size = matrices.size();
+
+    for (int i = 0; i < size; i++) {
+      float loss = matrices.get(i).getLossClip(differenceUnclip, differenceMin0, differenceMax1, Constants.LOSS_EXPONENT);
       scratch[i] = ((long) Float.floatToRawIntBits(loss) << 32) | (i & 0xFFFFFFFFL);
     }
     Arrays.sort(scratch, 0, size);

@@ -18,6 +18,9 @@
 
 package com.gmail.frogocomics.slabify.linalg;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+
 /**
  * Implementation of a NxN matrix.
  */
@@ -162,6 +165,28 @@ public final class MatrixN implements Matrix {
     } else {
       for (int i = 0; i < size * size; i++) {
         loss += Math.pow(Math.abs(data[i] - arr[i]), exponent);
+      }
+    }
+
+    return (float) loss;
+  }
+
+  @Override
+  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent) {
+    double loss = 0;
+
+    if (exponent == 2) {
+      for (int i = 0; i < size * size; i++) {
+        float l = data[i] == 0 ? data[i] - arrMin0[i] : (data[i] == 1 ? data[i] - arrMax1[i] : data[i] - arrUnclip[i]);
+        loss += l * l;
+      }
+    } else if (exponent == 1) {
+      for (int i = 0; i < size * size; i++) {
+        loss += data[i] == 0 ? abs(data[i] - arrMin0[i]) : (data[i] == 1 ? abs(data[i] - arrMax1[i]) : abs(data[i] - arrUnclip[i]));
+      }
+    } else {
+      for (int i = 0; i < size * size; i++) {
+        loss += data[i]== 0 ? pow(abs(data[i] - arrMin0[i]), exponent) : (data[i] == 1 ? pow(abs(data[i] - arrMax1[i]), exponent) : pow(abs(data[i] - arrUnclip[i]), exponent));
       }
     }
 

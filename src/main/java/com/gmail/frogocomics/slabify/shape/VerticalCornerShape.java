@@ -93,7 +93,7 @@ public class VerticalCornerShape extends Shape {
 
       switch (selectedOption) {
         case HALVES: {
-          Matrix upscaled3 = quarter3.upscale(resolution / 2);
+          Matrix upscaled3 = quarter3.upscale(resolution / quarter3.getSize());
 
           shapes.add(upscaled3);
           for (int angle : angles) {
@@ -102,9 +102,9 @@ public class VerticalCornerShape extends Shape {
           break;
         }
         case QUARTERS: {
-          Matrix upscaled2 = quarter2.upscale(resolution / 4);
-          Matrix upscaled3 = quarter3.upscale(resolution / 2);
-          Matrix upscaled4 = quarter4.upscale(resolution / 4);
+          Matrix upscaled2 = quarter2.upscale(resolution / quarter2.getSize());
+          Matrix upscaled3 = quarter3.upscale(resolution / quarter3.getSize());
+          Matrix upscaled4 = quarter4.upscale(resolution / quarter4.getSize());
 
           shapes.add(upscaled3);
           for (int angle : angles) {
@@ -123,10 +123,10 @@ public class VerticalCornerShape extends Shape {
           break;
         }
         case EIGHTHS: {
-          Matrix upscaled1 = quarter1.upscale(resolution / 8);
-          Matrix upscaled2 = quarter2.upscale(resolution / 4);
-          Matrix upscaled3 = quarter3.upscale(resolution / 2);
-          Matrix upscaled4 = quarter4.upscale(resolution / 4);
+          Matrix upscaled1 = quarter1.upscale(resolution / quarter1.getSize());
+          Matrix upscaled2 = quarter2.upscale(resolution / quarter2.getSize());
+          Matrix upscaled3 = quarter3.upscale(resolution / quarter3.getSize());
+          Matrix upscaled4 = quarter4.upscale(resolution / quarter4.getSize());
 
           shapes.add(upscaled3);
           for (int angle : angles) {

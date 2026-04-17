@@ -80,7 +80,7 @@ public class QuarterSlabShape extends Shape {
       List<Matrix> shapes = new ArrayList<>();
 
       if (selectedOption == Options.HALVES) {
-        Matrix upscaled2 = quarter2.upscale(resolution / 2);
+        Matrix upscaled2 = quarter2.upscale(resolution / quarter2.getSize());
 
         shapes.add(upscaled2);
         for (int angle : angles) {
@@ -89,9 +89,9 @@ public class QuarterSlabShape extends Shape {
 
         return Optional.of(shapes);
       } else if (selectedOption == Options.QUARTERS) {
-        Matrix upscaled1 = quarter1.upscale(resolution / 4);
-        Matrix upscaled2 = quarter2.upscale(resolution / 2);
-        Matrix upscaled3 = quarter3.upscale(resolution / 4);
+        Matrix upscaled1 = quarter1.upscale(resolution / quarter1.getSize());
+        Matrix upscaled2 = quarter2.upscale(resolution / quarter2.getSize());
+        Matrix upscaled3 = quarter3.upscale(resolution / quarter3.getSize());
 
         shapes.add(upscaled1);
         for (int angle : angles) {

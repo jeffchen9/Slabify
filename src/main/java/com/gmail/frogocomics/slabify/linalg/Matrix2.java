@@ -312,6 +312,31 @@ public final class Matrix2 implements Matrix {
   }
 
   @Override
+  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent) {
+    if (exponent == 2) {
+      float l00 = m00 == 0 ? m00 - arrMin0[0] : (m00 == 1 ? m00 - arrMax1[0] : m00 - arrUnclip[0]);
+      float l01 = m01 == 0 ? m01 - arrMin0[1] : (m01 == 1 ? m01 - arrMax1[1] : m01 - arrUnclip[1]);
+      float l10 = m10 == 0 ? m10 - arrMin0[2] : (m10 == 1 ? m10 - arrMax1[2] : m10 - arrUnclip[2]);
+      float l11 = m11 == 0 ? m11 - arrMin0[3] : (m11 == 1 ? m11 - arrMax1[3] : m11 - arrUnclip[3]);
+      return l00 * l00 + l01 * l01 + l10 * l10 + l11 * l11;
+    } else if (exponent == 1) {
+      float loss = 0;
+      loss += m00 == 0 ? abs(m00 - arrMin0[0]) : (m00 == 1 ? abs(m00 - arrMax1[0]) : abs(m00 - arrUnclip[0]));
+      loss += m01 == 0 ? abs(m01 - arrMin0[1]) : (m01 == 1 ? abs(m01 - arrMax1[1]) : abs(m01 - arrUnclip[1]));
+      loss += m10 == 0 ? abs(m10 - arrMin0[2]) : (m10 == 1 ? abs(m10 - arrMax1[2]) : abs(m10 - arrUnclip[2]));
+      loss += m11 == 0 ? abs(m11 - arrMin0[3]) : (m11 == 1 ? abs(m11 - arrMax1[3]) : abs(m11 - arrUnclip[3]));
+      return loss;
+    } else {
+      double loss = 0;
+      loss += m00 == 0 ? pow(abs(m00 - arrMin0[0]), exponent) : (m00 == 1 ? pow(abs(m00 - arrMax1[0]), exponent) : pow(abs(m00 - arrUnclip[0]), exponent));
+      loss += m01 == 0 ? pow(abs(m01 - arrMin0[1]), exponent) : (m01 == 1 ? pow(abs(m01 - arrMax1[1]), exponent) : pow(abs(m01 - arrUnclip[1]), exponent));
+      loss += m10 == 0 ? pow(abs(m10 - arrMin0[2]), exponent) : (m10 == 1 ? pow(abs(m10 - arrMax1[2]), exponent) : pow(abs(m10 - arrUnclip[2]), exponent));
+      loss += m11 == 0 ? pow(abs(m11 - arrMin0[3]), exponent) : (m11 == 1 ? pow(abs(m11 - arrMax1[3]), exponent) : pow(abs(m11 - arrUnclip[3]), exponent));
+      return (float) loss;
+    }
+  }
+
+  @Override
   public String toString() {
     return "[2x2]:  [" + m00 + ", " + m01 + ", " + m10 + ", " + m11 + "]";
   }

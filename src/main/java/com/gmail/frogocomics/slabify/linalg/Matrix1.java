@@ -20,6 +20,9 @@ package com.gmail.frogocomics.slabify.linalg;
 
 import java.util.Arrays;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+
 /**
  * Implementation of a 1x1 matrix.
  */
@@ -105,11 +108,24 @@ public final class Matrix1 implements Matrix {
   @Override
   public float getLoss(float[] arr, double exponent) {
     if (exponent == 2) {
-      return (m00 - arr[0]) * (m00 - arr[0]);
+      float l = m00 - arr[0];
+      return l * l;
     } else if (exponent == 1) {
       return Math.abs(m00 - arr[0]);
     } else {
       return (float) Math.pow(Math.abs(m00 - arr[0]), exponent);
+    }
+  }
+
+  @Override
+  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent) {
+    if (exponent == 2) {
+      float l00 = m00 == 0 ? m00 - arrMin0[0] : (m00 == 1 ? m00 - arrMax1[0] : m00 - arrUnclip[0]);
+      return l00 * l00;
+    } else if (exponent == 1) {
+      return m00 == 0 ? abs(m00 - arrMin0[0]) : (m00 == 1 ? abs(m00 - arrMax1[0]) : abs(m00 - arrUnclip[0]));
+    } else {
+      return (float) (m00 == 0 ? pow(abs(m00 - arrMin0[0]), exponent) : (m00 == 1 ? pow(abs(m00 - arrMax1[0]), exponent) : pow(abs(m00 - arrUnclip[0]), exponent)));
     }
   }
 

@@ -61,9 +61,9 @@ public class StairShape extends Shape {
     if (selectedOption == Options.ENABLE) {
 
       // Upscale shapes if needed
-      Matrix upscaledStairShape = stairShape.upscale(resolution / 2);
-      Matrix upscaledInsideStairShape = insideStairShape.upscale(resolution / 2);
-      Matrix upscaledOutsideStairShape = outsideStairShape.upscale(resolution / 2);
+      Matrix upscaledStairShape = stairShape.upscale(resolution / stairShape.getSize());
+      Matrix upscaledInsideStairShape = insideStairShape.upscale(resolution / insideStairShape.getSize());
+      Matrix upscaledOutsideStairShape = outsideStairShape.upscale(resolution / outsideStairShape.getSize());
 
       List<Matrix> shapes = new ArrayList<>();
 

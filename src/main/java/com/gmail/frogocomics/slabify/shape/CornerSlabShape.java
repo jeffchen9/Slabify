@@ -53,7 +53,7 @@ public class CornerSlabShape extends Shape {
 
     if (selectedOption == Options.ENABLE) {
       // Upscale shapes if needed
-      Matrix upscaledShape = shape.upscale(resolution / 2);
+      Matrix upscaledShape = shape.upscale(resolution / shape.getSize());
 
       List<Matrix> shapes = new ArrayList<>();
 

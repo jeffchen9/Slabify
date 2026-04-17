@@ -58,8 +58,8 @@ public class VerticalCornerSlabShape extends Shape {
 
     if (selectedOption == Options.ENABLE) {
       // Upscale shapes if needed
-      Matrix upscaledLeftStairShape = leftStairShape.upscale(resolution / 2);
-      Matrix upscaledRightStairShape = rightStairShape.upscale(resolution / 2);
+      Matrix upscaledLeftStairShape = leftStairShape.upscale(resolution / leftStairShape.getSize());
+      Matrix upscaledRightStairShape = rightStairShape.upscale(resolution / rightStairShape.getSize());
 
       List<Matrix> shapes = new ArrayList<>();
 

@@ -77,7 +77,6 @@ public final class Utils {
     } else {
       for (int i1 = 0; i1 < TILE_SIZE; i1++) {
         for (int i2 = 0; i2 < TILE_SIZE; i2++) {
-
           float baseHeight = originalMap.getIntHeight(i1, i2);
           float offset = addHeight - baseHeight;
           int rowStart = i1 * resolution;
@@ -351,6 +350,26 @@ public final class Utils {
   public static boolean allOnes(float[] arr) {
     for (float v : arr) {
       if (v != 1) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  public static boolean allAtOrBelowZero(float[] arr) {
+    for (float v : arr) {
+      if (v > 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  public static boolean allAtOrAboveOne(float[] arr) {
+    for (float v : arr) {
+      if (v < 1) {
         return false;
       }
     }

@@ -75,7 +75,7 @@ public class HeadShape extends Shape {
 
     assert resolution >= getMinResolution(null);
 
-    return selectedOption == Options.ENABLE ? Optional.of(Collections.singletonList(shape.upscale(resolution / 4))) : Optional.empty();
+    return selectedOption == Options.ENABLE ? Optional.of(Collections.singletonList(shape.upscale(resolution / shape.getSize()))) : Optional.empty();
   }
 
   @Override

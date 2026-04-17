@@ -68,12 +68,10 @@ public class EighthSlabShape extends Shape {
     assert resolution >= getMinResolution(null);
 
     if (selectedOption == Options.ENABLE) {
-
-      // Upscale shapes if needed
-      Matrix upscaledEastShape = southShape.upscale(resolution / 2);
-      Matrix upscaledSouthShape = eastShape.upscale(resolution / 2);
-      Matrix upscaledWestShape = northShape.upscale(resolution / 2);
-      Matrix upscaledNorthShape = westShape.upscale(resolution / 2);
+      Matrix upscaledEastShape = southShape.upscale(resolution / southShape.getSize());
+      Matrix upscaledSouthShape = eastShape.upscale(resolution / eastShape.getSize());
+      Matrix upscaledWestShape = northShape.upscale(resolution / northShape.getSize());
+      Matrix upscaledNorthShape = westShape.upscale(resolution / westShape.getSize());
 
       return Optional.of(List.of(upscaledEastShape, upscaledSouthShape, upscaledWestShape, upscaledNorthShape));
     }

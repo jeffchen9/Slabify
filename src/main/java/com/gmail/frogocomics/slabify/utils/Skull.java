@@ -35,11 +35,8 @@ public class Skull extends TileEntity {
 
   private static final long serialVersionUID = 1L;
 
-  private final String texture;
-
-  public Skull(@Nullable String texture, int x, int y, int z) {
+  public Skull(@Nullable String texture, int worldX, int worldY, int worldZ) {
     super(Constants.ID_SKULL);
-    this.texture = texture;
 
     if (texture != null) {
       Map<String, Tag> profileMap = new HashMap<>();
@@ -52,8 +49,8 @@ public class Skull extends TileEntity {
       setMap("profile", profileMap);
     }
 
-    setX(x);
-    setY(y);
-    setZ(z);
+    setX(worldX);
+    setY(worldY);
+    setZ(worldZ);
   }
 }

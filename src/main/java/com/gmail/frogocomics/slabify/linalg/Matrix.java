@@ -100,5 +100,7 @@ public interface Matrix extends Cloneable {
    * @return the loss.
    */
   float getLoss(float[] arr, double exponent);
+
+  float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent);
 }
 
