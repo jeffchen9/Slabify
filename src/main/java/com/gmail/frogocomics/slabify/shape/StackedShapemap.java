@@ -36,12 +36,12 @@ public class StackedShapemap implements Shapemap {
   }
 
   @Override
-  public int getMinZ() {
+  public int getMinZ(int x, int y) {
     return minZ;
   }
 
   @Override
-  public int getMaxZ() {
+  public int getMaxZ(int x, int y) {
     return maxZ;
   }
 }

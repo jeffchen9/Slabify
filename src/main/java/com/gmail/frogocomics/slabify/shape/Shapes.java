@@ -111,6 +111,102 @@ public final class Shapes {
     }
   }
 
+  public static Shapemap findMostSimilarShapesRagged(float[][] differenceMap, int resolution, List<Matrix> shapeMatrices,
+                                               List<Matrix> shapeMatricesStacked, boolean[][] mask) {
+    int height = differenceMap.length / resolution;
+    int width = differenceMap[0].length / resolution;
+    int resolutionSquared = resolution * resolution;
+    float[] scratch = new float[resolutionSquared];
+    float[] scratch2 = new float[resolutionSquared];
+    float[] scratch3 = new float[resolutionSquared];
+    float[] scratch4 = new float[resolutionSquared];
+    long[] scratch5 = new long[shapeMatrices.size()];
+
+    // Determine global bounds
+    Pair<Float, Float> globalMaxMin = Utils.findMinAndMax(differenceMap, mask, resolution);
+    int globalMaxHeight = (int) Math.round(Math.ceil(globalMaxMin.getValue0()));
+    int globalMinHeight = (int) Math.round(Math.floor(globalMaxMin.getValue1()));
+    int fullIdx = shapeMatrices.size() - 2;
+    int emptyIdx = shapeMatrices.size() - 1;
+    int fullStackedIdx = shapeMatricesStacked.size() - 2;
+
+    int[][][][] shapeMap = new int[height][width][globalMaxHeight - globalMinHeight][shapeMatrices.size()];
+    int[][] minZ = new int[height][width];
+    int[][] maxZ = new int[height][width];
+
+    for (int x = 0; x < height; x++) {
+      int rowBase = x * resolution;
+      for (int y = 0; y < width; y++) {
+        if (!mask[x][y]) {
+          continue;
+        }
+
+        int colBase = y * resolution;
+
+        int k = 0;
+
+        for (int i1 = 0; i1 < resolution; i1++) {
+          for (int i2 = 0; i2 < resolution; i2++) {
+            scratch[k] = differenceMap[rowBase + i1][colBase + i2];
+            k += 1;
+          }
+        }
+
+        // Find local maximum and minimum
+        float localMin = Integer.MAX_VALUE;
+        float localMax = Integer.MIN_VALUE;
+
+        for (int i = 0; i < resolutionSquared; i++) {
+          if (scratch[i] < localMin) {
+            localMin = scratch[i];
+          }
+
+          if (scratch[i] > localMax) {
+            localMax = scratch[i];
+          }
+        }
+
+        int localMaxHeight = (int) Math.round(Math.ceil(localMax));
+        int localMinHeight = (int) Math.round(Math.floor(localMin));
+        minZ[x][y] = localMinHeight;
+        maxZ[x][y] = localMaxHeight;
+        int localVertDiff = localMaxHeight - localMinHeight;
+
+        for (int i = 0; i < resolutionSquared; i++) {
+          scratch[i] -= localMinHeight;
+        }
+
+        boolean top = true;
+
+        for (int i = localVertDiff - 1; i >= 0; i--) {
+          for (int j = 0; j < resolutionSquared; j++) {
+            scratch2[j] = scratch[j] - i;
+            scratch3[j] = Math.max(i, scratch[j]) - i;
+            scratch4[j] = Math.min(i + 1, scratch[j]) - i;
+          }
+
+          int idx = i + localMinHeight - globalMinHeight;
+
+          if (Utils.allAtOrBelowZero(scratch2)) {
+            shapeMap[x][y][idx][0] = emptyIdx;
+          } else if (Utils.allAtOrAboveOne(scratch2)) {
+            shapeMap[x][y][idx][0] = top ? fullIdx : fullStackedIdx;
+          } else {
+            // differenceUnclip, differenceMin0, differenceMax1
+            Shapes.findMostSimilarShape(shapeMap[x][y][idx], scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
+          }
+
+          if (shapeMap[x][y][idx][0] != emptyIdx) {
+            top = false;
+          }
+        }
+
+      }
+    }
+
+    return new RaggedStackedShapemap(shapeMap, minZ, maxZ);
+  }
+
   /**
    * Find the most similar shapes.
    *
@@ -123,7 +219,7 @@ public final class Shapes {
    * closeness.
    */
   public static Shapemap findMostSimilarShapes(float[][] differenceMap, int resolution, List<Matrix> shapeMatrices,
-                                               List<Matrix> shapeMatricesStacked, boolean stacking) {
+                                               List<Matrix> shapeMatricesStacked, boolean stacking, boolean[][] mask) {
     int height = differenceMap.length / resolution;
     int width = differenceMap[0].length / resolution;
     int resolutionSquared = resolution * resolution;
@@ -135,7 +231,7 @@ public final class Shapes {
 
     if (stacking) {
       // Determine global bounds
-      Pair<Float, Float> maxMin = Utils.findMinAndMax(differenceMap);
+      Pair<Float, Float> maxMin = Utils.findMinAndMax(differenceMap, mask, resolution);
       int maxHeight = (int) Math.round(Math.ceil(maxMin.getValue0()));
       int minHeight = (int) Math.round(Math.floor(maxMin.getValue1()));
       int vertDiff = maxHeight - minHeight;
@@ -155,6 +251,10 @@ public final class Shapes {
       for (int x = 0; x < height; x++) {
         int rowBase = x * resolution;
         for (int y = 0; y < width; y++) {
+          if (!mask[x][y]) {
+            continue;
+          }
+
           int colBase = y * resolution;
 
           int k = 0;
@@ -275,6 +375,10 @@ public final class Shapes {
 
     Integer index = shapesMap.inverse().get(shape.getName());
     return index != null ? row[index] : null;
+  }
+
+  public static boolean isAvailable(String baseMaterial) {
+    return mappings.containsKey(baseMaterial);
   }
 
   /**

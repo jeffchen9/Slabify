@@ -22,19 +22,64 @@ import com.gmail.frogocomics.slabify.utils.Utils;
 
 import java.util.Set;
 
+/**
+ * Represents a representation of the closest shapes that match a difference map.
+ */
 public interface Shapemap {
 
+  /**
+   * Get the shape indices at a point.
+   *
+   * @param x the x coordinate.
+   * @param y the y coordinate.
+   * @param relativeZ the relative z coordinate.
+   * @return the closest indices, as an array, from closest to furthest.
+   */
   int[] getIndicesAt(int x, int y, int relativeZ);
 
-  int getMinZ();
+  /**
+   * Get the minimum z value.
+   *
+   * @param x the x coordinate, if required by the implementation.
+   * @param y the y coordinate, if required by the implementation.
+   * @return the minimum z value.
+   */
+  int getMinZ(int x, int y);
 
-  int getMaxZ();
+  /**
+   * Get the maximum z value.
+   *
+   * @param x the x coordinate, if required by the implementation.
+   * @param y the y coordinate, if required by the implementation.
+   * @return the maximum z value.
+   */
+  int getMaxZ(int x, int y);
 
-  default int getRange() {
-    return getMaxZ() - getMinZ();
+  /**
+   * Get the range between the minimum z value and the maximum z value.
+   *
+   * @param x the x coordinate, if required by the implementation.
+   * @param y the y coordinate, if required by the implementation.
+   * @return the range.
+   */
+  default int getRange(int x, int y) {
+    return getMaxZ(x, y) - getMinZ(x, y);
   }
 
+  /**
+   * Get the closest allowable shape index at a point.
+   *
+   * @param x the x coordinate.
+   * @param y the y coordinate.
+   * @param relativeZ the relative z coordinate.
+   * @param allowedIndices a set of the allowed shape indices.
+   * @return the closest allowable shape index.
+   */
   default int getIndexAt(int x, int y, int relativeZ, Set<Integer> allowedIndices) {
+    if (allowedIndices.isEmpty()) {
+      throw new IllegalArgumentException("allowedIndices must not be empty");
+    }
+
     return Utils.filter(getIndicesAt(x, y, relativeZ), allowedIndices);
   }
 }

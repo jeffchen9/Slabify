@@ -22,7 +22,7 @@ import static java.lang.Math.abs;
 import static java.lang.Math.pow;
 
 /**
- * Implementation of a NxN matrix.
+ * Implementation of a NxN matrix. Technically, this is unused, but this is present as a fallback.
  */
 public final class MatrixN implements Matrix {
 

@@ -35,6 +35,14 @@ public class Skull extends TileEntity {
 
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Create a new skull.
+   *
+   * @param texture the texture of the skull.
+   * @param worldX the world x coordinate.
+   * @param worldY the world y coordinate.
+   * @param worldZ the world z coordinate.
+   */
   public Skull(@Nullable String texture, int worldX, int worldY, int worldZ) {
     super(Constants.ID_SKULL);
 
@@ -49,6 +57,7 @@ public class Skull extends TileEntity {
       setMap("profile", profileMap);
     }
 
+    //Set the coordinate
     setX(worldX);
     setY(worldY);
     setZ(worldZ);

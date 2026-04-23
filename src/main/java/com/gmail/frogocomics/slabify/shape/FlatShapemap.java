@@ -32,12 +32,12 @@ public class FlatShapemap implements Shapemap {
   }
 
   @Override
-  public int getMinZ() {
+  public int getMinZ(int x, int y) {
     return 0;
   }
 
   @Override
-  public int getMaxZ() {
+  public int getMaxZ(int x, int y) {
     return 2;
   }
 }

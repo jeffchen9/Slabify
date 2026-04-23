@@ -19,7 +19,7 @@
 package com.gmail.frogocomics.slabify.linalg;
 
 /**
- * Wrapper for a 2D float array.
+ * Represents a 2 x 2 float matrix with fixed-size implementations to improve performance.
  */
 public interface Matrix extends Cloneable {
 
@@ -90,17 +90,37 @@ public interface Matrix extends Cloneable {
    */
   Matrix rotate(int degrees);
 
+  /**
+   * Clone the matrix.
+   *
+   * @return the cloned matrix.
+   */
   Matrix clone();
 
   /**
    * Get the loss metric.
    *
-   * @param arr      The array to compare against; it is assumed the sizes are compatible.
-   * @param exponent 2 for MSE, 1 for MAE (but other values greater than 1 are acceptable).
+   * @param arr      the array to compare against; it is assumed the sizes are compatible.
+   * @param exponent 2 for MSE, 1 for MAE (but other values greater than 0 are acceptable).
    * @return the loss.
    */
   float getLoss(float[] arr, double exponent);
 
+  /**
+   * Get a modified loss metric. The value of the array to use is dependent on the value of the matrix, at a given
+   * point. The value of the array is as follows:
+   * <ul>
+   *   <li>If the value of the matrix is equal to 0, the array value is clipped to be greater or equal to 0.</li>
+   *   <li>If the value of the matrix is equal to 1, the array value is clipped to be less or equal to 1.</li>
+   *   <li>Otherwise, the unclipped array value is taken.</li>
+   * </ul>
+   *
+   * @param arrUnclip the unclipped array to compare against; it is assumed the sizes are compatible.
+   * @param arrMin0   the clipped array (>=0) to compare against; it is assumed the sizes are compatible.
+   * @param arrMax1   the clipped array (<=1) to compare against; it is assumed the sizes are compatible.
+   * @param exponent  2 for MSE, 1 for MAE (but other values greater than 0 are acceptable).
+   * @return the modified loss.
+   */
   float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent);
 }
 

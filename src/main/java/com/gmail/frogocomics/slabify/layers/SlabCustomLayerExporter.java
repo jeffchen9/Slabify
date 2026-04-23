@@ -25,6 +25,7 @@ import com.gmail.frogocomics.slabify.shape.Shape.Options;
 import com.gmail.frogocomics.slabify.utils.Utils;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Chunk;
@@ -263,12 +264,30 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
         }
 
         Utils.getDifference(heightmapBuffer, tile, layer.getHeight(), differenceBuffer);
-        shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, stacking);
+
+        if (stacking) {
+          boolean[][] layerValue = new boolean[TILE_SIZE][TILE_SIZE];
+
+          for (int x = 0; x < TILE_SIZE; x++) {
+            for (int y = 0; y < TILE_SIZE; y++) {
+              layerValue[x][y] = tile.getBitLayerValue(layer, x, y);
+            }
+          }
+
+          // Determine the maximum vertical delta, and if high, switch to an alterative strategy
+          Pair<Float, Float> maxMin = Utils.findMinAndMax(differenceBuffer, layerValue, resolution);
+          float heightDelta = maxMin.getValue0() - maxMin.getValue1();
+
+          if (heightDelta < 100000) { // 15 is an arbitrary number
+            shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, stacking, layerValue);
+          } else { // Steep slopes present and faster to use optimization
+            shapemap = Shapes.findMostSimilarShapesRagged(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, layerValue);
+          }
+        } else {
+          shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, stacking, null);
+        }
         shapemaps.put(tile, shapemap);
       }
-
-      int minZ = shapemap.getMinZ();
-      int range = shapemap.getRange();
 
       for (int x = 0; x < CHUNK_SIZE; x++) {
         int localX = xOffset + x;
@@ -298,6 +317,10 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             Material baseMaterial = layer.mimicsTerrain() ? mapping.get(blockBelow.name)
                 : mixedMaterial.getMaterial(seed, worldX, worldZ, terrainHeight + 1);
 
+            if (!Shapes.isAvailable(baseMaterial.name)) {
+              continue;
+            }
+
             if (!availableIndices.containsKey(baseMaterial.name)) {
               availableIndices.put(baseMaterial.name, getAvailableIndices(baseMaterial.name, false));
             }
@@ -318,8 +341,12 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             Set<Integer> availableIndexStacked = availableIndicesStacked.get(baseMaterial.name);
 
             boolean top = true;
+            int localRange = shapemap.getRange(localX, localZ);
+            int localMinZ = shapemap.getMinZ(localX, localZ);
 
-            for (int relZ = range - 1; relZ >= 0; relZ--) {
+            // System.out.println(localRange + " " + localMinZ);
+
+            for (int relZ = localRange - 1; relZ >= 0; relZ--) {
               boolean updateTop = true;
               int idx = shapemap.getIndexAt(localX, localZ, relZ, top ? availableIndex : availableIndexStacked);
 
@@ -345,7 +372,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                 continue;
               }
 
-              if (idx == (top ? fullIdx : fullIdxStacked) && relZ + minZ + 1 <= 0) {
+              if (idx == (top ? fullIdx : fullIdxStacked) && relZ + localMinZ + 1 <= 0) {
                 continue;
               }
 
@@ -354,7 +381,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 //                continue;
 //              }
 
-              Material blockAbove = (terrainHeight + relZ + minZ + 2 < maxHeight) ? chunk.getMaterial(x, terrainHeight + relZ + minZ + 2, z) : Material.AIR;
+              Material blockAbove = (terrainHeight + relZ + localMinZ + 2 < maxHeight) ? chunk.getMaterial(x, terrainHeight + relZ + localMinZ + 2, z) : Material.AIR;
 
               // Full blocks will replace everything no matter what
 //              if (relZ + minZ + 1 > 0 && !(listShapes[idx] instanceof FullShape)) {
@@ -386,10 +413,10 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
               }
 
-              if (top && terrainHeight + relZ + minZ + 1 < maxHeight) {
-                listShapes[idx].place(worldX, terrainHeight + relZ + minZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
-              } else if (terrainHeight + relZ + minZ + 1 < maxHeight) {
-                listShapesStacked[idx].place(worldX, terrainHeight + relZ + minZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+              if (top && terrainHeight + relZ + localMinZ + 1 < maxHeight) {
+                listShapes[idx].place(worldX, terrainHeight + relZ + localMinZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+              } else if (terrainHeight + relZ + localMinZ + 1 < maxHeight) {
+                listShapesStacked[idx].place(worldX, terrainHeight + relZ + localMinZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
               }
 
               if (updateTop) {
@@ -423,6 +450,11 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
             Material baseMaterial = layer.mimicsTerrain() ? mapping.get(materialStr)
                 : mixedMaterial.getMaterial(seed, worldX, worldZ, terrainHeight + 1);
+
+            if (!Shapes.isAvailable(baseMaterial.name)) {
+              continue;
+            }
+
 
             if (!availableIndices.containsKey(baseMaterial.name)) {
               availableIndices.put(baseMaterial.name, getAvailableIndices(baseMaterial.name, false));
@@ -553,17 +585,19 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     List<String> availableShapes = Shapes.getAvailableShapes(baseMaterial);
     Set<Integer> availableIndices = new HashSet<>();
 
-    Shape[] arr = stacked ? listShapesStacked : listShapes;
+    if (Shapes.isAvailable(baseMaterial)) {
+      Shape[] arr = stacked ? listShapesStacked : listShapes;
 
-    for (int i = 0; i < arr.length; i++) {
+      for (int i = 0; i < arr.length; i++) {
 
-      Shape shape = arr[i];
-      if (availableShapes.contains(shape.getName())) {
-        if (layer.allowConquest() || (Shapes.getMaterial(shape, baseMaterial) != null &&
-            !Shapes.getMaterial(shape, baseMaterial).startsWith(CQ_NAMESPACE))) {
-          availableIndices.add(i);
-        } else if (shape instanceof FullShape || shape instanceof EmptyShape) {
-          availableIndices.add(i);
+        Shape shape = arr[i];
+        if (availableShapes.contains(shape.getName())) {
+          if (layer.allowConquest() || (Shapes.getMaterial(shape, baseMaterial) != null &&
+              !Shapes.getMaterial(shape, baseMaterial).startsWith(CQ_NAMESPACE))) {
+            availableIndices.add(i);
+          } else if (shape instanceof FullShape || shape instanceof EmptyShape) {
+            availableIndices.add(i);
+          }
         }
       }
     }

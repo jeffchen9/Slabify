@@ -295,6 +295,14 @@ public final class Utils {
     }
   }
 
+  /**
+   * Get the first value of an input array that is in a set.
+   *
+   * @param arr     the input array.
+   * @param allowed the set of allowed values.
+   * @return the first value of the input array that is within the set.
+   * @throws IllegalStateException if none of the values of the input array are in the set.
+   */
   public static int filter(int[] arr, Set<Integer> allowed) {
     for (int j : arr) {
       if (allowed.contains(j)) {
@@ -303,9 +311,15 @@ public final class Utils {
     }
 
     // This should not happen
-    return -1;
+    throw new IllegalStateException("None of the values in arr are in allowed");
   }
 
+  /**
+   * Find the maximum and minimum value in a float array.
+   *
+   * @param arr the array.
+   * @return the maximum and minimum value, as a pair.
+   */
   public static Pair<Float, Float> findMinAndMax(float[][] arr) {
     float min = Integer.MAX_VALUE;
     float max = Integer.MIN_VALUE;
@@ -319,6 +333,48 @@ public final class Utils {
         if (arr[i][j] > max) {
           max = arr[i][j];
         }
+      }
+    }
+
+    return new Pair<>(max, min);
+  }
+
+  /**
+   * Find the maximum and minimum value in a float array.
+   *
+   * @param arr  the array.
+   * @param mask the mask; only when the value true will the point be considered in the calculation of the maximum and
+   *             minimum.
+   * @return the maximum and minimum value, as a pair.
+   */
+  public static Pair<Float, Float> findMinAndMax(float[][] arr, boolean[][] mask, int resolution) {
+    float min = Integer.MAX_VALUE;
+    float max = Integer.MIN_VALUE;
+
+    for (int i = 0; i < mask.length; i++) {
+      for (int j = 0; j < mask[i].length; j++) {
+        // Skip when mask value is false
+        if (!mask[i][j]) {
+          continue;
+        }
+
+        for (int k = 0 ; k < resolution; k++) {
+          for (int l = 0 ; l < resolution; l++) {
+
+            int x = i * resolution + k;
+            int y = j * resolution + l;
+
+            if (arr[x][y] < min) {
+              min = arr[x][y];
+            }
+
+            if (arr[x][y] > max) {
+              max = arr[x][y];
+            }
+          }
+        }
+
+
       }
     }
 
@@ -357,6 +413,12 @@ public final class Utils {
     return true;
   }
 
+  /**
+   * Copy a file from resources to the configuration folder.
+   *
+   * @param fileName the name of the resource.
+   * @return the location of the copied file.
+   */
   public static File addFileToAppData(String fileName) {
     File configDir = Configuration.getConfigDir();
     File mappingFile = new File(configDir, fileName);
@@ -376,6 +438,13 @@ public final class Utils {
     return mappingFile;
   }
 
+  /**
+   * Read a .csv, including any header row.
+   *
+   * @param file the location of the .csv.
+   * @return the rows of the CSV, represented by a list.
+   * @throws IOException if there is an error reading the file.
+   */
   public static List<String[]> readCsv(File file) throws IOException {
     List<String[]> rows = new ArrayList<>();
     BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath())));

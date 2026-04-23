@@ -95,6 +95,7 @@ public final class Matrix1 implements Matrix {
 
   @Override
   public Matrix rotate(int degrees) {
+    // Rotation does not result in any difference for a 1 x 1 matrix
     return clone();
   }
 
