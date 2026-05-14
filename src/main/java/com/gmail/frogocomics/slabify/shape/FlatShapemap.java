@@ -18,7 +18,7 @@
 
 package com.gmail.frogocomics.slabify.shape;
 
-public class FlatShapemap implements Shapemap {
+public final class FlatShapemap implements Shapemap {
 
   public final int[][][] map;
 

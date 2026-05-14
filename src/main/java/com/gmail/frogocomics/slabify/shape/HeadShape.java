@@ -35,7 +35,7 @@ import java.util.*;
  *
  * This shape is available in Vanilla.
  */
-public class HeadShape extends Shape {
+public final class HeadShape extends Shape {
 
   public static final String NAME = "head";
   public static final String BLOCK = "minecraft:player_head";

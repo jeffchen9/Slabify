@@ -35,7 +35,7 @@ import static org.pepsoft.minecraft.Constants.MC_HALF;
  *
  * This shape is only available in Conquest Reforged.
  */
-public class EighthSlabShape extends Shape {
+public final class EighthSlabShape extends Shape {
 
   public static final String NAME = "eighth_slab";
 

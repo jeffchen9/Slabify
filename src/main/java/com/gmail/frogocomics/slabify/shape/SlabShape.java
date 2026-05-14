@@ -31,7 +31,7 @@ import static org.pepsoft.minecraft.Constants.MC_TYPE;
  *
  * This shape is available in Vanilla.
  */
-public class SlabShape extends Shape {
+public final class SlabShape extends Shape {
 
   public static final String NAME = "slab";
 

@@ -31,7 +31,7 @@ import java.util.Optional;
  *
  * This shape is available in Vanilla.
  */
-public class FullShape extends Shape {
+public final class FullShape extends Shape {
 
   public static final String NAME = "full";
   private static final FullShape instance = new FullShape();

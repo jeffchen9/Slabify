@@ -31,7 +31,7 @@ import static com.gmail.frogocomics.slabify.Constants.CQ_LAYER;
  *
  * This shape is only available in Conquest Reforged.
  */
-public class AltLayerShape extends Shape {
+public final class AltLayerShape extends Shape {
 
   public static final String NAME = "alt_layer";
 

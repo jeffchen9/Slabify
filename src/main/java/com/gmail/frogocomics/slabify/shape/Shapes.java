@@ -122,15 +122,11 @@ public final class Shapes {
     float[] scratch4 = new float[resolutionSquared];
     long[] scratch5 = new long[shapeMatrices.size()];
 
-    // Determine global bounds
-    Pair<Float, Float> globalMaxMin = Utils.findMinAndMax(differenceMap, mask, resolution);
-    int globalMaxHeight = (int) Math.round(Math.ceil(globalMaxMin.getValue0()));
-    int globalMinHeight = (int) Math.round(Math.floor(globalMaxMin.getValue1()));
     int fullIdx = shapeMatrices.size() - 2;
     int emptyIdx = shapeMatrices.size() - 1;
     int fullStackedIdx = shapeMatricesStacked.size() - 2;
 
-    int[][][][] shapeMap = new int[height][width][globalMaxHeight - globalMinHeight][shapeMatrices.size()];
+    int[][][][] shapeMap = new int[height][width][][];
     int[][] minZ = new int[height][width];
     int[][] maxZ = new int[height][width];
 
@@ -142,19 +138,21 @@ public final class Shapes {
         }
 
         int colBase = y * resolution;
-
         int k = 0;
 
         for (int i1 = 0; i1 < resolution; i1++) {
-          for (int i2 = 0; i2 < resolution; i2++) {
-            scratch[k] = differenceMap[rowBase + i1][colBase + i2];
-            k += 1;
-          }
+          System.arraycopy(
+              differenceMap[rowBase + i1],
+              colBase,
+              scratch,
+              i1 * resolution,
+              resolution
+          );
         }
 
         // Find local maximum and minimum
-        float localMin = Integer.MAX_VALUE;
-        float localMax = Integer.MIN_VALUE;
+        float localMin = Float.POSITIVE_INFINITY;
+        float localMax = Float.NEGATIVE_INFINITY;
 
         for (int i = 0; i < resolutionSquared; i++) {
           if (scratch[i] < localMin) {
@@ -166,11 +164,15 @@ public final class Shapes {
           }
         }
 
-        int localMaxHeight = (int) Math.round(Math.ceil(localMax));
-        int localMinHeight = (int) Math.round(Math.floor(localMin));
+        int localMaxHeight = (int) Math.ceil(localMax);
+        int localMinHeight = (int) Math.floor(localMin) - 1;
+
         minZ[x][y] = localMinHeight;
         maxZ[x][y] = localMaxHeight;
         int localVertDiff = localMaxHeight - localMinHeight;
+
+        // Allocate exact vertical depth needed for specific column
+        shapeMap[x][y] = new int[localVertDiff][shapeMatrices.size()];
 
         for (int i = 0; i < resolutionSquared; i++) {
           scratch[i] -= localMinHeight;
@@ -180,23 +182,21 @@ public final class Shapes {
 
         for (int i = localVertDiff - 1; i >= 0; i--) {
           for (int j = 0; j < resolutionSquared; j++) {
-            scratch2[j] = scratch[j] - i;
-            scratch3[j] = Math.max(i, scratch[j]) - i;
-            scratch4[j] = Math.min(i + 1, scratch[j]) - i;
+            float val = scratch[j] - i;
+            scratch2[j] = val;
+            scratch3[j] = Math.max(0f, val);
+            scratch4[j] = Math.min(1f, val);
           }
-
-          int idx = i + localMinHeight - globalMinHeight;
 
           if (Utils.allAtOrBelowZero(scratch2)) {
-            shapeMap[x][y][idx][0] = emptyIdx;
+            shapeMap[x][y][i][0] = emptyIdx;
           } else if (Utils.allAtOrAboveOne(scratch2)) {
-            shapeMap[x][y][idx][0] = top ? fullIdx : fullStackedIdx;
+            shapeMap[x][y][i][0] = top ? fullIdx : fullStackedIdx;
           } else {
-            // differenceUnclip, differenceMin0, differenceMax1
-            Shapes.findMostSimilarShape(shapeMap[x][y][idx], scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
+            Shapes.findMostSimilarShape(shapeMap[x][y][i], scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
           }
 
-          if (shapeMap[x][y][idx][0] != emptyIdx) {
+          if (shapeMap[x][y][i][0] != emptyIdx) {
             top = false;
           }
         }
@@ -232,8 +232,8 @@ public final class Shapes {
     if (stacking) {
       // Determine global bounds
       Pair<Float, Float> maxMin = Utils.findMinAndMax(differenceMap, mask, resolution);
-      int maxHeight = (int) Math.round(Math.ceil(maxMin.getValue0()));
-      int minHeight = (int) Math.round(Math.floor(maxMin.getValue1()));
+      int maxHeight = (int) Math.ceil(maxMin.getValue0());
+      int minHeight = (int) Math.floor(maxMin.getValue1());
       int vertDiff = maxHeight - minHeight;
       int fullIdx = shapeMatrices.size() - 2;
       int emptyIdx = shapeMatrices.size() - 1;
@@ -260,23 +260,23 @@ public final class Shapes {
           int k = 0;
 
           for (int i1 = 0; i1 < resolution; i1++) {
-            for (int i2 = 0; i2 < resolution; i2++) {
-              scratch[k] = differenceMap[rowBase + i1][colBase + i2];
-              k += 1;
-            }
+            System.arraycopy(
+                differenceMap[rowBase + i1],
+                colBase,
+                scratch,
+                i1 * resolution,
+                resolution
+            );
           }
 
           boolean top = true;
 
           for (int i = vertDiff - 1; i >= 0; i--) {
             for (int j = 0; j < resolutionSquared; j++) {
-              scratch2[j] = scratch[j] - i;
-              // differenceUnclip
-              // scratch2[j] = Math.max(i, Math.min(i + 1, scratch[j])) - i;
-              // differenceMin0
-              scratch3[j] = Math.max(i, scratch[j]) - i;
-              // differenceMax1
-              scratch4[j] = Math.min(i + 1, scratch[j]) - i;
+              float val = scratch[j] - i;
+              scratch2[j] = val;
+              scratch3[j] = Math.max(0f, val);
+              scratch4[j] = Math.min(1f, val);
             }
 
             if (Utils.allAtOrBelowZero(scratch2)) {

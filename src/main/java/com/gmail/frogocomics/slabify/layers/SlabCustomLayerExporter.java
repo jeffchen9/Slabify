@@ -277,8 +277,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
           // Determine the maximum vertical delta, and if high, switch to an alterative strategy
           Pair<Float, Float> maxMin = Utils.findMinAndMax(differenceBuffer, layerValue, resolution);
           float heightDelta = maxMin.getValue0() - maxMin.getValue1();
-
-          if (heightDelta < 100000) { // 15 is an arbitrary number
+          if (heightDelta < 5) { // Arbitrary
             shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, stacking, layerValue);
           } else { // Steep slopes present and faster to use optimization
             shapemap = Shapes.findMostSimilarShapesRagged(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, layerValue);
@@ -344,8 +343,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             int localRange = shapemap.getRange(localX, localZ);
             int localMinZ = shapemap.getMinZ(localX, localZ);
 
-            // System.out.println(localRange + " " + localMinZ);
-
             for (int relZ = localRange - 1; relZ >= 0; relZ--) {
               boolean updateTop = true;
               int idx = shapemap.getIndexAt(localX, localZ, relZ, top ? availableIndex : availableIndexStacked);
@@ -410,7 +407,8 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                     slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
                   }
                 }
-
+              } else if (terrainHeight + relZ + localMinZ < tile.getWaterLevel(localX, localZ)) {
+                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
 
               if (top && terrainHeight + relZ + localMinZ + 1 < maxHeight) {
@@ -501,6 +499,8 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                 if (!(listShapes[idx] instanceof FullShape)) {
                   slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
                 }
+              } else if (terrainHeight + 1 < tile.getWaterLevel(localX, localZ)) {
+                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
 
               // Place the block
@@ -538,6 +538,8 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                 if (!(listShapes[idx] instanceof FullShape)) {
                   slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
                 }
+              } else if (terrainHeight + 2 < tile.getWaterLevel(localX, localZ)) {
+                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
 
               // Place the block
@@ -556,6 +558,8 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               } else if (blockAbove != null && (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
                   blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
                   || blockAbove.containsWater())) {
+                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+              } else if (terrainHeight < tile.getWaterLevel(localX, localZ)) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
 

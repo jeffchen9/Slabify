@@ -31,7 +31,7 @@ import java.util.Optional;
  *
  * This shape is available in Vanilla.
  */
-public class EmptyShape extends Shape {
+public final class EmptyShape extends Shape {
 
   public static final String NAME = "empty";
   private static final EmptyShape instance = new EmptyShape();

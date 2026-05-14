@@ -32,7 +32,7 @@ import static org.pepsoft.minecraft.Constants.MC_FACING;
  *
  * This shape is only available in Conquest Reforged.
  */
-public class VerticalCornerShape extends Shape {
+public final class VerticalCornerShape extends Shape {
 
   public static final String NAME = "vert_corner";
 
@@ -190,7 +190,6 @@ public class VerticalCornerShape extends Shape {
           slabMaterials[1] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "3");
           slabMaterials[2] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "3");
           slabMaterials[3] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "3");
-
           slabMaterials[4] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "2");
           slabMaterials[5] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2");
           slabMaterials[6] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2");

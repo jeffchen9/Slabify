@@ -32,7 +32,7 @@ import static org.pepsoft.minecraft.Constants.MC_FACING;
  *
  * This shape is only available in Conquest Reforged.
  */
-public class VerticalSlabShape extends Shape {
+public final class VerticalSlabShape extends Shape {
 
   public static final String NAME = "vert_slab";
 
@@ -188,7 +188,6 @@ public class VerticalSlabShape extends Shape {
           slabMaterials[1] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "3");
           slabMaterials[2] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "3");
           slabMaterials[3] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "3");
-
           slabMaterials[4] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2");
           slabMaterials[5] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2");
           slabMaterials[6] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "2");
@@ -206,7 +205,6 @@ public class VerticalSlabShape extends Shape {
           slabMaterials[1] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "3");
           slabMaterials[2] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "3");
           slabMaterials[3] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "3");
-
           slabMaterials[4] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2");
           slabMaterials[5] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2");
           slabMaterials[6] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "2");
@@ -215,7 +213,6 @@ public class VerticalSlabShape extends Shape {
           slabMaterials[9] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "4");
           slabMaterials[10] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "4");
           slabMaterials[11] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "4");
-
           slabMaterials[12] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "1");
           slabMaterials[13] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "1");
           slabMaterials[14] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "1");

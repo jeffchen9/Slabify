@@ -31,7 +31,7 @@ import static org.pepsoft.minecraft.Constants.MC_LAYERS;
  *
  * This shape is available in Vanilla.
  */
-public class LayerShape extends Shape {
+public final class LayerShape extends Shape {
 
   public static final String NAME = "layer";
   private final Map<String, Material[]> materials = new HashMap<>();

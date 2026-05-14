@@ -31,7 +31,7 @@ import java.util.*;
 /**
  * Represents the player head tile entity.
  */
-public class Skull extends TileEntity {
+public final class Skull extends TileEntity {
 
   private static final long serialVersionUID = 1L;
 

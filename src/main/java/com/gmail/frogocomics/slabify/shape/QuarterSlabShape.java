@@ -25,6 +25,7 @@ import org.pepsoft.minecraft.Material;
 import java.util.*;
 
 import static com.gmail.frogocomics.slabify.Constants.CQ_LAYER;
+import static com.gmail.frogocomics.slabify.shape.Shape.Options.*;
 import static org.pepsoft.minecraft.Constants.MC_FACING;
 import static org.pepsoft.minecraft.Constants.MC_HALF;
 
@@ -33,7 +34,7 @@ import static org.pepsoft.minecraft.Constants.MC_HALF;
  *
  * This shape is only available in Conquest Reforged.
  */
-public class QuarterSlabShape extends Shape {
+public final class QuarterSlabShape extends Shape {
 
   public static final String NAME = "quarter";
 
@@ -56,14 +57,14 @@ public class QuarterSlabShape extends Shape {
   });
 
   public QuarterSlabShape() {
-    super("Quarter Slab", NAME, new Options[]{Options.DISABLE, Options.QUARTERS, Options.HALVES}, false, -1, false, Options.DISABLE);
+    super("Quarter Slab", NAME, new Options[]{DISABLE, QUARTERS, HALVES}, false, -1, false, DISABLE);
   }
 
   @Override
   public int getMinResolution(Options option) {
-    if (option == Options.QUARTERS) {
+    if (option == QUARTERS) {
       return 4;
-    } else if (option == Options.HALVES) {
+    } else if (option == HALVES) {
       return 2;
     }
 
@@ -75,11 +76,11 @@ public class QuarterSlabShape extends Shape {
 
     assert resolution >= getMinResolution(selectedOption);
 
-    if (selectedOption != Options.DISABLE) {
+    if (selectedOption != DISABLE) {
       int[] angles = {90, 180, 270};
       List<Matrix> shapes = new ArrayList<>();
 
-      if (selectedOption == Options.HALVES) {
+      if (selectedOption == HALVES) {
         Matrix upscaled2 = quarter2.upscale(resolution / quarter2.getSize());
 
         shapes.add(upscaled2);
@@ -88,7 +89,7 @@ public class QuarterSlabShape extends Shape {
         }
 
         return Optional.of(shapes);
-      } else if (selectedOption == Options.QUARTERS) {
+      } else if (selectedOption == QUARTERS) {
         Matrix upscaled1 = quarter1.upscale(resolution / quarter1.getSize());
         Matrix upscaled2 = quarter2.upscale(resolution / quarter2.getSize());
         Matrix upscaled3 = quarter3.upscale(resolution / quarter3.getSize());
@@ -125,7 +126,7 @@ public class QuarterSlabShape extends Shape {
         return Material.AIR;
       }
 
-      if (option == Options.HALVES) {
+      if (option == HALVES) {
         Material[] slabMaterials = new Material[4];
         slabMaterials[0] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2", MC_HALF, "bottom");
         slabMaterials[1] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2", MC_HALF, "bottom");
@@ -133,7 +134,7 @@ public class QuarterSlabShape extends Shape {
         slabMaterials[3] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "2", MC_HALF, "bottom");
 
         materials.put(baseMaterial.name, slabMaterials);
-      } else if (option == Options.QUARTERS) {
+      } else if (option == QUARTERS || option == EIGHTHS) {
         Material[] slabMaterials = new Material[12];
 
         slabMaterials[0] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "1", MC_HALF, "bottom");

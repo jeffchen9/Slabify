@@ -33,7 +33,7 @@ import static org.pepsoft.minecraft.Constants.MC_HALF;
  *
  * This shape is only available in Conquest Reforged.
  */
-public class VerticalCornerSlabShape extends Shape {
+public final class VerticalCornerSlabShape extends Shape {
 
   public static final String NAME = "vert_corner_slab";
 

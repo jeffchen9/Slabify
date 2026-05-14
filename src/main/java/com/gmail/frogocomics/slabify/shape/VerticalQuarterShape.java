@@ -32,7 +32,7 @@ import static org.pepsoft.minecraft.Constants.MC_FACING;
  *
  * This shape is only available in Conquest Reforged.
  */
-public class VerticalQuarterShape extends Shape {
+public final class VerticalQuarterShape extends Shape {
 
   public static final String NAME = "vert_quarter";
 

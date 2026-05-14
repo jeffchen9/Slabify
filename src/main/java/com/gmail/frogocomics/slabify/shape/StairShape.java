@@ -31,7 +31,7 @@ import static org.pepsoft.minecraft.Constants.*;
  *
  * This shape is available in Vanilla.
  */
-public class StairShape extends Shape {
+public final class StairShape extends Shape {
 
   public static final String NAME = "stairs";
 

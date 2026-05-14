@@ -18,7 +18,7 @@
 
 package com.gmail.frogocomics.slabify.shape;
 
-public class StackedShapemap implements Shapemap {
+public final class StackedShapemap implements Shapemap {
 
   public final int[][][][] map;
   private final int minZ;
