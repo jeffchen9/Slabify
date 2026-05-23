@@ -18,21 +18,40 @@
 
 package com.gmail.frogocomics.slabify.shape;
 
+import java.util.Set;
+
 public final class StackedShapemap implements Shapemap {
 
-  public final int[][][][] map;
+  public final int[] map;
   private final int minZ;
-  private final int maxZ;
+  private final int vertDiff;
+  private final int shapeSize;
 
-  public StackedShapemap(int[][][][] map, int minZ, int maxZ) {
+  public StackedShapemap(int[] map, int minZ, int maxZ, int shapeSize) {
     this.map = map;
     this.minZ = minZ;
-    this.maxZ = maxZ;
+    this.vertDiff = maxZ - minZ;
+    this.shapeSize = shapeSize;
   }
 
   @Override
-  public int[] getIndicesAt(int x, int y, int relativeZ) {
-    return map[x][y][relativeZ];
+  public int getIndexAt(int x, int y, int relativeZ, Set<Integer> allowedIndices) {
+    if (allowedIndices.isEmpty()) {
+      throw new IllegalArgumentException("allowedIndices must not be empty");
+    }
+
+    int flatXY = (x << 7) | y;
+    int startIndex = (flatXY * vertDiff + relativeZ) * shapeSize;
+
+    for (int i = 0; i < shapeSize; i++) {
+      int shapeIdx = map[startIndex + i];
+      if (allowedIndices.contains(shapeIdx)) {
+        return shapeIdx;
+      }
+    }
+
+    // This should not happen
+    throw new IllegalStateException("None of the values in arr are in allowed");
   }
 
   @Override
@@ -41,7 +60,7 @@ public final class StackedShapemap implements Shapemap {
   }
 
   @Override
-  public int getMaxZ(int x, int y) {
-    return maxZ;
+  public int getRange(int x, int y) {
+    return vertDiff;
   }
 }

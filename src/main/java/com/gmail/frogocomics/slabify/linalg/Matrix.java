@@ -19,7 +19,7 @@
 package com.gmail.frogocomics.slabify.linalg;
 
 /**
- * Represents a 2 x 2 float matrix with fixed-size implementations to improve performance.
+ * Represents an {@code n} x {@code n} float matrix with fixed-size implementations to improve performance.
  */
 public interface Matrix extends Cloneable {
 

@@ -18,17 +18,35 @@
 
 package com.gmail.frogocomics.slabify.shape;
 
+import java.util.Set;
+
 public final class FlatShapemap implements Shapemap {
 
-  public final int[][][] map;
+  private final int[] map;
+  private final int shapeSize;
 
-  public FlatShapemap(int[][][] map) {
+  public FlatShapemap(int[] map, int shapeSize) {
     this.map = map;
+    this.shapeSize = shapeSize;
   }
 
   @Override
-  public int[] getIndicesAt(int x, int y, int relativeZ) {
-    return map[x][y];
+  public int getIndexAt(int x, int y, int relativeZ, Set<Integer> allowedIndices) {
+    if (allowedIndices.isEmpty()) {
+      throw new IllegalArgumentException("allowedIndices must not be empty");
+    }
+
+    int startIndex = ((x << 7) | y) * shapeSize;
+
+    for (int i = 0; i < shapeSize; i++) {
+      int shapeIdx = map[startIndex + i];
+      if (allowedIndices.contains(shapeIdx)) {
+        return shapeIdx;
+      }
+    }
+
+    // This should not happen
+    throw new IllegalStateException("None of the values in arr are in allowed");
   }
 
   @Override
@@ -37,7 +55,7 @@ public final class FlatShapemap implements Shapemap {
   }
 
   @Override
-  public int getMaxZ(int x, int y) {
+  public int getRange(int x, int y) {
     return 2;
   }
 }

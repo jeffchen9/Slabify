@@ -116,19 +116,24 @@ public final class Shapes {
     int height = differenceMap.length / resolution;
     int width = differenceMap[0].length / resolution;
     int resolutionSquared = resolution * resolution;
+
+    int maxShapeSize = Math.max(shapeMatrices.size(), shapeMatricesStacked.size());
+
     float[] scratch = new float[resolutionSquared];
     float[] scratch2 = new float[resolutionSquared];
     float[] scratch3 = new float[resolutionSquared];
     float[] scratch4 = new float[resolutionSquared];
-    long[] scratch5 = new long[shapeMatrices.size()];
+    long[] scratch5 = new long[maxShapeSize];
 
     int fullIdx = shapeMatrices.size() - 2;
     int emptyIdx = shapeMatrices.size() - 1;
     int fullStackedIdx = shapeMatricesStacked.size() - 2;
 
-    int[][][][] shapeMap = new int[height][width][][];
-    int[][] minZ = new int[height][width];
-    int[][] maxZ = new int[height][width];
+    int totalMapSize = 0;
+
+    int[] minZ = new int[height * width];
+    int[] maxZ = new int[height * width];
+    int[] offsets = new int[height * width];
 
     for (int x = 0; x < height; x++) {
       int rowBase = x * resolution;
@@ -138,41 +143,52 @@ public final class Shapes {
         }
 
         int colBase = y * resolution;
-        int k = 0;
-
-        for (int i1 = 0; i1 < resolution; i1++) {
-          System.arraycopy(
-              differenceMap[rowBase + i1],
-              colBase,
-              scratch,
-              i1 * resolution,
-              resolution
-          );
-        }
-
-        // Find local maximum and minimum
         float localMin = Float.POSITIVE_INFINITY;
         float localMax = Float.NEGATIVE_INFINITY;
 
-        for (int i = 0; i < resolutionSquared; i++) {
-          if (scratch[i] < localMin) {
-            localMin = scratch[i];
-          }
-
-          if (scratch[i] > localMax) {
-            localMax = scratch[i];
+        for (int i1 = 0; i1 < resolution; i1++) {
+          for (int j1 = 0; j1 < resolution; j1++) {
+            float val = differenceMap[rowBase + i1][colBase + j1];
+            if (val < localMin) {
+              localMin = val;
+            }
+            if (val > localMax) {
+              localMax = val;
+            }
           }
         }
 
         int localMaxHeight = (int) Math.ceil(localMax);
         int localMinHeight = (int) Math.floor(localMin) - 1;
 
-        minZ[x][y] = localMinHeight;
-        maxZ[x][y] = localMaxHeight;
-        int localVertDiff = localMaxHeight - localMinHeight;
+        int flatXY = (x << 7) | y;
+        minZ[flatXY] = localMinHeight;
+        maxZ[flatXY] = localMaxHeight;
+        offsets[flatXY] = totalMapSize;
+        totalMapSize += (localMaxHeight - localMinHeight) * maxShapeSize;
+      }
+    }
 
-        // Allocate exact vertical depth needed for specific column
-        shapeMap[x][y] = new int[localVertDiff][shapeMatrices.size()];
+    int[] shapeMap = new int[totalMapSize];
+    Arrays.fill(shapeMap, -1);
+
+    for (int x = 0; x < height; x++) {
+      int rowBase = x * resolution;
+      for (int y = 0; y < width; y++) {
+        if (!mask[x][y]) {
+          continue;
+        }
+
+        int colBase = y * resolution;
+        int flatXY = (x << 7) | y;
+        int localMinHeight = minZ[flatXY];
+        int localVertDiff = maxZ[flatXY] - localMinHeight;
+        int baseOffset = offsets[flatXY];
+        for (int i1 = 0; i1 < resolution; i1++) {
+          System.arraycopy(
+              differenceMap[rowBase + i1], colBase, scratch, i1 * resolution, resolution
+          );
+        }
 
         for (int i = 0; i < resolutionSquared; i++) {
           scratch[i] -= localMinHeight;
@@ -181,6 +197,8 @@ public final class Shapes {
         boolean top = true;
 
         for (int i = localVertDiff - 1; i >= 0; i--) {
+          int targetOffset = baseOffset + (i * maxShapeSize);
+
           for (int j = 0; j < resolutionSquared; j++) {
             float val = scratch[j] - i;
             scratch2[j] = val;
@@ -189,22 +207,21 @@ public final class Shapes {
           }
 
           if (Utils.allAtOrBelowZero(scratch2)) {
-            shapeMap[x][y][i][0] = emptyIdx;
+            shapeMap[targetOffset] = emptyIdx;
           } else if (Utils.allAtOrAboveOne(scratch2)) {
-            shapeMap[x][y][i][0] = top ? fullIdx : fullStackedIdx;
+            shapeMap[targetOffset] = top ? fullIdx : fullStackedIdx;
           } else {
-            Shapes.findMostSimilarShape(shapeMap[x][y][i], scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
+            Shapes.findMostSimilarShape(shapeMap, targetOffset, scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
           }
 
-          if (shapeMap[x][y][i][0] != emptyIdx) {
+          if (shapeMap[targetOffset] != emptyIdx) {
             top = false;
           }
         }
-
       }
     }
 
-    return new RaggedStackedShapemap(shapeMap, minZ, maxZ);
+    return new RaggedStackedShapemap(shapeMap, minZ, maxZ, offsets, maxShapeSize);
   }
 
   /**
@@ -223,6 +240,8 @@ public final class Shapes {
     int height = differenceMap.length / resolution;
     int width = differenceMap[0].length / resolution;
     int resolutionSquared = resolution * resolution;
+    int shapeSize = shapeMatrices.size();
+    int maxShapeSize = Math.max(shapeMatrices.size(), shapeMatricesStacked.size());
     float[] scratch = new float[resolutionSquared];
     float[] scratch2 = new float[resolutionSquared];
     float[] scratch3 = new float[resolutionSquared];
@@ -235,11 +254,13 @@ public final class Shapes {
       int maxHeight = (int) Math.ceil(maxMin.getValue0());
       int minHeight = (int) Math.floor(maxMin.getValue1());
       int vertDiff = maxHeight - minHeight;
+
       int fullIdx = shapeMatrices.size() - 2;
       int emptyIdx = shapeMatrices.size() - 1;
       int fullStackedIdx = shapeMatricesStacked.size() - 2;
 
-      int[][][][] shapeMap = new int[height][width][vertDiff][shapeMatrices.size()];
+      int[] shapeMap = new int[height * width * vertDiff * maxShapeSize];
+      Arrays.fill(shapeMap, -1);
 
       // Make minHeight equal to 0
       for (int i = 0; i < differenceMap.length; i++) {
@@ -256,8 +277,8 @@ public final class Shapes {
           }
 
           int colBase = y * resolution;
-
-          int k = 0;
+          int flatXY = (x << 7) | y;
+          int baseOffset = flatXY * vertDiff * maxShapeSize;
 
           for (int i1 = 0; i1 < resolution; i1++) {
             System.arraycopy(
@@ -272,6 +293,7 @@ public final class Shapes {
           boolean top = true;
 
           for (int i = vertDiff - 1; i >= 0; i--) {
+            int targetOffset = baseOffset + (i * maxShapeSize);
             for (int j = 0; j < resolutionSquared; j++) {
               float val = scratch[j] - i;
               scratch2[j] = val;
@@ -280,30 +302,29 @@ public final class Shapes {
             }
 
             if (Utils.allAtOrBelowZero(scratch2)) {
-              shapeMap[x][y][i][0] = emptyIdx;
+              shapeMap[targetOffset] = emptyIdx;
             } else if (Utils.allAtOrAboveOne(scratch2)) {
-              shapeMap[x][y][i][0] = top ? fullIdx : fullStackedIdx;
+              shapeMap[targetOffset] = top ? fullIdx : fullStackedIdx;
             } else {
-              // differenceUnclip, differenceMin0, differenceMax1
-              Shapes.findMostSimilarShape(shapeMap[x][y][i], scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
+              Shapes.findMostSimilarShape(shapeMap, targetOffset, scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
             }
 
-            if (shapeMap[x][y][i][0] != emptyIdx) {
+            if (shapeMap[targetOffset] != emptyIdx) {
               top = false;
             }
           }
-
         }
       }
 
-      return new StackedShapemap(shapeMap, minHeight, maxHeight);
+      return new StackedShapemap(shapeMap, minHeight, maxHeight, maxShapeSize);
     } else {
-      int[][][] shapeMap = new int[height][width][shapeMatrices.size()];
+      int[] shapeMap = new int[height * width * shapeSize];
 
       for (int x = 0; x < height; x++) {
         int rowBase = x * resolution;
         for (int y = 0; y < width; y++) {
           int colBase = y * resolution;
+          int targetOffset = ((x << 7) | y) * shapeSize;
 
           for (int i1 = 0; i1 < resolution; i1++) {
             System.arraycopy(
@@ -315,23 +336,15 @@ public final class Shapes {
             );
           }
 
-          findMostSimilarShape(shapeMap[x][y], scratch, shapeMatrices, scratch5);
+          findMostSimilarShape(shapeMap, targetOffset, scratch, shapeMatrices, scratch5);
         }
       }
 
-      return new FlatShapemap(shapeMap);
+      return new FlatShapemap(shapeMap, shapeSize);
     }
   }
 
-  /**
-   * Find the most similar shapes.
-   *
-   * @param target     the array to write the output to, as indices ordered by similarity.
-   * @param difference the difference between the terrain height and the heightmap height.
-   * @param matrices   a list of the matrices of available shapes.
-   * @param scratch    a buffer with a length greater or equal to {@code matrices}.
-   */
-  public static void findMostSimilarShape(int[] target, float[] difference, List<Matrix> matrices, long[] scratch) {
+  public static void findMostSimilarShape(int[] flatMap, int targetOffset, float[] difference, List<Matrix> matrices, long[] scratch) {
     int size = matrices.size();
 
     for (int i = 0; i < size; i++) {
@@ -341,11 +354,11 @@ public final class Shapes {
     Arrays.sort(scratch, 0, size);
 
     for (int i = 0; i < size; i++) {
-      target[i] = (int) (scratch[i] & 0xFFFFFFFFL);
+      flatMap[targetOffset + i] = (int) (scratch[i] & 0xFFFFFFFFL);
     }
   }
 
-  public static void findMostSimilarShape(int[] target, float[] differenceUnclip, float[] differenceMin0, float[] differenceMax1, List<Matrix> matrices, long[] scratch) {
+  public static void findMostSimilarShape(int[] flatMap, int targetOffset, float[] differenceUnclip, float[] differenceMin0, float[] differenceMax1, List<Matrix> matrices, long[] scratch) {
     int size = matrices.size();
 
     for (int i = 0; i < size; i++) {
@@ -355,7 +368,7 @@ public final class Shapes {
     Arrays.sort(scratch, 0, size);
 
     for (int i = 0; i < size; i++) {
-      target[i] = (int) (scratch[i] & 0xFFFFFFFFL);
+      flatMap[targetOffset + i] = (int) (scratch[i] & 0xFFFFFFFFL);
     }
   }
 

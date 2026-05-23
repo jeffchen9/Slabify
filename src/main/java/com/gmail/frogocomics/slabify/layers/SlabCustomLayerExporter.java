@@ -58,7 +58,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
   private int fullIdx;
   private int fullIdxStacked;
   private int emptyIdx;
-  // Shape, id, layer (0 if cut, 1+ if fill), option associated with shape
   private Shape[] listShapes;
   private int[] listLocalIds;
   private int[] listHeights; // 0 if cut, 1+ if fill
@@ -278,12 +277,12 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
           Pair<Float, Float> maxMin = Utils.findMinAndMax(differenceBuffer, layerValue, resolution);
           float heightDelta = maxMin.getValue0() - maxMin.getValue1();
           if (heightDelta < 5) { // Arbitrary
-            shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, stacking, layerValue);
+            shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, true, layerValue);
           } else { // Steep slopes present and faster to use optimization
             shapemap = Shapes.findMostSimilarShapesRagged(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, layerValue);
           }
         } else {
-          shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, stacking, null);
+          shapemap = Shapes.findMostSimilarShapes(differenceBuffer, resolution, shapeMatrices, shapeMatricesStacked, false, null);
         }
         shapemaps.put(tile, shapemap);
       }
@@ -373,26 +372,8 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                 continue;
               }
 
-//              // If material is Conquest and the layer does not allow Conquest, skip
-//              if (slabMaterial.namespace.equals(Constants.CQ_NAMESPACE) && !layer.allowConquest()) {
-//                continue;
-//              }
-
-              Material blockAbove = (terrainHeight + relZ + localMinZ + 2 < maxHeight) ? chunk.getMaterial(x, terrainHeight + relZ + localMinZ + 2, z) : Material.AIR;
-
-              // Full blocks will replace everything no matter what
-//              if (relZ + minZ + 1 > 0 && !(listShapes[idx] instanceof FullShape)) {
-//                if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
-//                  continue;
-//                }
-//
-//                if (!layer.replacesNonSolidBlocks() && (blockAbove != Material.AIR) && (blockAbove
-//                    != Material.STATIONARY_WATER) && (blockAbove != Material.WATER) && (blockAbove
-//                    != Material.FALLING_WATER)
-//                    && (blockAbove != Material.FLOWING_WATER) && !blockAbove.containsWater()) {
-//                  continue;
-//                }
-//              }
+              int h1 = terrainHeight + relZ + localMinZ + 2;
+              Material blockAbove = (h1 < maxHeight) && (h1 >= minHeight) ? chunk.getMaterial(x, h1, z) : Material.AIR;
 
               // Check for waterlogging
               if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
@@ -411,12 +392,16 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
 
-              if (top && terrainHeight + relZ + localMinZ + 1 < maxHeight) {
-                listShapes[idx].place(worldX, terrainHeight + relZ + localMinZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
-              } else if (terrainHeight + relZ + localMinZ + 1 < maxHeight) {
-                listShapesStacked[idx].place(worldX, terrainHeight + relZ + localMinZ + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+              int h = terrainHeight + relZ + localMinZ + 1;
+              if (top && h < maxHeight && h >= minHeight) {
+                listShapes[idx].place(worldX, h, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+              } else if (h < maxHeight && h >= minHeight) {
+                try {
+                  listShapesStacked[idx].place(worldX, h, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                  throw new RuntimeException(e);
+                }
               }
-
               if (updateTop) {
                 top = false;
               }
@@ -581,6 +566,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       if (tileCounter.count(tile) == 64) {
         shapemaps.remove(tile);
         tileCounter.remove(tile, 64);
+        System.out.println("REMOVING");
       }
     }
   }

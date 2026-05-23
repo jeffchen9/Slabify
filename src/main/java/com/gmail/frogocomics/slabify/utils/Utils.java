@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
@@ -293,25 +292,6 @@ public final class Utils {
     for (int y = 0; y < finalSize; y++) {
       System.arraycopy(buffer[y + offset], offset, outBuffer[y], 0, finalSize);
     }
-  }
-
-  /**
-   * Get the first value of an input array that is in a set.
-   *
-   * @param arr     the input array.
-   * @param allowed the set of allowed values.
-   * @return the first value of the input array that is within the set.
-   * @throws IllegalStateException if none of the values of the input array are in the set.
-   */
-  public static int filter(int[] arr, Set<Integer> allowed) {
-    for (int j : arr) {
-      if (allowed.contains(j)) {
-        return j;
-      }
-    }
-
-    // This should not happen
-    throw new IllegalStateException("None of the values in arr are in allowed");
   }
 
   /**
