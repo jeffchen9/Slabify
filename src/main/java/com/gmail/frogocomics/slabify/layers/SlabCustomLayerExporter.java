@@ -566,7 +566,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       if (tileCounter.count(tile) == 64) {
         shapemaps.remove(tile);
         tileCounter.remove(tile, 64);
-        System.out.println("REMOVING");
       }
     }
   }

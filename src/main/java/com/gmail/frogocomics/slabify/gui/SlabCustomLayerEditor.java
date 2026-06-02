@@ -245,7 +245,18 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
       // Populate rows
       for (Entry<String, Material> entry : mapping.entrySet()) {
-        String[] underlyingMaterial = entry.getKey().split(":");
+        String[] underlyingMaterial;
+
+        if (entry.getKey().contains(":")) {
+          underlyingMaterial = entry.getKey().split(":");
+
+          if (underlyingMaterial.length == 1) {
+            continue;
+          }
+        } else {
+          underlyingMaterial = new String[]{Constants.MC_NAMESPACE, entry.getKey()};
+        }
+
         Material slabMaterial = entry.getValue();
 
         tableModel.setValueAt(
