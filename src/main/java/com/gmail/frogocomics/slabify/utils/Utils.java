@@ -264,7 +264,7 @@ public final class Utils {
 
     float result = wy0 * (row0[x0] * wx0 + row0[x1] * wx1 + row0[x2] * wx2 + row0[x3] * wx3);
     result += wy1 * (row1[x0] * wx0 + row1[x1] * wx1 + row1[x2] * wx2 + row1[x3] * wx3);
-    result += wy2 * (row0[x0] * wx0 + row2[x1] * wx1 + row2[x2] * wx2 + row2[x3] * wx3);
+    result += wy2 * (row2[x0] * wx0 + row2[x1] * wx1 + row2[x2] * wx2 + row2[x3] * wx3);
     result += wy3 * (row3[x0] * wx0 + row3[x1] * wx1 + row3[x2] * wx2 + row3[x3] * wx3);
 
     return result;
