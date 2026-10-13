@@ -34,6 +34,12 @@ public final class MatrixN implements Matrix {
     data = new float[size * size];
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the values of the matrix in row-major order, which must have a length that is a perfect square. The
+   *             array is used directly rather than copied.
+   */
   public MatrixN(float[] data) {
     int sr = (int) Math.sqrt(data.length);
 
@@ -45,6 +51,11 @@ public final class MatrixN implements Matrix {
     this.data = data;
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the values of the matrix, which must be square.
+   */
   public MatrixN(float[][] data) {
     size = data.length;
 
@@ -151,7 +162,8 @@ public final class MatrixN implements Matrix {
   }
 
   @Override
-  public float getLoss(float[] arr, double exponent) {
+  public float getLoss(float[] arr, double exponent, float bound) {
+    // Only a fallback for sizes no shape currently uses, so the exact loss is always returned
     double loss = 0;
 
     if (exponent == 2) {
@@ -173,7 +185,8 @@ public final class MatrixN implements Matrix {
   }
 
   @Override
-  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent) {
+  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent, float bound) {
+    // Only a fallback for sizes no shape currently uses, so the exact loss is always returned
     double loss = 0;
 
     if (exponent == 2) {

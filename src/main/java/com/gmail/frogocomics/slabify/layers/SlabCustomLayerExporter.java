@@ -23,8 +23,6 @@ import com.gmail.frogocomics.slabify.linalg.Matrix;
 import com.gmail.frogocomics.slabify.shape.*;
 import com.gmail.frogocomics.slabify.shape.Shape.Options;
 import com.gmail.frogocomics.slabify.utils.Utils;
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
 import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.jspecify.annotations.Nullable;
@@ -46,6 +44,7 @@ import java.util.Map.Entry;
 import static com.gmail.frogocomics.slabify.Constants.CHUNK_SIZE;
 import static com.gmail.frogocomics.slabify.Constants.CQ_NAMESPACE;
 import static org.pepsoft.minecraft.Constants.MC_HALF;
+import static org.pepsoft.minecraft.Constants.MC_WATER;
 import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
 import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
@@ -70,10 +69,20 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
   private final Map<String, Set<Integer>> availableIndices = new HashMap<>();
   private final Set<Integer> layerIndices = new HashSet<>();
+  private final Set<Integer> allIndices = new HashSet<>();
   private final Map<String, Set<Integer>> availableIndicesNoLayer = new HashMap<>();
   private final Map<String, Set<Integer>> availableIndicesStacked = new HashMap<>();
-  private final Map<Tile, Shapemap> shapemaps = new HashMap<>();
-  private final Multiset<Tile> tileCounter = HashMultiset.create();
+  // WorldPainter renders a region one column of chunks at a time, which touches at most 6 tiles: the region's 4, plus
+  // the tiles bordering it above and below, which only have their edge chunks rendered. Keeping the 8 most recently used
+  // shapemaps covers every tile in use while releasing finished and bordering tiles. A tile evicted too early is just
+  // recomputed, as shapemaps are deterministic.
+  private static final int MAX_CACHED_SHAPEMAPS = 8;
+  private final Map<Tile, Shapemap> shapemaps = new LinkedHashMap<>(16, 0.75f, true) {
+    @Override
+    protected boolean removeEldestEntry(Entry<Tile, Shapemap> eldest) {
+      return size() > MAX_CACHED_SHAPEMAPS;
+    }
+  };
   private int resolution = 1;
   private Map<String, Material> mapping;
   private final boolean stacking;
@@ -84,6 +93,13 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
   private boolean disable = false;
 
+  /**
+   * Create a new exporter.
+   *
+   * @param dimension the dimension to export.
+   * @param platform  the platform to export to.
+   * @param layer     the layer to export.
+   */
   public SlabCustomLayerExporter(Dimension dimension, Platform platform, Slab layer) {
     super(dimension, platform, null, layer);
 
@@ -204,6 +220,8 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
       }
 
       for (int i = 0; i < listShapes.length; i++) {
+        allIndices.add(i);
+
         if (listShapes[i] instanceof LayerShape || listShapes[i] instanceof AltLayerShape) {
           layerIndices.add(i);
         }
@@ -338,12 +356,19 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             Set<Integer> availableIndexNoLayer = availableIndicesNoLayer.get(baseMaterial.name);
             Set<Integer> availableIndexStacked = availableIndicesStacked.get(baseMaterial.name);
 
-            boolean top = true;
+            boolean topFound = false;
             int localRange = shapemap.getRange(localX, localZ);
             int localMinZ = shapemap.getMinZ(localX, localZ);
 
             for (int relZ = localRange - 1; relZ >= 0; relZ--) {
-              boolean updateTop = true;
+              // Must switch to the stackable shape list at the same level as the shapemap, whose indices refer to that
+              // list for every level below the first one whose closest shape is not empty, whether or not anything is
+              // placed there
+              boolean top = !topFound;
+              if (top && shapemap.getIndexAt(localX, localZ, relZ, allIndices) != emptyIdx) {
+                topFound = true;
+              }
+
               int idx = shapemap.getIndexAt(localX, localZ, relZ, top ? availableIndex : availableIndexStacked);
 
               if (top && layerIndices.contains(idx) && relZ >= 1) {
@@ -353,10 +378,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                 // Block below layer is NOT full block
                 if (belowIdx != fullIdxStacked) {
                   idx = shapemap.getIndexAt(localX, localZ, relZ, availableIndexNoLayer);
-
-                  if (idx == emptyIdx) {
-                    updateTop = false;
-                  }
                 }
               }
 
@@ -375,35 +396,16 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               int h1 = terrainHeight + relZ + localMinZ + 2;
               Material blockAbove = (h1 < maxHeight) && (h1 >= minHeight) ? chunk.getMaterial(x, h1, z) : Material.AIR;
 
-              // Check for waterlogging
-              if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
-                  blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
-                  || blockAbove.containsWater()) { // (material.hasProperty(MC_WATERLOGGED) && material.getProperty(MC_WATERLOGGED).equals("true"))
-                if (top) {
-                  if (!(listShapes[idx] instanceof FullShape)) {
-                    slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-                  }
-                } else {
-                  if (!(listShapesStacked[idx] instanceof FullShape)) {
-                    slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-                  }
-                }
-              } else if (terrainHeight + relZ + localMinZ < tile.getWaterLevel(localX, localZ)) {
+              // Check for waterlogging; full blocks cannot be waterlogged
+              Shape shape = top ? listShapes[idx] : listShapesStacked[idx];
+              if (!(shape instanceof FullShape) && (isWater(blockAbove)
+                  || terrainHeight + relZ + localMinZ < tile.getWaterLevel(localX, localZ))) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
 
               int h = terrainHeight + relZ + localMinZ + 1;
-              if (top && h < maxHeight && h >= minHeight) {
-                listShapes[idx].place(worldX, h, worldZ, x, z, chunk, slabMaterial, baseMaterial);
-              } else if (h < maxHeight && h >= minHeight) {
-                try {
-                  listShapesStacked[idx].place(worldX, h, worldZ, x, z, chunk, slabMaterial, baseMaterial);
-                } catch (ArrayIndexOutOfBoundsException e) {
-                  throw new RuntimeException(e);
-                }
-              }
-              if (updateTop) {
-                top = false;
+              if (h < maxHeight && h >= minHeight) {
+                shape.place(worldX, h, worldZ, x, z, chunk, slabMaterial, baseMaterial);
               }
             }
           } else { // No block stacking
@@ -469,22 +471,14 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                   continue;
                 }
 
-                if (!layer.replacesNonSolidBlocks() && (blockAbove != Material.AIR) && (blockAbove
-                    != Material.STATIONARY_WATER) && (blockAbove != Material.WATER) && (blockAbove
-                    != Material.FALLING_WATER)
-                    && (blockAbove != Material.FLOWING_WATER) && !blockAbove.containsWater()) {
+                if (!layer.replacesNonSolidBlocks() && blockAbove != Material.AIR && !isWater(blockAbove)) {
                   continue;
                 }
               }
 
-              // Check for waterlogging
-              if (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
-                  blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
-                  || blockAbove.containsWater()) {
-                if (!(listShapes[idx] instanceof FullShape)) {
-                  slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-                }
-              } else if (terrainHeight + 1 < tile.getWaterLevel(localX, localZ)) {
+              // Check for waterlogging; full blocks cannot be waterlogged
+              if (!(listShapes[idx] instanceof FullShape) && (isWater(blockAbove)
+                  || terrainHeight + 1 < tile.getWaterLevel(localX, localZ))) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
 
@@ -508,22 +502,13 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
                   continue;
                 }
 
-                if (!layer.replacesNonSolidBlocks() && (blockTwoAbove != Material.AIR) && (blockTwoAbove
-                    != Material.STATIONARY_WATER) && (blockTwoAbove != Material.WATER) && (blockTwoAbove
-                    != Material.FALLING_WATER)
-                    && (blockTwoAbove != Material.FLOWING_WATER) && !blockTwoAbove.containsWater()) {
+                if (!layer.replacesNonSolidBlocks() && blockTwoAbove != Material.AIR && !isWater(blockTwoAbove)) {
                   continue;
                 }
               }
 
-              // Check for waterlogging
-              if (blockTwoAbove == Material.STATIONARY_WATER || blockTwoAbove == Material.WATER ||
-                  blockTwoAbove == Material.FALLING_WATER || blockTwoAbove == Material.FLOWING_WATER
-                  || blockTwoAbove.containsWater()) {
-                if (!(listShapes[idx] instanceof FullShape)) {
-                  slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-                }
-              } else if (terrainHeight + 2 < tile.getWaterLevel(localX, localZ)) {
+              // Check for waterlogging (the full shape is only ever registered at height 1)
+              if (isWater(blockTwoAbove) || terrainHeight + 2 < tile.getWaterLevel(localX, localZ)) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
 
@@ -535,16 +520,8 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               }
             } else { // Cut, height == 0
               // Check for waterlogging
-              if (blockBelow == Material.STATIONARY_WATER ||
-                  blockBelow == Material.WATER || blockBelow == Material.FALLING_WATER ||
-                  blockBelow == Material.FLOWING_WATER || blockBelow.containsWater() ||
-                  tile.getWaterLevel(localX, localZ) == terrainHeight) {
-                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-              } else if (blockAbove != null && (blockAbove == Material.STATIONARY_WATER || blockAbove == Material.WATER ||
-                  blockAbove == Material.FALLING_WATER || blockAbove == Material.FLOWING_WATER
-                  || blockAbove.containsWater())) {
-                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
-              } else if (terrainHeight < tile.getWaterLevel(localX, localZ)) {
+              if (isWater(blockBelow) || (blockAbove != null && isWater(blockAbove))
+                  || terrainHeight <= tile.getWaterLevel(localX, localZ)) {
                 slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
               }
 
@@ -557,15 +534,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             }
           }
         }
-      }
-
-      tileCounter.add(tile);
-
-      // 64 chunks per tile (8*8)
-      // Remove shapemap to save memory when all chunks in particular tile have been fully processed
-      if (tileCounter.count(tile) == 64) {
-        shapemaps.remove(tile);
-        tileCounter.remove(tile, 64);
       }
     }
   }
@@ -592,6 +560,14 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
     }
 
     return availableIndices;
+  }
+
+  /**
+   * Check whether a block is any kind of water, including flowing water; the same test as WorldPainter's
+   * {@code PostProcessor.containsAnyWater}.
+   */
+  private static boolean isWater(Material material) {
+    return material.containsWater() || material.isNamed(MC_WATER);
   }
 
   /**

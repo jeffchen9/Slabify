@@ -31,6 +31,11 @@ public final class Matrix2 implements Matrix {
   Matrix2() {
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the values of the matrix in row-major order, which must have a length of 2*2.
+   */
   public Matrix2(float[] data) {
     if (data.length != 2 * 2) {
       throw new IllegalArgumentException("Array must be of length 2*2");
@@ -42,6 +47,11 @@ public final class Matrix2 implements Matrix {
     m11 = data[3];
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the values of the matrix, which must be 2x2.
+   */
   public Matrix2(float[][] data) {
     if (data.length != 2 || data[0].length != 2) {
       throw new IllegalArgumentException("Array must be 2x2");
@@ -299,7 +309,8 @@ public final class Matrix2 implements Matrix {
   }
 
   @Override
-  public float getLoss(float[] arr, double exponent) {
+  public float getLoss(float[] arr, double exponent, float bound) {
+    // Too few terms for stopping early to pay off, so the exact loss is always returned
     if (exponent == 2) {
       float l00 = m00 - arr[0];
       float l01 = m01 - arr[1];
@@ -315,7 +326,8 @@ public final class Matrix2 implements Matrix {
   }
 
   @Override
-  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent) {
+  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent, float bound) {
+    // Too few terms for stopping early to pay off, so the exact loss is always returned
     if (exponent == 2) {
       float l00 = m00 == 0 ? m00 - arrMin0[0] : (m00 == 1 ? m00 - arrMax1[0] : m00 - arrUnclip[0]);
       float l01 = m01 == 0 ? m01 - arrMin0[1] : (m01 == 1 ? m01 - arrMax1[1] : m01 - arrUnclip[1]);

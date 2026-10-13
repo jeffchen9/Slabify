@@ -66,27 +66,18 @@ public final class Utils {
       throw new IllegalArgumentException("Resolution must be a power of two");
     }
 
-    // Special case of resolution of 1
-    if (resolution == 1) {
-      for (int x = 0; x < TILE_SIZE; x++) {
-        for (int y = 0; y < TILE_SIZE; y++) {
-          buffer[x][y] = upscaledMap[x][y] - originalMap.getIntHeight(x, y) + addHeight;
-        }
-      }
-    } else {
-      for (int i1 = 0; i1 < TILE_SIZE; i1++) {
-        for (int i2 = 0; i2 < TILE_SIZE; i2++) {
-          float baseHeight = originalMap.getIntHeight(i1, i2);
-          float offset = addHeight - baseHeight;
-          int rowStart = i1 * resolution;
-          int colStart = i2 * resolution;
+    for (int i1 = 0; i1 < TILE_SIZE; i1++) {
+      for (int i2 = 0; i2 < TILE_SIZE; i2++) {
+        float baseHeight = originalMap.getIntHeight(i1, i2);
+        float offset = addHeight - baseHeight;
+        int rowStart = i1 * resolution;
+        int colStart = i2 * resolution;
 
-          for (int i3 = 0; i3 < resolution; i3++) {
-            for (int i4 = 0; i4 < resolution; i4++) {
-              int x = rowStart + i3;
-              int y = colStart + i4;
-              buffer[x][y] = upscaledMap[x][y] + offset;
-            }
+        for (int i3 = 0; i3 < resolution; i3++) {
+          for (int i4 = 0; i4 < resolution; i4++) {
+            int x = rowStart + i3;
+            int y = colStart + i4;
+            buffer[x][y] = upscaledMap[x][y] + offset;
           }
         }
       }
@@ -297,31 +288,6 @@ public final class Utils {
   /**
    * Find the maximum and minimum value in a float array.
    *
-   * @param arr the array.
-   * @return the maximum and minimum value, as a pair.
-   */
-  public static Pair<Float, Float> findMinAndMax(float[][] arr) {
-    float min = Integer.MAX_VALUE;
-    float max = Integer.MIN_VALUE;
-
-    for (int i = 0; i < arr.length; i++) {
-      for (int j = 0; j < arr[i].length; j++) {
-        if (arr[i][j] < min) {
-          min = arr[i][j];
-        }
-
-        if (arr[i][j] > max) {
-          max = arr[i][j];
-        }
-      }
-    }
-
-    return new Pair<>(max, min);
-  }
-
-  /**
-   * Find the maximum and minimum value in a float array.
-   *
    * @param arr  the array.
    * @param mask the mask; only when the value true will the point be considered in the calculation of the maximum and
    *             minimum.
@@ -419,6 +385,16 @@ public final class Utils {
   }
 
   /**
+   * Add the Minecraft namespace to a block name that does not have one.
+   *
+   * @param name the block name, with or without a namespace.
+   * @return the block name with a namespace.
+   */
+  public static String withNamespace(String name) {
+    return name.contains(":") ? name : Constants.MC_NAMESPACE + ":" + name;
+  }
+
+  /**
    * Read a .csv, including any header row.
    *
    * @param file the location of the .csv.
@@ -427,10 +403,11 @@ public final class Utils {
    */
   public static List<String[]> readCsv(File file) throws IOException {
     List<String[]> rows = new ArrayList<>();
-    BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath())));
-    String line;
-    while ((line = reader.readLine()) != null) {
-      rows.add(line.split(","));
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath())))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        rows.add(line.split(","));
+      }
     }
     return rows;
   }

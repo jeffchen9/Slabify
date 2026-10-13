@@ -23,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.pepsoft.minecraft.Constants.MC_TYPE;
 
@@ -35,7 +36,7 @@ public final class SlabShape extends Shape {
 
   public static final String NAME = "slab";
 
-  private final Map<String, Material> materials = new HashMap<>();
+  private final Map<String, Material> materials = new ConcurrentHashMap<>();
   private final Matrix shape;
 
   public SlabShape() {

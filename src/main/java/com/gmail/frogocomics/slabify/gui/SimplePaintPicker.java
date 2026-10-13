@@ -62,10 +62,20 @@ public final class SimplePaintPicker extends JPanel {
     updatePreview();
   }
 
+  /**
+   * Get the opacity.
+   *
+   * @return the opacity, from 0 to 1.
+   */
   public float getOpacity() {
     return opacity;
   }
 
+  /**
+   * Set the opacity.
+   *
+   * @param opacity the opacity, from 0 to 1.
+   */
   public void setOpacity(float opacity) {
     this.opacity = opacity;
     updatePreview();

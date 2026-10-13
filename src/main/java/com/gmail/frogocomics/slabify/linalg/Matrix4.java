@@ -31,6 +31,11 @@ public final class Matrix4 implements Matrix {
   Matrix4() {
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the values of the matrix in row-major order, which must have a length of 4*4.
+   */
   public Matrix4(float[] data) {
     if (data.length != 4 * 4) {
       throw new IllegalArgumentException("Array must be of length 4*4");
@@ -54,6 +59,11 @@ public final class Matrix4 implements Matrix {
     m33 = data[15];
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the values of the matrix, which must be 4x4.
+   */
   public Matrix4(float[][] data) {
     if (data.length != 4 || data[0].length != 4) {
       throw new IllegalArgumentException("Array must be 4x4");
@@ -395,76 +405,135 @@ public final class Matrix4 implements Matrix {
   }
 
   @Override
-  public float getLoss(float[] arr, double exponent) {
+  public float getLoss(float[] arr, double exponent, float bound) {
+    // Stop once a row takes the loss above the bound. Rows are added in the same order as a single sum, so a
+    // loss within the bound is unaffected
     if (exponent == 2) {
       float l00 = m00 - arr[0];
       float l01 = m01 - arr[1];
       float l02 = m02 - arr[2];
       float l03 = m03 - arr[3];
+      float loss = l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03;
+      if (loss > bound) {
+        return loss;
+      }
       float l10 = m10 - arr[4];
       float l11 = m11 - arr[5];
       float l12 = m12 - arr[6];
       float l13 = m13 - arr[7];
+      loss = loss + l10 * l10 + l11 * l11 + l12 * l12 + l13 * l13;
+      if (loss > bound) {
+        return loss;
+      }
       float l20 = m20 - arr[8];
       float l21 = m21 - arr[9];
       float l22 = m22 - arr[10];
       float l23 = m23 - arr[11];
+      loss = loss + l20 * l20 + l21 * l21 + l22 * l22 + l23 * l23;
+      if (loss > bound) {
+        return loss;
+      }
       float l30 = m30 - arr[12];
       float l31 = m31 - arr[13];
       float l32 = m32 - arr[14];
       float l33 = m33 - arr[15];
-      return l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03 + l10 * l10 + l11 * l11 + l12 * l12 + l13 * l13 + l20 * l20
-          + l21 * l21 + l22 * l22 + l23 * l23 + l30 * l30 + l31 * l31 + l32 * l32 + l33 * l33;
+      loss = loss + l30 * l30 + l31 * l31 + l32 * l32 + l33 * l33;
+      return loss;
     } else if (exponent == 1) {
-      return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m10 - arr[4]) +
-          abs(m11 - arr[5]) + abs(m12 - arr[6]) + abs(m13 - arr[7]) + abs(m20 - arr[8]) + abs(m21 - arr[9]) +
-          abs(m22 - arr[10]) + abs(m23 - arr[11]) + abs(m30 - arr[12]) + abs(m31 - arr[13]) + abs(m32 - arr[14]) +
-          abs(m33 - arr[15]);
+      float loss = abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m10 - arr[4]) + abs(m11 - arr[5]) + abs(m12 - arr[6]) + abs(m13 - arr[7]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m20 - arr[8]) + abs(m21 - arr[9]) + abs(m22 - arr[10]) + abs(m23 - arr[11]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m30 - arr[12]) + abs(m31 - arr[13]) + abs(m32 - arr[14]) + abs(m33 - arr[15]);
+      return loss;
     } else {
-      return (float) (pow(abs(m00 - arr[0]), exponent) + pow(abs(m01 - arr[1]), exponent) +
-          pow(abs(m02 - arr[2]), exponent) + pow(abs(m03 - arr[3]), exponent) + pow(abs(m10 - arr[4]), exponent) +
-          pow(abs(m11 - arr[5]), exponent) + pow(abs(m12 - arr[6]), exponent) + pow(abs(m13 - arr[7]), exponent) +
-          pow(abs(m20 - arr[8]), exponent) + pow(abs(m21 - arr[9]), exponent) + pow(abs(m22 - arr[10]), exponent) +
-          pow(abs(m23 - arr[11]), exponent) + pow(abs(m30 - arr[12]), exponent) + pow(abs(m31 - arr[13]), exponent) +
-          pow(abs(m32 - arr[14]), exponent) + pow(abs(m33 - arr[15]), exponent));
+      double loss = pow(abs(m00 - arr[0]), exponent) + pow(abs(m01 - arr[1]), exponent) +
+          pow(abs(m02 - arr[2]), exponent) + pow(abs(m03 - arr[3]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m10 - arr[4]), exponent) + pow(abs(m11 - arr[5]), exponent) +
+          pow(abs(m12 - arr[6]), exponent) + pow(abs(m13 - arr[7]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m20 - arr[8]), exponent) + pow(abs(m21 - arr[9]), exponent) +
+          pow(abs(m22 - arr[10]), exponent) + pow(abs(m23 - arr[11]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m30 - arr[12]), exponent) + pow(abs(m31 - arr[13]), exponent) +
+          pow(abs(m32 - arr[14]), exponent) + pow(abs(m33 - arr[15]), exponent);
+      return (float) loss;
     }
   }
 
   @Override
-  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent) {
+  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent, float bound) {
+    // Stop once a row takes the loss above the bound. Rows are added in the same order as a single sum, so a
+    // loss within the bound is unaffected
     if (exponent == 2) {
       float l00 = m00 == 0 ? m00 - arrMin0[0] : (m00 == 1 ? m00 - arrMax1[0] : m00 - arrUnclip[0]);
       float l01 = m01 == 0 ? m01 - arrMin0[1] : (m01 == 1 ? m01 - arrMax1[1] : m01 - arrUnclip[1]);
       float l02 = m02 == 0 ? m02 - arrMin0[2] : (m02 == 1 ? m02 - arrMax1[2] : m02 - arrUnclip[2]);
       float l03 = m03 == 0 ? m03 - arrMin0[3] : (m03 == 1 ? m03 - arrMax1[3] : m03 - arrUnclip[3]);
+      float loss = l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03;
+      if (loss > bound) {
+        return loss;
+      }
       float l10 = m10 == 0 ? m10 - arrMin0[4] : (m10 == 1 ? m10 - arrMax1[4] : m10 - arrUnclip[4]);
       float l11 = m11 == 0 ? m11 - arrMin0[5] : (m11 == 1 ? m11 - arrMax1[5] : m11 - arrUnclip[5]);
       float l12 = m12 == 0 ? m12 - arrMin0[6] : (m12 == 1 ? m12 - arrMax1[6] : m12 - arrUnclip[6]);
       float l13 = m13 == 0 ? m13 - arrMin0[7] : (m13 == 1 ? m13 - arrMax1[7] : m13 - arrUnclip[7]);
+      loss = loss + l10 * l10 + l11 * l11 + l12 * l12 + l13 * l13;
+      if (loss > bound) {
+        return loss;
+      }
       float l20 = m20 == 0 ? m20 - arrMin0[8] : (m20 == 1 ? m20 - arrMax1[8] : m20 - arrUnclip[8]);
       float l21 = m21 == 0 ? m21 - arrMin0[9] : (m21 == 1 ? m21 - arrMax1[9] : m21 - arrUnclip[9]);
       float l22 = m22 == 0 ? m22 - arrMin0[10] : (m22 == 1 ? m22 - arrMax1[10] : m22 - arrUnclip[10]);
       float l23 = m23 == 0 ? m23 - arrMin0[11] : (m23 == 1 ? m23 - arrMax1[11] : m23 - arrUnclip[11]);
+      loss = loss + l20 * l20 + l21 * l21 + l22 * l22 + l23 * l23;
+      if (loss > bound) {
+        return loss;
+      }
       float l30 = m30 == 0 ? m30 - arrMin0[12] : (m30 == 1 ? m30 - arrMax1[12] : m30 - arrUnclip[12]);
       float l31 = m31 == 0 ? m31 - arrMin0[13] : (m31 == 1 ? m31 - arrMax1[13] : m31 - arrUnclip[13]);
       float l32 = m32 == 0 ? m32 - arrMin0[14] : (m32 == 1 ? m32 - arrMax1[14] : m32 - arrUnclip[14]);
       float l33 = m33 == 0 ? m33 - arrMin0[15] : (m33 == 1 ? m33 - arrMax1[15] : m33 - arrUnclip[15]);
-      return l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03 + l10 * l10 + l11 * l11 + l12 * l12 + l13 * l13 + l20 * l20
-          + l21 * l21 + l22 * l22 + l23 * l23 + l30 * l30 + l31 * l31 + l32 * l32 + l33 * l33;
+      loss = loss + l30 * l30 + l31 * l31 + l32 * l32 + l33 * l33;
+      return loss;
     } else if (exponent == 1) {
       float loss = 0;
       loss += m00 == 0 ? abs(m00 - arrMin0[0]) : (m00 == 1 ? abs(m00 - arrMax1[0]) : abs(m00 - arrUnclip[0]));
       loss += m01 == 0 ? abs(m01 - arrMin0[1]) : (m01 == 1 ? abs(m01 - arrMax1[1]) : abs(m01 - arrUnclip[1]));
       loss += m02 == 0 ? abs(m02 - arrMin0[2]) : (m02 == 1 ? abs(m02 - arrMax1[2]) : abs(m02 - arrUnclip[2]));
       loss += m03 == 0 ? abs(m03 - arrMin0[3]) : (m03 == 1 ? abs(m03 - arrMax1[3]) : abs(m03 - arrUnclip[3]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m10 == 0 ? abs(m10 - arrMin0[4]) : (m10 == 1 ? abs(m10 - arrMax1[4]) : abs(m10 - arrUnclip[4]));
       loss += m11 == 0 ? abs(m11 - arrMin0[5]) : (m11 == 1 ? abs(m11 - arrMax1[5]) : abs(m11 - arrUnclip[5]));
       loss += m12 == 0 ? abs(m12 - arrMin0[6]) : (m12 == 1 ? abs(m12 - arrMax1[6]) : abs(m12 - arrUnclip[6]));
       loss += m13 == 0 ? abs(m13 - arrMin0[7]) : (m13 == 1 ? abs(m13 - arrMax1[7]) : abs(m13 - arrUnclip[7]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m20 == 0 ? abs(m20 - arrMin0[8]) : (m20 == 1 ? abs(m20 - arrMax1[8]) : abs(m20 - arrUnclip[8]));
       loss += m21 == 0 ? abs(m21 - arrMin0[9]) : (m21 == 1 ? abs(m21 - arrMax1[9]) : abs(m21 - arrUnclip[9]));
       loss += m22 == 0 ? abs(m22 - arrMin0[10]) : (m22 == 1 ? abs(m22 - arrMax1[10]) : abs(m22 - arrUnclip[10]));
       loss += m23 == 0 ? abs(m23 - arrMin0[11]) : (m23 == 1 ? abs(m23 - arrMax1[11]) : abs(m23 - arrUnclip[11]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m30 == 0 ? abs(m30 - arrMin0[12]) : (m30 == 1 ? abs(m30 - arrMax1[12]) : abs(m30 - arrUnclip[12]));
       loss += m31 == 0 ? abs(m31 - arrMin0[13]) : (m31 == 1 ? abs(m31 - arrMax1[13]) : abs(m31 - arrUnclip[13]));
       loss += m32 == 0 ? abs(m32 - arrMin0[14]) : (m32 == 1 ? abs(m32 - arrMax1[14]) : abs(m32 - arrUnclip[14]));
@@ -476,14 +545,23 @@ public final class Matrix4 implements Matrix {
       loss += m01 == 0 ? pow(abs(m01 - arrMin0[1]), exponent) : (m01 == 1 ? pow(abs(m01 - arrMax1[1]), exponent) : pow(abs(m01 - arrUnclip[1]), exponent));
       loss += m02 == 0 ? pow(abs(m02 - arrMin0[2]), exponent) : (m02 == 1 ? pow(abs(m02 - arrMax1[2]), exponent) : pow(abs(m02 - arrUnclip[2]), exponent));
       loss += m03 == 0 ? pow(abs(m03 - arrMin0[3]), exponent) : (m03 == 1 ? pow(abs(m03 - arrMax1[3]), exponent) : pow(abs(m03 - arrUnclip[3]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m10 == 0 ? pow(abs(m10 - arrMin0[4]), exponent) : (m10 == 1 ? pow(abs(m10 - arrMax1[4]), exponent) : pow(abs(m10 - arrUnclip[4]), exponent));
       loss += m11 == 0 ? pow(abs(m11 - arrMin0[5]), exponent) : (m11 == 1 ? pow(abs(m11 - arrMax1[5]), exponent) : pow(abs(m11 - arrUnclip[5]), exponent));
       loss += m12 == 0 ? pow(abs(m12 - arrMin0[6]), exponent) : (m12 == 1 ? pow(abs(m12 - arrMax1[6]), exponent) : pow(abs(m12 - arrUnclip[6]), exponent));
       loss += m13 == 0 ? pow(abs(m13 - arrMin0[7]), exponent) : (m13 == 1 ? pow(abs(m13 - arrMax1[7]), exponent) : pow(abs(m13 - arrUnclip[7]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m20 == 0 ? pow(abs(m20 - arrMin0[8]), exponent) : (m20 == 1 ? pow(abs(m20 - arrMax1[8]), exponent) : pow(abs(m20 - arrUnclip[8]), exponent));
       loss += m21 == 0 ? pow(abs(m21 - arrMin0[9]), exponent) : (m21 == 1 ? pow(abs(m21 - arrMax1[9]), exponent) : pow(abs(m21 - arrUnclip[9]), exponent));
       loss += m22 == 0 ? pow(abs(m22 - arrMin0[10]), exponent) : (m22 == 1 ? pow(abs(m22 - arrMax1[10]), exponent) : pow(abs(m22 - arrUnclip[10]), exponent));
       loss += m23 == 0 ? pow(abs(m23 - arrMin0[11]), exponent) : (m23 == 1 ? pow(abs(m23 - arrMax1[11]), exponent) : pow(abs(m23 - arrUnclip[11]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m30 == 0 ? pow(abs(m30 - arrMin0[12]), exponent) : (m30 == 1 ? pow(abs(m30 - arrMax1[12]), exponent) : pow(abs(m30 - arrUnclip[12]), exponent));
       loss += m31 == 0 ? pow(abs(m31 - arrMin0[13]), exponent) : (m31 == 1 ? pow(abs(m31 - arrMax1[13]), exponent) : pow(abs(m31 - arrUnclip[13]), exponent));
       loss += m32 == 0 ? pow(abs(m32 - arrMin0[14]), exponent) : (m32 == 1 ? pow(abs(m32 - arrMax1[14]), exponent) : pow(abs(m32 - arrUnclip[14]), exponent));

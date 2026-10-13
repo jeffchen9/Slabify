@@ -22,10 +22,10 @@ import com.gmail.frogocomics.slabify.linalg.Matrix;
 import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.pepsoft.minecraft.Constants.MC_FACING;
 import static org.pepsoft.minecraft.Constants.MC_HALF;
@@ -39,7 +39,7 @@ public final class EighthSlabShape extends Shape {
 
   public static final String NAME = "eighth_slab";
 
-  private final Map<String, Material[]> materials = new HashMap<>();
+  private final Map<String, Material[]> materials = new ConcurrentHashMap<>();
   private final Matrix southShape = Matrix.of(new float[][]{
       {0.5f, 0},
       {0, 0}

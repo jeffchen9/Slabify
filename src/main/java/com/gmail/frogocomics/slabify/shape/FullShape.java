@@ -41,6 +41,11 @@ public final class FullShape extends Shape {
     super(null, NAME, new Options[]{}, true, 1, true, null);
   }
 
+  /**
+   * Get the shared instance.
+   *
+   * @return the shared instance.
+   */
   public static FullShape getInstance() {
     return instance;
   }

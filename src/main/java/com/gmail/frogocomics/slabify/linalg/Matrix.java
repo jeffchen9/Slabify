@@ -102,9 +102,12 @@ public interface Matrix extends Cloneable {
    *
    * @param arr      the array to compare against; it is assumed the sizes are compatible.
    * @param exponent 2 for MSE, 1 for MAE (but other values greater than 0 are acceptable).
-   * @return the loss.
+   * @param bound    the loss above which the exact value is not needed. As every term of the loss is non-negative,
+   *                 implementations may stop early once the loss is known to exceed this. Use
+   *                 {@link Float#POSITIVE_INFINITY} to always get the exact loss.
+   * @return the loss if it is at most {@code bound}; otherwise any value greater than {@code bound}.
    */
-  float getLoss(float[] arr, double exponent);
+  float getLoss(float[] arr, double exponent, float bound);
 
   /**
    * Get a modified loss metric. The value of the array to use is dependent on the value of the matrix, at a given
@@ -119,8 +122,10 @@ public interface Matrix extends Cloneable {
    * @param arrMin0   the clipped array (>=0) to compare against; it is assumed the sizes are compatible.
    * @param arrMax1   the clipped array (<=1) to compare against; it is assumed the sizes are compatible.
    * @param exponent  2 for MSE, 1 for MAE (but other values greater than 0 are acceptable).
-   * @return the modified loss.
+   * @param bound     the loss above which the exact value is not needed, as in
+   *                  {@link #getLoss(float[], double, float)}.
+   * @return the modified loss if it is at most {@code bound}; otherwise any value greater than {@code bound}.
    */
-  float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent);
+  float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent, float bound);
 }
 

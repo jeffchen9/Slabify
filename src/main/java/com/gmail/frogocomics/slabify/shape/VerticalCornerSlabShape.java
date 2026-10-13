@@ -23,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.gmail.frogocomics.slabify.Constants.CQ_HINGE;
 import static org.pepsoft.minecraft.Constants.MC_FACING;
@@ -37,7 +38,7 @@ public final class VerticalCornerSlabShape extends Shape {
 
   public static final String NAME = "vert_corner_slab";
 
-  private final Map<String, Material[]> materials = new HashMap<>();
+  private final Map<String, Material[]> materials = new ConcurrentHashMap<>();
   private final Matrix leftStairShape = Matrix.of(new float[][]{
       {1, 0},
       {0.5f, 0}
@@ -63,17 +64,9 @@ public final class VerticalCornerSlabShape extends Shape {
 
       List<Matrix> shapes = new ArrayList<>();
 
-      int[] angles = {90, 180, 270};
+      addRotations(shapes, upscaledLeftStairShape);
 
-      shapes.add(upscaledLeftStairShape);
-      for (int angle : angles) {
-        shapes.add(upscaledLeftStairShape.rotate(angle));
-      }
-
-      shapes.add(upscaledRightStairShape);
-      for (int angle : angles) {
-        shapes.add(upscaledRightStairShape.rotate(angle));
-      }
+      addRotations(shapes, upscaledRightStairShape);
 
       return Optional.of(shapes);
     }

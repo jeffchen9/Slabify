@@ -41,6 +41,11 @@ public final class EmptyShape extends Shape {
     super(null, NAME, new Options[]{}, true, 1, false, null);
   }
 
+  /**
+   * Get the shared instance.
+   *
+   * @return the shared instance.
+   */
   public static EmptyShape getInstance() {
     return instance;
   }

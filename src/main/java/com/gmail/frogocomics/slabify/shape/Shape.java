@@ -40,6 +40,17 @@ public abstract class Shape {
   private final boolean supportsStacking;
   private final Options defaultOption;
 
+  /**
+   * Create a new shape.
+   *
+   * @param displayName      the name shown to the user.
+   * @param name             the name (not the display name).
+   * @param availableOptions the options the user can select.
+   * @param vanilla          {@code true} if the shape is vanilla.
+   * @param minResolution    the minimum upscaling needed, or -1 if it depends on the selected option.
+   * @param supportsStacking {@code true} if the shape supports stacking.
+   * @param defaultOption    the default option, or {@code null} if the shape has no options.
+   */
   public Shape(String displayName, String name, Options[] availableOptions, boolean vanilla, int minResolution,
                boolean supportsStacking, @Nullable Options defaultOption) {
     this.displayName = displayName;
@@ -123,6 +134,19 @@ public abstract class Shape {
    */
   public void place(int worldX, int worldY, int worldZ, int localX, int localZ, Chunk chunk, Material material, Material baseMaterial) {
     chunk.setMaterial(localX, worldY, localZ, material);
+  }
+
+  /**
+   * Add a matrix to a list, followed by its rotations by 90, 180 and 270 degrees.
+   *
+   * @param shapes the list to add to.
+   * @param matrix the matrix.
+   */
+  protected static void addRotations(List<Matrix> shapes, Matrix matrix) {
+    shapes.add(matrix);
+    for (int angle = 90; angle < 360; angle += 90) {
+      shapes.add(matrix.rotate(angle));
+    }
   }
 
   /**

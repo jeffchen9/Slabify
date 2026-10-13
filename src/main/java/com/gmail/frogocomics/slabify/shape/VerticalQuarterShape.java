@@ -23,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.gmail.frogocomics.slabify.Constants.CQ_LAYER;
 import static org.pepsoft.minecraft.Constants.MC_FACING;
@@ -36,7 +37,7 @@ public final class VerticalQuarterShape extends Shape {
 
   public static final String NAME = "vert_quarter";
 
-  private final Map<String, Material[]> materials = new HashMap<>();
+  private final Map<String, Material[]> materials = new ConcurrentHashMap<>();
   private final Matrix quarter1 = Matrix.of(new float[][]{
       {1, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
@@ -89,17 +90,13 @@ public final class VerticalQuarterShape extends Shape {
 
     if (selectedOption != Options.DISABLE) {
 
-      int[] angles = {90, 180, 270};
       List<Matrix> shapes = new ArrayList<>();
 
       switch (selectedOption) {
         case HALVES: {
           Matrix upscaled3 = quarter3.upscale(resolution / quarter3.getSize());
 
-          shapes.add(upscaled3);
-          for (int angle : angles) {
-            shapes.add(upscaled3.rotate(angle));
-          }
+          addRotations(shapes, upscaled3);
           break;
         }
         case QUARTERS: {
@@ -107,20 +104,11 @@ public final class VerticalQuarterShape extends Shape {
           Matrix upscaled3 = quarter3.upscale(resolution / quarter3.getSize());
           Matrix upscaled4 = quarter4.upscale(resolution / quarter4.getSize());
 
-          shapes.add(upscaled3);
-          for (int angle : angles) {
-            shapes.add(upscaled3.rotate(angle));
-          }
+          addRotations(shapes, upscaled3);
 
-          shapes.add(upscaled2);
-          for (int angle : angles) {
-            shapes.add(upscaled2.rotate(angle));
-          }
+          addRotations(shapes, upscaled2);
 
-          shapes.add(upscaled4);
-          for (int angle : angles) {
-            shapes.add(upscaled4.rotate(angle));
-          }
+          addRotations(shapes, upscaled4);
           break;
         }
         case EIGHTHS: {
@@ -129,25 +117,13 @@ public final class VerticalQuarterShape extends Shape {
           Matrix upscaled3 = quarter3.upscale(resolution / quarter3.getSize());
           Matrix upscaled4 = quarter4.upscale(resolution / quarter4.getSize());
 
-          shapes.add(upscaled3);
-          for (int angle : angles) {
-            shapes.add(upscaled3.rotate(angle));
-          }
+          addRotations(shapes, upscaled3);
 
-          shapes.add(upscaled2);
-          for (int angle : angles) {
-            shapes.add(upscaled2.rotate(angle));
-          }
+          addRotations(shapes, upscaled2);
 
-          shapes.add(upscaled4);
-          for (int angle : angles) {
-            shapes.add(upscaled4.rotate(angle));
-          }
+          addRotations(shapes, upscaled4);
 
-          shapes.add(upscaled1);
-          for (int angle : angles) {
-            shapes.add(upscaled1.rotate(angle));
-          }
+          addRotations(shapes, upscaled1);
           break;
         }
       }
@@ -168,64 +144,28 @@ public final class VerticalQuarterShape extends Shape {
         return Material.AIR;
       }
 
-      if (option == null) {
-        throw new IllegalArgumentException("Option cannot be null for a vertical quarter");
-      }
+      // The halves and quarters shapes are a prefix of the eighths shapes (see getShapeMatrices), so this one array is
+      // valid for every option. The cache is shared by all layers, which may use different options for this shape.
+      Material[] slabMaterials = new Material[16];
 
-      Material[] slabMaterials = null;
+      slabMaterials[0] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "3");
+      slabMaterials[1] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "3");
+      slabMaterials[2] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "3");
+      slabMaterials[3] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "3");
 
-      switch (option) {
-        case HALVES:
-          slabMaterials = new Material[4];
+      slabMaterials[4] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "2");
+      slabMaterials[5] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2");
+      slabMaterials[6] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2");
+      slabMaterials[7] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "2");
+      slabMaterials[8] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "4");
+      slabMaterials[9] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "4");
+      slabMaterials[10] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "4");
+      slabMaterials[11] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "4");
 
-          slabMaterials[0] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "3");
-          slabMaterials[1] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "3");
-          slabMaterials[2] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "3");
-          slabMaterials[3] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "3");
-
-          break;
-        case QUARTERS:
-          slabMaterials = new Material[12];
-
-          slabMaterials[0] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "3");
-          slabMaterials[1] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "3");
-          slabMaterials[2] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "3");
-          slabMaterials[3] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "3");
-
-          slabMaterials[4] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "2");
-          slabMaterials[5] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2");
-          slabMaterials[6] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2");
-          slabMaterials[7] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "2");
-          slabMaterials[8] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "4");
-          slabMaterials[9] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "4");
-          slabMaterials[10] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "4");
-          slabMaterials[11] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "4");
-
-          break;
-        case EIGHTHS:
-          slabMaterials = new Material[16];
-
-          slabMaterials[0] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "3");
-          slabMaterials[1] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "3");
-          slabMaterials[2] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "3");
-          slabMaterials[3] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "3");
-
-          slabMaterials[4] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "2");
-          slabMaterials[5] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2");
-          slabMaterials[6] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2");
-          slabMaterials[7] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "2");
-          slabMaterials[8] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "4");
-          slabMaterials[9] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "4");
-          slabMaterials[10] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "4");
-          slabMaterials[11] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "4");
-
-          slabMaterials[12] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "1");
-          slabMaterials[13] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "1");
-          slabMaterials[14] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "1");
-          slabMaterials[15] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "1");
-
-          break;
-      }
+      slabMaterials[12] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "1");
+      slabMaterials[13] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "1");
+      slabMaterials[14] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "1");
+      slabMaterials[15] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "1");
 
       materials.put(baseMaterial.name, slabMaterials);
     }

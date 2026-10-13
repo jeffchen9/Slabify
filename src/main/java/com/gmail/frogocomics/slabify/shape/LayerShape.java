@@ -23,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.pepsoft.minecraft.Constants.MC_LAYERS;
 
@@ -34,7 +35,7 @@ import static org.pepsoft.minecraft.Constants.MC_LAYERS;
 public final class LayerShape extends Shape {
 
   public static final String NAME = "layer";
-  private final Map<String, Material[]> materials = new HashMap<>();
+  private final Map<String, Material[]> materials = new ConcurrentHashMap<>();
 
   public LayerShape() {
     super("Layer", NAME, new Options[]{Options.DISABLE, Options.ENABLE}, true, 1, false, Options.DISABLE);

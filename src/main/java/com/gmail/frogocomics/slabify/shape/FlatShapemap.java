@@ -22,10 +22,16 @@ import java.util.Set;
 
 public final class FlatShapemap implements Shapemap {
 
-  private final int[] map;
+  private final short[] map;
   private final int shapeSize;
 
-  public FlatShapemap(int[] map, int shapeSize) {
+  /**
+   * Create a new shapemap without stacking.
+   *
+   * @param map       the shape indices, in order of closeness, for every cell.
+   * @param shapeSize the number of shape indices stored for each cell.
+   */
+  public FlatShapemap(short[] map, int shapeSize) {
     this.map = map;
     this.shapeSize = shapeSize;
   }

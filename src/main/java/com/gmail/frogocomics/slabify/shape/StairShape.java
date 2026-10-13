@@ -23,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.pepsoft.minecraft.Constants.*;
 
@@ -35,7 +36,7 @@ public final class StairShape extends Shape {
 
   public static final String NAME = "stairs";
 
-  private final Map<String, Material[]> materials = new HashMap<>();
+  private final Map<String, Material[]> materials = new ConcurrentHashMap<>();
   private final Matrix stairShape = Matrix.of(new float[][]{
       {1, 1},
       {0.5f, 0.5f}
@@ -73,22 +74,11 @@ public final class StairShape extends Shape {
       Outside stair (N, E, S, W)
        */
 
-      int[] angles = {90, 180, 270};
+      addRotations(shapes, upscaledStairShape);
 
-      shapes.add(upscaledStairShape);
-      for (int angle : angles) {
-        shapes.add(upscaledStairShape.rotate(angle));
-      }
+      addRotations(shapes, upscaledInsideStairShape);
 
-      shapes.add(upscaledInsideStairShape);
-      for (int angle : angles) {
-        shapes.add(upscaledInsideStairShape.rotate(angle));
-      }
-
-      shapes.add(upscaledOutsideStairShape);
-      for (int angle : angles) {
-        shapes.add(upscaledOutsideStairShape.rotate(angle));
-      }
+      addRotations(shapes, upscaledOutsideStairShape);
 
       return Optional.of(shapes);
     }

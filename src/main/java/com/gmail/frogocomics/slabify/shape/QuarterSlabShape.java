@@ -23,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.gmail.frogocomics.slabify.Constants.CQ_LAYER;
 import static com.gmail.frogocomics.slabify.shape.Shape.Options.*;
@@ -38,7 +39,7 @@ public final class QuarterSlabShape extends Shape {
 
   public static final String NAME = "quarter";
 
-  private final Map<String, Material[]> materials = new HashMap<>();
+  private final Map<String, Material[]> materials = new ConcurrentHashMap<>();
   private final Matrix quarter1 = Matrix.of(new float[][]{
       {0.25f, 0.25f, 0.25f, 0.25f},
       {0, 0, 0, 0},
@@ -77,16 +78,12 @@ public final class QuarterSlabShape extends Shape {
     assert resolution >= getMinResolution(selectedOption);
 
     if (selectedOption != DISABLE) {
-      int[] angles = {90, 180, 270};
       List<Matrix> shapes = new ArrayList<>();
 
       if (selectedOption == HALVES) {
         Matrix upscaled2 = quarter2.upscale(resolution / quarter2.getSize());
 
-        shapes.add(upscaled2);
-        for (int angle : angles) {
-          shapes.add(upscaled2.rotate(angle));
-        }
+        addRotations(shapes, upscaled2);
 
         return Optional.of(shapes);
       } else if (selectedOption == QUARTERS) {
@@ -94,20 +91,11 @@ public final class QuarterSlabShape extends Shape {
         Matrix upscaled2 = quarter2.upscale(resolution / quarter2.getSize());
         Matrix upscaled3 = quarter3.upscale(resolution / quarter3.getSize());
 
-        shapes.add(upscaled1);
-        for (int angle : angles) {
-          shapes.add(upscaled1.rotate(angle));
-        }
+        addRotations(shapes, upscaled1);
 
-        shapes.add(upscaled2);
-        for (int angle : angles) {
-          shapes.add(upscaled2.rotate(angle));
-        }
+        addRotations(shapes, upscaled2);
 
-        shapes.add(upscaled3);
-        for (int angle : angles) {
-          shapes.add(upscaled3.rotate(angle));
-        }
+        addRotations(shapes, upscaled3);
 
         return Optional.of(shapes);
       }
@@ -126,38 +114,29 @@ public final class QuarterSlabShape extends Shape {
         return Material.AIR;
       }
 
-      if (option == HALVES) {
-        Material[] slabMaterials = new Material[4];
-        slabMaterials[0] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2", MC_HALF, "bottom");
-        slabMaterials[1] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2", MC_HALF, "bottom");
-        slabMaterials[2] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "2", MC_HALF, "bottom");
-        slabMaterials[3] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "2", MC_HALF, "bottom");
+      // One array for every option, since the cache is shared by all layers, which may use different options for this
+      // shape
+      Material[] slabMaterials = new Material[12];
 
-        materials.put(baseMaterial.name, slabMaterials);
-      } else if (option == QUARTERS || option == EIGHTHS) {
-        Material[] slabMaterials = new Material[12];
+      slabMaterials[0] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "1", MC_HALF, "bottom");
+      slabMaterials[1] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "1", MC_HALF, "bottom");
+      slabMaterials[2] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "1", MC_HALF, "bottom");
+      slabMaterials[3] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "1", MC_HALF, "bottom");
 
-        slabMaterials[0] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "1", MC_HALF, "bottom");
-        slabMaterials[1] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "1", MC_HALF, "bottom");
-        slabMaterials[2] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "1", MC_HALF, "bottom");
-        slabMaterials[3] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "1", MC_HALF, "bottom");
+      slabMaterials[4] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2", MC_HALF, "bottom");
+      slabMaterials[5] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2", MC_HALF, "bottom");
+      slabMaterials[6] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "2", MC_HALF, "bottom");
+      slabMaterials[7] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "2", MC_HALF, "bottom");
 
-        slabMaterials[4] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "2", MC_HALF, "bottom");
-        slabMaterials[5] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "2", MC_HALF, "bottom");
-        slabMaterials[6] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "2", MC_HALF, "bottom");
-        slabMaterials[7] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "2", MC_HALF, "bottom");
+      slabMaterials[8] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "3", MC_HALF, "bottom");
+      slabMaterials[9] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "3", MC_HALF, "bottom");
+      slabMaterials[10] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "3", MC_HALF, "bottom");
+      slabMaterials[11] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "3", MC_HALF, "bottom");
 
-        slabMaterials[8] = Material.get(materialName, MC_FACING, "east", CQ_LAYER, "3", MC_HALF, "bottom");
-        slabMaterials[9] = Material.get(materialName, MC_FACING, "north", CQ_LAYER, "3", MC_HALF, "bottom");
-        slabMaterials[10] = Material.get(materialName, MC_FACING, "west", CQ_LAYER, "3", MC_HALF, "bottom");
-        slabMaterials[11] = Material.get(materialName, MC_FACING, "south", CQ_LAYER, "3", MC_HALF, "bottom");
-
-        materials.put(baseMaterial.name, slabMaterials);
-      } else if (option != null) {
-        throw new IllegalArgumentException("Invalid option: " + option);
-      }
+      materials.put(baseMaterial.name, slabMaterials);
     }
 
-    return materials.get(baseMaterial.name)[i];
+    // Halves only uses the layer 2 shapes, which are at indices 4-7 for quarters
+    return materials.get(baseMaterial.name)[option == HALVES ? i + 4 : i];
   }
 }

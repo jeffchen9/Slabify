@@ -23,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.gmail.frogocomics.slabify.Constants.CQ_LAYER;
 
@@ -35,7 +36,7 @@ public final class AltLayerShape extends Shape {
 
   public static final String NAME = "alt_layer";
 
-  private final Map<String, Material[]> materials = new HashMap<>();
+  private final Map<String, Material[]> materials = new ConcurrentHashMap<>();
   private final float[] heights = new float[]{0.125f, 0.25f, 0.5f, 0.75f};
 
   public AltLayerShape() {
@@ -48,7 +49,7 @@ public final class AltLayerShape extends Shape {
     if (selectedOption == Options.ENABLE) {
       List<Matrix> shapes = new ArrayList<>();
 
-      for (int i = 1; i < heights.length; i++) {
+      for (int i = 0; i < heights.length; i++) {
         shapes.add((Matrix.of(new float[][]{{heights[i]}})).upscale(resolution / getMinResolution(null)));
       }
 

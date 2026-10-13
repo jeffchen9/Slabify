@@ -33,7 +33,7 @@ public final class Constants {
 
   public static final String CQ_HINGE = "hinge";
   public static final String CQ_LAYER = "layer";
-  public static double LOSS_EXPONENT = 2;
+  public static final double LOSS_EXPONENT;
   public static boolean CORRECT = false;
 
   // File names
@@ -46,14 +46,17 @@ public final class Constants {
 
   static {
     String s = System.getProperty("com.gmail.frogocomics.exponent");
+    double exponent = 2;
 
     if (s != null) {
       try {
-        LOSS_EXPONENT = Double.parseDouble(s);
+        exponent = Double.parseDouble(s);
       } catch (NumberFormatException ignored) {
         // Keep default of 2
       }
     }
+
+    LOSS_EXPONENT = exponent;
 
     s = System.getProperty("com.gmail.frogocomics.slabify.correct");
 

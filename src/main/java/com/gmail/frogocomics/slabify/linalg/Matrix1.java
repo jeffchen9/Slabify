@@ -33,10 +33,20 @@ public final class Matrix1 implements Matrix {
   Matrix1() {
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the value of the matrix.
+   */
   public Matrix1(float data) {
     m00 = data;
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the values of the matrix, which must be 1x1.
+   */
   public Matrix1(float[][] data) {
     if (data.length != 1 || data[0].length != 1) {
       throw new IllegalArgumentException("Array must be 1x1");
@@ -107,7 +117,8 @@ public final class Matrix1 implements Matrix {
   }
 
   @Override
-  public float getLoss(float[] arr, double exponent) {
+  public float getLoss(float[] arr, double exponent, float bound) {
+    // Too few terms for stopping early to pay off, so the exact loss is always returned
     if (exponent == 2) {
       float l = m00 - arr[0];
       return l * l;
@@ -119,7 +130,8 @@ public final class Matrix1 implements Matrix {
   }
 
   @Override
-  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent) {
+  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent, float bound) {
+    // Too few terms for stopping early to pay off, so the exact loss is always returned
     if (exponent == 2) {
       float l00 = m00 == 0 ? m00 - arrMin0[0] : (m00 == 1 ? m00 - arrMax1[0] : m00 - arrUnclip[0]);
       return l00 * l00;

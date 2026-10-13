@@ -41,6 +41,11 @@ public final class SlabPreviewObject implements WPObject {
   private final int height = 4;
   private final Material[][][] blocks;
 
+  /**
+   * Create a new preview, with one row for each entry in the mapping.
+   *
+   * @param mapping a map of underlying block names to the material of the slab to place on them.
+   */
   public SlabPreviewObject(Map<String, Material> mapping) {
     length = 2 * mapping.size() - 1;
     blocks = new Material[length][width][height];
@@ -61,7 +66,7 @@ public final class SlabPreviewObject implements WPObject {
 
     for (Entry<String, Material> entry : mapping.entrySet()) {
       Material baseMaterial = Material.getPrototype(entry.getKey());
-      Material slabBlock = slabShape.getMaterial(baseMaterial, 0, null);
+      Material slabBlock = slabShape.getMaterial(entry.getValue(), 0, null);
 
       // Set underlying block
       for (int j = 0; j < width; j++) {

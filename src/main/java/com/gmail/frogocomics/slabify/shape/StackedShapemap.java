@@ -22,12 +22,20 @@ import java.util.Set;
 
 public final class StackedShapemap implements Shapemap {
 
-  public final int[] map;
+  public final short[] map;
   private final int minZ;
   private final int vertDiff;
   private final int shapeSize;
 
-  public StackedShapemap(int[] map, int minZ, int maxZ, int shapeSize) {
+  /**
+   * Create a new shapemap in which every cell has the same range of z values.
+   *
+   * @param map       the shape indices, in order of closeness, for every level of every cell.
+   * @param minZ      the minimum z value.
+   * @param maxZ      the maximum z value.
+   * @param shapeSize the number of shape indices stored for each level.
+   */
+  public StackedShapemap(short[] map, int minZ, int maxZ, int shapeSize) {
     this.map = map;
     this.minZ = minZ;
     this.vertDiff = maxZ - minZ;

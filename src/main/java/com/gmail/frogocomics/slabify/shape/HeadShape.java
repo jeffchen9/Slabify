@@ -63,7 +63,7 @@ public final class HeadShape extends Shape {
 
       for (String[] row : rows) {
         String name = row[0];
-        heads.put(name.startsWith(Constants.MC_NAMESPACE + ":") ? name : Constants.MC_NAMESPACE + ":" +  name, row[1]);
+        heads.put(Utils.withNamespace(name), row[1]);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -94,6 +94,11 @@ public final class HeadShape extends Shape {
     }
   }
 
+  /**
+   * Get the head textures, which are loaded from the head mapping file.
+   *
+   * @return a map of block names to the texture of the head to use for each block.
+   */
   public static Map<String, String> getHeads() {
     return heads;
   }

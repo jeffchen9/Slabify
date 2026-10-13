@@ -25,6 +25,7 @@ import com.gmail.frogocomics.slabify.layers.SlabCustomLayerSettings;
 import com.gmail.frogocomics.slabify.shape.Shape;
 import com.gmail.frogocomics.slabify.shape.Shape.Options;
 import com.gmail.frogocomics.slabify.shape.Shapes;
+import com.gmail.frogocomics.slabify.utils.Utils;
 import org.javatuples.Pair;
 import org.pepsoft.minecraft.Material;
 import org.pepsoft.worldpainter.*;
@@ -245,16 +246,10 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
       // Populate rows
       for (Entry<String, Material> entry : mapping.entrySet()) {
-        String[] underlyingMaterial;
+        String[] underlyingMaterial = Utils.withNamespace(entry.getKey()).split(":");
 
-        if (entry.getKey().contains(":")) {
-          underlyingMaterial = entry.getKey().split(":");
-
-          if (underlyingMaterial.length == 1) {
-            continue;
-          }
-        } else {
-          underlyingMaterial = new String[]{Constants.MC_NAMESPACE, entry.getKey()};
+        if (underlyingMaterial.length == 1) {
+          continue;
         }
 
         Material slabMaterial = entry.getValue();
@@ -276,8 +271,9 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
   @Override
   public boolean isCommitAvailable() {
-    // Check whether the configuration currently selected by the user is valid and could be written to the layer
-    return true;
+    // WorldPainter exports a tile's layers from a sorted set in which two same-named slab layers compare as equal, so
+    // only one of them would be exported where both are painted
+    return context.getAllLayers().stream().noneMatch(l -> !l.equals(layer) && l.getName().equals(nameField.getText()));
   }
 
   @Override
@@ -605,6 +601,13 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     add(bottomPanel, BorderLayout.CENTER);
   }
 
+  /**
+   * Get the material for a block. Characters that are not allowed in block names are removed, and blocks with "slab"
+   * in their name are made bottom slabs.
+   *
+   * @param p the namespace and name of the block. A {@code null} namespace is treated as Minecraft's.
+   * @return the material, or nothing if the name is {@code null} or either part is empty after cleaning.
+   */
   public Optional<Material> getMaterial(Pair<String, String> p) {
     String blockNamespace = p.getValue0();
     String block = p.getValue1();
@@ -617,8 +620,8 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
       return Optional.empty();
     }
 
-    blockNamespace = blockNamespace.toLowerCase().replaceAll("[^a-z_]]", "");
-    block = block.toLowerCase().replaceAll("[^a-z_]]", "");
+    blockNamespace = blockNamespace.toLowerCase().replaceAll("[^a-z0-9_]", "");
+    block = block.toLowerCase().replaceAll("[^a-z0-9_]", "");
 
     if (!block.isEmpty() && !blockNamespace.isEmpty()) {
       String materialName = blockNamespace + ":" + block;
@@ -639,41 +642,14 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
 
   private void loadMappings(File location) {
     Map<String, Material> mappings = new LinkedHashMap<>();
-    try (BufferedReader reader = new BufferedReader(new FileReader(location))) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        String[] parts = line.split(",");
+    try {
+      for (String[] parts : Utils.readCsv(location)) {
         if (parts.length == 2) {
-          String[] p1 = parts[0].split(":");
-          String[] p2 = parts[1].split(":");
+          String underlying = Utils.withNamespace(parts[0]);
+          String[] slab = Utils.withNamespace(parts[1]).split(":");
 
-          if (p1.length <= 2 && p2.length <= 2) {
-
-            String underlyingNamespace;
-            String underlyingName;
-            String slabNamespace;
-            String slabName;
-
-            if (p1.length == 1) {
-              underlyingNamespace = Constants.MC_NAMESPACE;
-              underlyingName = p1[0];
-            } else {
-              underlyingNamespace = p1[0];
-              underlyingName = p1[1];
-            }
-
-            if (p2.length == 1) {
-              slabNamespace = Constants.MC_NAMESPACE;
-              slabName = p2[0];
-            } else {
-              slabNamespace = p2[0];
-              slabName = p2[1];
-            }
-
-            Optional<Material> optSlab = getMaterial(new Pair<>(slabNamespace, slabName));
-
-            optSlab.ifPresent(
-                material -> mappings.put(underlyingNamespace + ":" + underlyingName, material));
+          if (underlying.split(":").length == 2 && slab.length == 2) {
+            getMaterial(new Pair<>(slab[0], slab[1])).ifPresent(material -> mappings.put(underlying, material));
           }
         }
       }
@@ -701,93 +677,85 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
   }
 
   private void createShapesDialog() {
-    if (shapesPanel == null) {
-      shapesPanel = new JPanel(new GridBagLayout());
-      GridBagConstraints gbc = new GridBagConstraints();
-      gbc.insets = new Insets(5, 10, 5, 10);
-      gbc.fill = GridBagConstraints.BOTH;
+    shapesPanel = new JPanel(new GridBagLayout());
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.insets = new Insets(5, 10, 5, 10);
+    gbc.fill = GridBagConstraints.BOTH;
 
-      gbc.gridy = 0;
-      gbc.gridx = 1;
+    gbc.gridy = 0;
+    gbc.gridx = 1;
+
+    for (Options option : Options.values()) {
+      shapesPanel.add(new JLabel(option.toString()), gbc);
+      gbc.gridx++;
+    }
+
+    gbc.gridx = 0;
+    gbc.gridy++;
+
+    for (Shape shape : Shapes.shapesList) {
+      JLabel label = new JLabel(shape.toString());
+
+      // Bold the labels of non-vanilla shapes to indicate to the user the potential incompatibility
+      if (!shape.isVanilla()) {
+        label.setText(label.getText() + "*");
+        label.setFont(label.getFont().deriveFont(Font.BOLD));
+      }
+
+      shapesPanel.add(label, gbc);
+
+      Map<Options, JCheckBox> rowMap = new EnumMap<>(Options.class);
+      ButtonGroup group = new ButtonGroup();
+
+      gbc.gridx++;
 
       for (Options option : Options.values()) {
-        shapesPanel.add(new JLabel(option.toString()), gbc);
+        if (shape.getAvailableOptions().contains(option)) {
+          JCheckBox checkBox = new JCheckBox();
+          group.add(checkBox);
+
+          // This is to account for the rare occurrence a layer was saved and new shapes are created. The default
+          // option would be to disable the new shape, so the checkbox corresponding to Options.DISABLE is selected.
+          if (option == Options.DISABLE) {
+            checkBox.setSelected(true);
+          }
+
+          shapesPanel.add(checkBox, gbc);
+          rowMap.put(option, checkBox);
+        } else {
+          // Empty placeholder keeps grid aligned
+          shapesPanel.add(Box.createHorizontalStrut(16), gbc);
+        }
+
         gbc.gridx++;
       }
+
+      shapeSelectionMap.put(shape.getName(), rowMap);
 
       gbc.gridx = 0;
       gbc.gridy++;
-
-      for (Shape shape : Shapes.shapesList) {
-        JLabel label = new JLabel(shape.toString());
-
-        // Bold the labels of non-vanilla shapes to indicate to the user the potential incompatibility
-        if (!shape.isVanilla()) {
-          label.setText(label.getText() + "*");
-          label.setFont(label.getFont().deriveFont(Font.BOLD));
-        }
-
-        shapesPanel.add(label, gbc);
-
-        Map<Options, JCheckBox> rowMap = new EnumMap<>(Options.class);
-        ButtonGroup group = new ButtonGroup();
-
-        gbc.gridx++;
-
-        for (Options option : Options.values()) {
-          if (shape.getAvailableOptions().contains(option)) {
-            JCheckBox checkBox = new JCheckBox();
-            group.add(checkBox);
-
-            // This is to account for the rare occurrence a layer was saved and new shapes are created. The default
-            // option would be to disable the new shape, so the checkbox corresponding to Options.DISABLE is selected.
-            if (option == Options.DISABLE) {
-              checkBox.setSelected(true);
-            }
-
-            shapesPanel.add(checkBox, gbc);
-            rowMap.put(option, checkBox);
-          } else {
-            // Empty placeholder keeps grid aligned
-            shapesPanel.add(Box.createHorizontalStrut(16), gbc);
-          }
-
-          gbc.gridx++;
-        }
-
-        shapeSelectionMap.put(shape.getName(), rowMap);
-
-        gbc.gridx = 0;
-        gbc.gridy++;
-      }
     }
 
-    if (stackingCheckBox == null) {
-      stackingCheckBox = new JCheckBox();
-    }
+    stackingCheckBox = new JCheckBox();
   }
 
   private void updateShapesDialog(Map<String, Options> shapes) {
-    if (shapesPanel != null) {
-      for (Entry<String, Options> entry : shapes.entrySet()) {
-        String k = entry.getKey();
-        Options v = entry.getValue();
+    for (Entry<String, Options> entry : shapes.entrySet()) {
+      String k = entry.getKey();
+      Options v = entry.getValue();
 
-        if (shapeSelectionMap.containsKey(k)) {
-          Map<Options, JCheckBox> rowMap = shapeSelectionMap.get(k);
+      if (shapeSelectionMap.containsKey(k)) {
+        Map<Options, JCheckBox> rowMap = shapeSelectionMap.get(k);
 
-          for (Entry<Options, JCheckBox> entry2 : rowMap.entrySet()) {
-            Options k2 = entry2.getKey();
-            JCheckBox v2 = entry2.getValue();
-            v2.setSelected(v == k2);
-          }
+        for (Entry<Options, JCheckBox> entry2 : rowMap.entrySet()) {
+          Options k2 = entry2.getKey();
+          JCheckBox v2 = entry2.getValue();
+          v2.setSelected(v == k2);
         }
       }
     }
 
-    if (stackingCheckBox != null) {
-      stackingCheckBox.setSelected(layer.supportsStacking());
-    }
+    stackingCheckBox.setSelected(layer.supportsStacking());
   }
 
   private void openShapesDialog() {
@@ -882,6 +850,11 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
       fireTableRowsInserted(rows.size() - 1, rows.size() - 1);
     }
 
+    /**
+     * Remove a row.
+     *
+     * @param i the index of the row to remove.
+     */
     public void removeRow(int i) {
       rows.remove(i);
       fireTableRowsDeleted(i, i);
@@ -977,6 +950,14 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
       this("", Constants.MC_NAMESPACE, "", Constants.MC_NAMESPACE);
     }
 
+    /**
+     * Create a new row.
+     *
+     * @param block          the block name.
+     * @param blockNamespace the block namespace.
+     * @param slab           the slab name.
+     * @param slabNamespace  the slab namespace.
+     */
     public CustomRow(String block, String blockNamespace, String slab, String slabNamespace) {
       this.block = block;
       this.blockNamespace = blockNamespace;
@@ -984,34 +965,74 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
       this.slabNamespace = slabNamespace;
     }
 
+    /**
+     * Get the block name.
+     *
+     * @return the block name.
+     */
     public String getBlock() {
       return block;
     }
 
+    /**
+     * Set the block name.
+     *
+     * @param block the block name.
+     */
     public void setBlock(String block) {
       this.block = block;
     }
 
+    /**
+     * Get the block namespace.
+     *
+     * @return the block namespace.
+     */
     public String getBlockNamespace() {
       return blockNamespace;
     }
 
+    /**
+     * Set the block namespace.
+     *
+     * @param blockNamespace the block namespace.
+     */
     public void setBlockNamespace(String blockNamespace) {
       this.blockNamespace = blockNamespace;
     }
 
+    /**
+     * Get the slab name.
+     *
+     * @return the slab name.
+     */
     public String getSlab() {
       return slab;
     }
 
+    /**
+     * Set the slab name.
+     *
+     * @param slab the slab name.
+     */
     public void setSlab(String slab) {
       this.slab = slab;
     }
 
+    /**
+     * Get the slab namespace.
+     *
+     * @return the slab namespace.
+     */
     public String getSlabNamespace() {
       return slabNamespace;
     }
 
+    /**
+     * Set the slab namespace.
+     *
+     * @param slabNamespace the slab namespace.
+     */
     public void setSlabNamespace(String slabNamespace) {
       this.slabNamespace = slabNamespace;
     }
@@ -1025,6 +1046,12 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
     private final JComboBox<String> nameField;
     private final String defaultValue;
 
+    /**
+     * Create a new renderer and editor.
+     *
+     * @param blockNames   the block names to suggest.
+     * @param defaultValue the block name to show when a cell has none.
+     */
     public CustomRendererEditor(String[] blockNames, String defaultValue) {
       this.defaultValue = defaultValue;
 
@@ -1100,11 +1127,17 @@ public final class SlabCustomLayerEditor extends AbstractLayerEditor<Slab> {
       return new Pair<>(namespaceField.getSelectedItem(), nameField.getSelectedItem());
     }
 
+    /**
+     * Enable the namespace and name fields.
+     */
     public void enable() {
       namespaceField.setEnabled(true);
       nameField.setEnabled(true);
     }
 
+    /**
+     * Disable the namespace and name fields.
+     */
     public void disable() {
       namespaceField.setEnabled(false);
       nameField.setEnabled(false);

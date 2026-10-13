@@ -24,7 +24,7 @@
 
     <groupId>com.gmail.frogocomics.slabify</groupId>
     <artifactId>SlabifyPlugin</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 
     <parent>
         <groupId>org.pepsoft.worldpainter</groupId>
@@ -43,7 +43,7 @@
         <dependency>
             <groupId>org.pepsoft.worldpainter</groupId>
             <artifactId>WPGUI</artifactId>
-            <version>2.24.2</version>
+            <version>LATEST</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -66,8 +66,8 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <excludes>
-                    <exclude>org.demo.wpplugin.properties</exclude>
-                    <exclude>com.gmail.frogocomics.slabify.plugins</exclude>
+                    <exclude>com.gmail.frogocomics.slabify.properties</exclude>
+                    <exclude>org.pepsoft.worldpainter.plugins</exclude>
                 </excludes>
                 <filtering>false</filtering>
             </resource>

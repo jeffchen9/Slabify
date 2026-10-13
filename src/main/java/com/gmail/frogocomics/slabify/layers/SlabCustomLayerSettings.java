@@ -25,6 +25,11 @@ public final class SlabCustomLayerSettings implements ExporterSettings {
 
   private final Slab layer;
 
+  /**
+   * Create new settings.
+   *
+   * @param layer the layer the settings are for.
+   */
   public SlabCustomLayerSettings(Slab layer) {
     this.layer = layer;
   }

@@ -31,6 +31,11 @@ public final class Matrix8 implements Matrix {
   Matrix8() {
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the values of the matrix in row-major order, which must have a length of 8*8.
+   */
   public Matrix8(float[] data) {
     if (data.length != 8 * 8) {
       throw new IllegalArgumentException("Array must be of length 8*8");
@@ -102,6 +107,11 @@ public final class Matrix8 implements Matrix {
     m77 = data[63];
   }
 
+  /**
+   * Create a new matrix.
+   *
+   * @param data the values of the matrix, which must be 8x8.
+   */
   public Matrix8(float[][] data) {
     if (data.length != 8 || data[0].length != 8) {
       throw new IllegalArgumentException("Array must be 8x8");
@@ -807,7 +817,9 @@ public final class Matrix8 implements Matrix {
   }
 
   @Override
-  public float getLoss(float[] arr, double exponent) {
+  public float getLoss(float[] arr, double exponent, float bound) {
+    // Stop once a row takes the loss above the bound. Rows are added in the same order as a single sum, so a
+    // loss within the bound is unaffected
     if (exponent == 2) {
       float l00 = m00 - arr[0];
       float l01 = m01 - arr[1];
@@ -817,6 +829,10 @@ public final class Matrix8 implements Matrix {
       float l05 = m05 - arr[5];
       float l06 = m06 - arr[6];
       float l07 = m07 - arr[7];
+      float loss = l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03 + l04 * l04 + l05 * l05 + l06 * l06 + l07 * l07;
+      if (loss > bound) {
+        return loss;
+      }
       float l10 = m10 - arr[8];
       float l11 = m11 - arr[9];
       float l12 = m12 - arr[10];
@@ -825,6 +841,10 @@ public final class Matrix8 implements Matrix {
       float l15 = m15 - arr[13];
       float l16 = m16 - arr[14];
       float l17 = m17 - arr[15];
+      loss = loss + l10 * l10 + l11 * l11 + l12 * l12 + l13 * l13 + l14 * l14 + l15 * l15 + l16 * l16 + l17 * l17;
+      if (loss > bound) {
+        return loss;
+      }
       float l20 = m20 - arr[16];
       float l21 = m21 - arr[17];
       float l22 = m22 - arr[18];
@@ -833,6 +853,10 @@ public final class Matrix8 implements Matrix {
       float l25 = m25 - arr[21];
       float l26 = m26 - arr[22];
       float l27 = m27 - arr[23];
+      loss = loss + l20 * l20 + l21 * l21 + l22 * l22 + l23 * l23 + l24 * l24 + l25 * l25 + l26 * l26 + l27 * l27;
+      if (loss > bound) {
+        return loss;
+      }
       float l30 = m30 - arr[24];
       float l31 = m31 - arr[25];
       float l32 = m32 - arr[26];
@@ -841,6 +865,10 @@ public final class Matrix8 implements Matrix {
       float l35 = m35 - arr[29];
       float l36 = m36 - arr[30];
       float l37 = m37 - arr[31];
+      loss = loss + l30 * l30 + l31 * l31 + l32 * l32 + l33 * l33 + l34 * l34 + l35 * l35 + l36 * l36 + l37 * l37;
+      if (loss > bound) {
+        return loss;
+      }
       float l40 = m40 - arr[32];
       float l41 = m41 - arr[33];
       float l42 = m42 - arr[34];
@@ -849,6 +877,10 @@ public final class Matrix8 implements Matrix {
       float l45 = m45 - arr[37];
       float l46 = m46 - arr[38];
       float l47 = m47 - arr[39];
+      loss = loss + l40 * l40 + l41 * l41 + l42 * l42 + l43 * l43 + l44 * l44 + l45 * l45 + l46 * l46 + l47 * l47;
+      if (loss > bound) {
+        return loss;
+      }
       float l50 = m50 - arr[40];
       float l51 = m51 - arr[41];
       float l52 = m52 - arr[42];
@@ -857,6 +889,10 @@ public final class Matrix8 implements Matrix {
       float l55 = m55 - arr[45];
       float l56 = m56 - arr[46];
       float l57 = m57 - arr[47];
+      loss = loss + l50 * l50 + l51 * l51 + l52 * l52 + l53 * l53 + l54 * l54 + l55 * l55 + l56 * l56 + l57 * l57;
+      if (loss > bound) {
+        return loss;
+      }
       float l60 = m60 - arr[48];
       float l61 = m61 - arr[49];
       float l62 = m62 - arr[50];
@@ -865,6 +901,10 @@ public final class Matrix8 implements Matrix {
       float l65 = m65 - arr[53];
       float l66 = m66 - arr[54];
       float l67 = m67 - arr[55];
+      loss = loss + l60 * l60 + l61 * l61 + l62 * l62 + l63 * l63 + l64 * l64 + l65 * l65 + l66 * l66 + l67 * l67;
+      if (loss > bound) {
+        return loss;
+      }
       float l70 = m70 - arr[56];
       float l71 = m71 - arr[57];
       float l72 = m72 - arr[58];
@@ -873,56 +913,101 @@ public final class Matrix8 implements Matrix {
       float l75 = m75 - arr[61];
       float l76 = m76 - arr[62];
       float l77 = m77 - arr[63];
-      return l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03 + l04 * l04 + l05 * l05 + l06 * l06 + l07 * l07 + l10 * l10
-          + l11 * l11 + l12 * l12 + l13 * l13 + l14 * l14 + l15 * l15 + l16 * l16 + l17 * l17 + l20 * l20 + l21 * l21 +
-          l22 * l22 + l23 * l23 + l24 * l24 + l25 * l25 + l26 * l26 + l27 * l27 + l30 * l30 + l31 * l31 + l32 * l32 +
-          l33 * l33 + l34 * l34 + l35 * l35 + l36 * l36 + l37 * l37 + l40 * l40 + l41 * l41 + l42 * l42 + l43 * l43 +
-          l44 * l44 + l45 * l45 + l46 * l46 + l47 * l47 + l50 * l50 + l51 * l51 + l52 * l52 + l53 * l53 + l54 * l54 +
-          l55 * l55 + l56 * l56 + l57 * l57 + l60 * l60 + l61 * l61 + l62 * l62 + l63 * l63 + l64 * l64 + l65 * l65 +
-          l66 * l66 + l67 * l67 + l70 * l70 + l71 * l71 + l72 * l72 + l73 * l73 + l74 * l74 + l75 * l75 + l76 * l76 +
-          l77 * l77;
+      loss = loss + l70 * l70 + l71 * l71 + l72 * l72 + l73 * l73 + l74 * l74 + l75 * l75 + l76 * l76 + l77 * l77;
+      return loss;
     } else if (exponent == 1) {
-      return abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m04 - arr[4]) +
-          abs(m05 - arr[5]) + abs(m06 - arr[6]) + abs(m07 - arr[7]) + abs(m10 - arr[8]) + abs(m11 - arr[9]) +
-          abs(m12 - arr[10]) + abs(m13 - arr[11]) + abs(m14 - arr[12]) + abs(m15 - arr[13]) + abs(m16 - arr[14]) +
-          abs(m17 - arr[15]) + abs(m20 - arr[16]) + abs(m21 - arr[17]) + abs(m22 - arr[18]) + abs(m23 - arr[19]) +
-          abs(m24 - arr[20]) + abs(m25 - arr[21]) + abs(m26 - arr[22]) + abs(m27 - arr[23]) + abs(m30 - arr[24]) +
-          abs(m31 - arr[25]) + abs(m32 - arr[26]) + abs(m33 - arr[27]) + abs(m34 - arr[28]) + abs(m35 - arr[29]) +
-          abs(m36 - arr[30]) + abs(m37 - arr[31]) + abs(m40 - arr[32]) + abs(m41 - arr[33]) + abs(m42 - arr[34]) +
-          abs(m43 - arr[35]) + abs(m44 - arr[36]) + abs(m45 - arr[37]) + abs(m46 - arr[38]) + abs(m47 - arr[39]) +
-          abs(m50 - arr[40]) + abs(m51 - arr[41]) + abs(m52 - arr[42]) + abs(m53 - arr[43]) + abs(m54 - arr[44]) +
-          abs(m55 - arr[45]) + abs(m56 - arr[46]) + abs(m57 - arr[47]) + abs(m60 - arr[48]) + abs(m61 - arr[49]) +
-          abs(m62 - arr[50]) + abs(m63 - arr[51]) + abs(m64 - arr[52]) + abs(m65 - arr[53]) + abs(m66 - arr[54]) +
-          abs(m67 - arr[55]) + abs(m70 - arr[56]) + abs(m71 - arr[57]) + abs(m72 - arr[58]) + abs(m73 - arr[59]) +
+      float loss = abs(m00 - arr[0]) + abs(m01 - arr[1]) + abs(m02 - arr[2]) + abs(m03 - arr[3]) + abs(m04 - arr[4]) +
+          abs(m05 - arr[5]) + abs(m06 - arr[6]) + abs(m07 - arr[7]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m10 - arr[8]) + abs(m11 - arr[9]) + abs(m12 - arr[10]) + abs(m13 - arr[11]) +
+          abs(m14 - arr[12]) + abs(m15 - arr[13]) + abs(m16 - arr[14]) + abs(m17 - arr[15]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m20 - arr[16]) + abs(m21 - arr[17]) + abs(m22 - arr[18]) + abs(m23 - arr[19]) +
+          abs(m24 - arr[20]) + abs(m25 - arr[21]) + abs(m26 - arr[22]) + abs(m27 - arr[23]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m30 - arr[24]) + abs(m31 - arr[25]) + abs(m32 - arr[26]) + abs(m33 - arr[27]) +
+          abs(m34 - arr[28]) + abs(m35 - arr[29]) + abs(m36 - arr[30]) + abs(m37 - arr[31]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m40 - arr[32]) + abs(m41 - arr[33]) + abs(m42 - arr[34]) + abs(m43 - arr[35]) +
+          abs(m44 - arr[36]) + abs(m45 - arr[37]) + abs(m46 - arr[38]) + abs(m47 - arr[39]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m50 - arr[40]) + abs(m51 - arr[41]) + abs(m52 - arr[42]) + abs(m53 - arr[43]) +
+          abs(m54 - arr[44]) + abs(m55 - arr[45]) + abs(m56 - arr[46]) + abs(m57 - arr[47]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m60 - arr[48]) + abs(m61 - arr[49]) + abs(m62 - arr[50]) + abs(m63 - arr[51]) +
+          abs(m64 - arr[52]) + abs(m65 - arr[53]) + abs(m66 - arr[54]) + abs(m67 - arr[55]);
+      if (loss > bound) {
+        return loss;
+      }
+      loss = loss + abs(m70 - arr[56]) + abs(m71 - arr[57]) + abs(m72 - arr[58]) + abs(m73 - arr[59]) +
           abs(m74 - arr[60]) + abs(m75 - arr[61]) + abs(m76 - arr[62]) + abs(m77 - arr[63]);
+      return loss;
     } else {
-      return (float) (pow(abs(m00 - arr[0]), exponent) + pow(abs(m01 - arr[1]), exponent) +
+      double loss = pow(abs(m00 - arr[0]), exponent) + pow(abs(m01 - arr[1]), exponent) +
           pow(abs(m02 - arr[2]), exponent) + pow(abs(m03 - arr[3]), exponent) + pow(abs(m04 - arr[4]), exponent) +
-          pow(abs(m05 - arr[5]), exponent) + pow(abs(m06 - arr[6]), exponent) + pow(abs(m07 - arr[7]), exponent) +
-          pow(abs(m10 - arr[8]), exponent) + pow(abs(m11 - arr[9]), exponent) + pow(abs(m12 - arr[10]), exponent) +
-          pow(abs(m13 - arr[11]), exponent) + pow(abs(m14 - arr[12]), exponent) + pow(abs(m15 - arr[13]), exponent) +
-          pow(abs(m16 - arr[14]), exponent) + pow(abs(m17 - arr[15]), exponent) + pow(abs(m20 - arr[16]), exponent) +
-          pow(abs(m21 - arr[17]), exponent) + pow(abs(m22 - arr[18]), exponent) + pow(abs(m23 - arr[19]), exponent) +
-          pow(abs(m24 - arr[20]), exponent) + pow(abs(m25 - arr[21]), exponent) + pow(abs(m26 - arr[22]), exponent) +
-          pow(abs(m27 - arr[23]), exponent) + pow(abs(m30 - arr[24]), exponent) + pow(abs(m31 - arr[25]), exponent) +
+          pow(abs(m05 - arr[5]), exponent) + pow(abs(m06 - arr[6]), exponent) + pow(abs(m07 - arr[7]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m10 - arr[8]), exponent) + pow(abs(m11 - arr[9]), exponent) +
+          pow(abs(m12 - arr[10]), exponent) + pow(abs(m13 - arr[11]), exponent) + pow(abs(m14 - arr[12]), exponent) +
+          pow(abs(m15 - arr[13]), exponent) + pow(abs(m16 - arr[14]), exponent) + pow(abs(m17 - arr[15]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m20 - arr[16]), exponent) + pow(abs(m21 - arr[17]), exponent) +
+          pow(abs(m22 - arr[18]), exponent) + pow(abs(m23 - arr[19]), exponent) + pow(abs(m24 - arr[20]), exponent) +
+          pow(abs(m25 - arr[21]), exponent) + pow(abs(m26 - arr[22]), exponent) + pow(abs(m27 - arr[23]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m30 - arr[24]), exponent) + pow(abs(m31 - arr[25]), exponent) +
           pow(abs(m32 - arr[26]), exponent) + pow(abs(m33 - arr[27]), exponent) + pow(abs(m34 - arr[28]), exponent) +
-          pow(abs(m35 - arr[29]), exponent) + pow(abs(m36 - arr[30]), exponent) + pow(abs(m37 - arr[31]), exponent) +
-          pow(abs(m40 - arr[32]), exponent) + pow(abs(m41 - arr[33]), exponent) + pow(abs(m42 - arr[34]), exponent) +
-          pow(abs(m43 - arr[35]), exponent) + pow(abs(m44 - arr[36]), exponent) + pow(abs(m45 - arr[37]), exponent) +
-          pow(abs(m46 - arr[38]), exponent) + pow(abs(m47 - arr[39]), exponent) + pow(abs(m50 - arr[40]), exponent) +
-          pow(abs(m51 - arr[41]), exponent) + pow(abs(m52 - arr[42]), exponent) + pow(abs(m53 - arr[43]), exponent) +
-          pow(abs(m54 - arr[44]), exponent) + pow(abs(m55 - arr[45]), exponent) + pow(abs(m56 - arr[46]), exponent) +
-          pow(abs(m57 - arr[47]), exponent) + pow(abs(m60 - arr[48]), exponent) + pow(abs(m61 - arr[49]), exponent) +
+          pow(abs(m35 - arr[29]), exponent) + pow(abs(m36 - arr[30]), exponent) + pow(abs(m37 - arr[31]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m40 - arr[32]), exponent) + pow(abs(m41 - arr[33]), exponent) +
+          pow(abs(m42 - arr[34]), exponent) + pow(abs(m43 - arr[35]), exponent) + pow(abs(m44 - arr[36]), exponent) +
+          pow(abs(m45 - arr[37]), exponent) + pow(abs(m46 - arr[38]), exponent) + pow(abs(m47 - arr[39]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m50 - arr[40]), exponent) + pow(abs(m51 - arr[41]), exponent) +
+          pow(abs(m52 - arr[42]), exponent) + pow(abs(m53 - arr[43]), exponent) + pow(abs(m54 - arr[44]), exponent) +
+          pow(abs(m55 - arr[45]), exponent) + pow(abs(m56 - arr[46]), exponent) + pow(abs(m57 - arr[47]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m60 - arr[48]), exponent) + pow(abs(m61 - arr[49]), exponent) +
           pow(abs(m62 - arr[50]), exponent) + pow(abs(m63 - arr[51]), exponent) + pow(abs(m64 - arr[52]), exponent) +
-          pow(abs(m65 - arr[53]), exponent) + pow(abs(m66 - arr[54]), exponent) + pow(abs(m67 - arr[55]), exponent) +
-          pow(abs(m70 - arr[56]), exponent) + pow(abs(m71 - arr[57]), exponent) + pow(abs(m72 - arr[58]), exponent) +
-          pow(abs(m73 - arr[59]), exponent) + pow(abs(m74 - arr[60]), exponent) + pow(abs(m75 - arr[61]), exponent) +
-          pow(abs(m76 - arr[62]), exponent) + pow(abs(m77 - arr[63]), exponent));
+          pow(abs(m65 - arr[53]), exponent) + pow(abs(m66 - arr[54]), exponent) + pow(abs(m67 - arr[55]), exponent);
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
+      loss = loss + pow(abs(m70 - arr[56]), exponent) + pow(abs(m71 - arr[57]), exponent) +
+          pow(abs(m72 - arr[58]), exponent) + pow(abs(m73 - arr[59]), exponent) + pow(abs(m74 - arr[60]), exponent) +
+          pow(abs(m75 - arr[61]), exponent) + pow(abs(m76 - arr[62]), exponent) + pow(abs(m77 - arr[63]), exponent);
+      return (float) loss;
     }
   }
 
   @Override
-  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent) {
+  public float getLossClip(float[] arrUnclip, float[] arrMin0, float[] arrMax1, double exponent, float bound) {
+    // Stop once a row takes the loss above the bound. Rows are added in the same order as a single sum, so a
+    // loss within the bound is unaffected
     if (exponent == 2) {
       float l00 = m00 == 0 ? m00 - arrMin0[0] : (m00 == 1 ? m00 - arrMax1[0] : m00 - arrUnclip[0]);
       float l01 = m01 == 0 ? m01 - arrMin0[1] : (m01 == 1 ? m01 - arrMax1[1] : m01 - arrUnclip[1]);
@@ -932,6 +1017,10 @@ public final class Matrix8 implements Matrix {
       float l05 = m05 == 0 ? m05 - arrMin0[5] : (m05 == 1 ? m05 - arrMax1[5] : m05 - arrUnclip[5]);
       float l06 = m06 == 0 ? m06 - arrMin0[6] : (m06 == 1 ? m06 - arrMax1[6] : m06 - arrUnclip[6]);
       float l07 = m07 == 0 ? m07 - arrMin0[7] : (m07 == 1 ? m07 - arrMax1[7] : m07 - arrUnclip[7]);
+      float loss = l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03 + l04 * l04 + l05 * l05 + l06 * l06 + l07 * l07;
+      if (loss > bound) {
+        return loss;
+      }
       float l10 = m10 == 0 ? m10 - arrMin0[8] : (m10 == 1 ? m10 - arrMax1[8] : m10 - arrUnclip[8]);
       float l11 = m11 == 0 ? m11 - arrMin0[9] : (m11 == 1 ? m11 - arrMax1[9] : m11 - arrUnclip[9]);
       float l12 = m12 == 0 ? m12 - arrMin0[10] : (m12 == 1 ? m12 - arrMax1[10] : m12 - arrUnclip[10]);
@@ -940,6 +1029,10 @@ public final class Matrix8 implements Matrix {
       float l15 = m15 == 0 ? m15 - arrMin0[13] : (m15 == 1 ? m15 - arrMax1[13] : m15 - arrUnclip[13]);
       float l16 = m16 == 0 ? m16 - arrMin0[14] : (m16 == 1 ? m16 - arrMax1[14] : m16 - arrUnclip[14]);
       float l17 = m17 == 0 ? m17 - arrMin0[15] : (m17 == 1 ? m17 - arrMax1[15] : m17 - arrUnclip[15]);
+      loss = loss + l10 * l10 + l11 * l11 + l12 * l12 + l13 * l13 + l14 * l14 + l15 * l15 + l16 * l16 + l17 * l17;
+      if (loss > bound) {
+        return loss;
+      }
       float l20 = m20 == 0 ? m20 - arrMin0[16] : (m20 == 1 ? m20 - arrMax1[16] : m20 - arrUnclip[16]);
       float l21 = m21 == 0 ? m21 - arrMin0[17] : (m21 == 1 ? m21 - arrMax1[17] : m21 - arrUnclip[17]);
       float l22 = m22 == 0 ? m22 - arrMin0[18] : (m22 == 1 ? m22 - arrMax1[18] : m22 - arrUnclip[18]);
@@ -948,6 +1041,10 @@ public final class Matrix8 implements Matrix {
       float l25 = m25 == 0 ? m25 - arrMin0[21] : (m25 == 1 ? m25 - arrMax1[21] : m25 - arrUnclip[21]);
       float l26 = m26 == 0 ? m26 - arrMin0[22] : (m26 == 1 ? m26 - arrMax1[22] : m26 - arrUnclip[22]);
       float l27 = m27 == 0 ? m27 - arrMin0[23] : (m27 == 1 ? m27 - arrMax1[23] : m27 - arrUnclip[23]);
+      loss = loss + l20 * l20 + l21 * l21 + l22 * l22 + l23 * l23 + l24 * l24 + l25 * l25 + l26 * l26 + l27 * l27;
+      if (loss > bound) {
+        return loss;
+      }
       float l30 = m30 == 0 ? m30 - arrMin0[24] : (m30 == 1 ? m30 - arrMax1[24] : m30 - arrUnclip[24]);
       float l31 = m31 == 0 ? m31 - arrMin0[25] : (m31 == 1 ? m31 - arrMax1[25] : m31 - arrUnclip[25]);
       float l32 = m32 == 0 ? m32 - arrMin0[26] : (m32 == 1 ? m32 - arrMax1[26] : m32 - arrUnclip[26]);
@@ -956,6 +1053,10 @@ public final class Matrix8 implements Matrix {
       float l35 = m35 == 0 ? m35 - arrMin0[29] : (m35 == 1 ? m35 - arrMax1[29] : m35 - arrUnclip[29]);
       float l36 = m36 == 0 ? m36 - arrMin0[30] : (m36 == 1 ? m36 - arrMax1[30] : m36 - arrUnclip[30]);
       float l37 = m37 == 0 ? m37 - arrMin0[31] : (m37 == 1 ? m37 - arrMax1[31] : m37 - arrUnclip[31]);
+      loss = loss + l30 * l30 + l31 * l31 + l32 * l32 + l33 * l33 + l34 * l34 + l35 * l35 + l36 * l36 + l37 * l37;
+      if (loss > bound) {
+        return loss;
+      }
       float l40 = m40 == 0 ? m40 - arrMin0[32] : (m40 == 1 ? m40 - arrMax1[32] : m40 - arrUnclip[32]);
       float l41 = m41 == 0 ? m41 - arrMin0[33] : (m41 == 1 ? m41 - arrMax1[33] : m41 - arrUnclip[33]);
       float l42 = m42 == 0 ? m42 - arrMin0[34] : (m42 == 1 ? m42 - arrMax1[34] : m42 - arrUnclip[34]);
@@ -964,6 +1065,10 @@ public final class Matrix8 implements Matrix {
       float l45 = m45 == 0 ? m45 - arrMin0[37] : (m45 == 1 ? m45 - arrMax1[37] : m45 - arrUnclip[37]);
       float l46 = m46 == 0 ? m46 - arrMin0[38] : (m46 == 1 ? m46 - arrMax1[38] : m46 - arrUnclip[38]);
       float l47 = m47 == 0 ? m47 - arrMin0[39] : (m47 == 1 ? m47 - arrMax1[39] : m47 - arrUnclip[39]);
+      loss = loss + l40 * l40 + l41 * l41 + l42 * l42 + l43 * l43 + l44 * l44 + l45 * l45 + l46 * l46 + l47 * l47;
+      if (loss > bound) {
+        return loss;
+      }
       float l50 = m50 == 0 ? m50 - arrMin0[40] : (m50 == 1 ? m50 - arrMax1[40] : m50 - arrUnclip[40]);
       float l51 = m51 == 0 ? m51 - arrMin0[41] : (m51 == 1 ? m51 - arrMax1[41] : m51 - arrUnclip[41]);
       float l52 = m52 == 0 ? m52 - arrMin0[42] : (m52 == 1 ? m52 - arrMax1[42] : m52 - arrUnclip[42]);
@@ -972,6 +1077,10 @@ public final class Matrix8 implements Matrix {
       float l55 = m55 == 0 ? m55 - arrMin0[45] : (m55 == 1 ? m55 - arrMax1[45] : m55 - arrUnclip[45]);
       float l56 = m56 == 0 ? m56 - arrMin0[46] : (m56 == 1 ? m56 - arrMax1[46] : m56 - arrUnclip[46]);
       float l57 = m57 == 0 ? m57 - arrMin0[47] : (m57 == 1 ? m57 - arrMax1[47] : m57 - arrUnclip[47]);
+      loss = loss + l50 * l50 + l51 * l51 + l52 * l52 + l53 * l53 + l54 * l54 + l55 * l55 + l56 * l56 + l57 * l57;
+      if (loss > bound) {
+        return loss;
+      }
       float l60 = m60 == 0 ? m60 - arrMin0[48] : (m60 == 1 ? m60 - arrMax1[48] : m60 - arrUnclip[48]);
       float l61 = m61 == 0 ? m61 - arrMin0[49] : (m61 == 1 ? m61 - arrMax1[49] : m61 - arrUnclip[49]);
       float l62 = m62 == 0 ? m62 - arrMin0[50] : (m62 == 1 ? m62 - arrMax1[50] : m62 - arrUnclip[50]);
@@ -980,6 +1089,10 @@ public final class Matrix8 implements Matrix {
       float l65 = m65 == 0 ? m65 - arrMin0[53] : (m65 == 1 ? m65 - arrMax1[53] : m65 - arrUnclip[53]);
       float l66 = m66 == 0 ? m66 - arrMin0[54] : (m66 == 1 ? m66 - arrMax1[54] : m66 - arrUnclip[54]);
       float l67 = m67 == 0 ? m67 - arrMin0[55] : (m67 == 1 ? m67 - arrMax1[55] : m67 - arrUnclip[55]);
+      loss = loss + l60 * l60 + l61 * l61 + l62 * l62 + l63 * l63 + l64 * l64 + l65 * l65 + l66 * l66 + l67 * l67;
+      if (loss > bound) {
+        return loss;
+      }
       float l70 = m70 == 0 ? m70 - arrMin0[56] : (m70 == 1 ? m70 - arrMax1[56] : m70 - arrUnclip[56]);
       float l71 = m71 == 0 ? m71 - arrMin0[57] : (m71 == 1 ? m71 - arrMax1[57] : m71 - arrUnclip[57]);
       float l72 = m72 == 0 ? m72 - arrMin0[58] : (m72 == 1 ? m72 - arrMax1[58] : m72 - arrUnclip[58]);
@@ -988,14 +1101,8 @@ public final class Matrix8 implements Matrix {
       float l75 = m75 == 0 ? m75 - arrMin0[61] : (m75 == 1 ? m75 - arrMax1[61] : m75 - arrUnclip[61]);
       float l76 = m76 == 0 ? m76 - arrMin0[62] : (m76 == 1 ? m76 - arrMax1[62] : m76 - arrUnclip[62]);
       float l77 = m77 == 0 ? m77 - arrMin0[63] : (m77 == 1 ? m77 - arrMax1[63] : m77 - arrUnclip[63]);
-      return l00 * l00 + l01 * l01 + l02 * l02 + l03 * l03 + l04 * l04 + l05 * l05 + l06 * l06 + l07 * l07 + l10 * l10 +
-          l11 * l11 + l12 * l12 + l13 * l13 + l14 * l14 + l15 * l15 + l16 * l16 + l17 * l17 + l20 * l20 + l21 * l21 +
-          l22 * l22 + l23 * l23 + l24 * l24 + l25 * l25 + l26 * l26 + l27 * l27 + l30 * l30 + l31 * l31 + l32 * l32 +
-          l33 * l33 + l34 * l34 + l35 * l35 + l36 * l36 + l37 * l37 + l40 * l40 + l41 * l41 + l42 * l42 + l43 * l43 +
-          l44 * l44 + l45 * l45 + l46 * l46 + l47 * l47 + l50 * l50 + l51 * l51 + l52 * l52 + l53 * l53 + l54 * l54 +
-          l55 * l55 + l56 * l56 + l57 * l57 + l60 * l60 + l61 * l61 + l62 * l62 + l63 * l63 + l64 * l64 + l65 * l65 +
-          l66 * l66 + l67 * l67 + l70 * l70 + l71 * l71 + l72 * l72 + l73 * l73 + l74 * l74 + l75 * l75 + l76 * l76 +
-          l77 * l77;
+      loss = loss + l70 * l70 + l71 * l71 + l72 * l72 + l73 * l73 + l74 * l74 + l75 * l75 + l76 * l76 + l77 * l77;
+      return loss;
     } else if (exponent == 1) {
       float loss = 0;
       loss += m00 == 0 ? abs(m00 - arrMin0[0]) : (m00 == 1 ? abs(m00 - arrMax1[0]) : abs(m00 - arrUnclip[0]));
@@ -1006,6 +1113,9 @@ public final class Matrix8 implements Matrix {
       loss += m05 == 0 ? abs(m05 - arrMin0[5]) : (m05 == 1 ? abs(m05 - arrMax1[5]) : abs(m05 - arrUnclip[5]));
       loss += m06 == 0 ? abs(m06 - arrMin0[6]) : (m06 == 1 ? abs(m06 - arrMax1[6]) : abs(m06 - arrUnclip[6]));
       loss += m07 == 0 ? abs(m07 - arrMin0[7]) : (m07 == 1 ? abs(m07 - arrMax1[7]) : abs(m07 - arrUnclip[7]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m10 == 0 ? abs(m10 - arrMin0[8]) : (m10 == 1 ? abs(m10 - arrMax1[8]) : abs(m10 - arrUnclip[8]));
       loss += m11 == 0 ? abs(m11 - arrMin0[9]) : (m11 == 1 ? abs(m11 - arrMax1[9]) : abs(m11 - arrUnclip[9]));
       loss += m12 == 0 ? abs(m12 - arrMin0[10]) : (m12 == 1 ? abs(m12 - arrMax1[10]) : abs(m12 - arrUnclip[10]));
@@ -1014,6 +1124,9 @@ public final class Matrix8 implements Matrix {
       loss += m15 == 0 ? abs(m15 - arrMin0[13]) : (m15 == 1 ? abs(m15 - arrMax1[13]) : abs(m15 - arrUnclip[13]));
       loss += m16 == 0 ? abs(m16 - arrMin0[14]) : (m16 == 1 ? abs(m16 - arrMax1[14]) : abs(m16 - arrUnclip[14]));
       loss += m17 == 0 ? abs(m17 - arrMin0[15]) : (m17 == 1 ? abs(m17 - arrMax1[15]) : abs(m17 - arrUnclip[15]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m20 == 0 ? abs(m20 - arrMin0[16]) : (m20 == 1 ? abs(m20 - arrMax1[16]) : abs(m20 - arrUnclip[16]));
       loss += m21 == 0 ? abs(m21 - arrMin0[17]) : (m21 == 1 ? abs(m21 - arrMax1[17]) : abs(m21 - arrUnclip[17]));
       loss += m22 == 0 ? abs(m22 - arrMin0[18]) : (m22 == 1 ? abs(m22 - arrMax1[18]) : abs(m22 - arrUnclip[18]));
@@ -1022,6 +1135,9 @@ public final class Matrix8 implements Matrix {
       loss += m25 == 0 ? abs(m25 - arrMin0[21]) : (m25 == 1 ? abs(m25 - arrMax1[21]) : abs(m25 - arrUnclip[21]));
       loss += m26 == 0 ? abs(m26 - arrMin0[22]) : (m26 == 1 ? abs(m26 - arrMax1[22]) : abs(m26 - arrUnclip[22]));
       loss += m27 == 0 ? abs(m27 - arrMin0[23]) : (m27 == 1 ? abs(m27 - arrMax1[23]) : abs(m27 - arrUnclip[23]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m30 == 0 ? abs(m30 - arrMin0[24]) : (m30 == 1 ? abs(m30 - arrMax1[24]) : abs(m30 - arrUnclip[24]));
       loss += m31 == 0 ? abs(m31 - arrMin0[25]) : (m31 == 1 ? abs(m31 - arrMax1[25]) : abs(m31 - arrUnclip[25]));
       loss += m32 == 0 ? abs(m32 - arrMin0[26]) : (m32 == 1 ? abs(m32 - arrMax1[26]) : abs(m32 - arrUnclip[26]));
@@ -1030,6 +1146,9 @@ public final class Matrix8 implements Matrix {
       loss += m35 == 0 ? abs(m35 - arrMin0[29]) : (m35 == 1 ? abs(m35 - arrMax1[29]) : abs(m35 - arrUnclip[29]));
       loss += m36 == 0 ? abs(m36 - arrMin0[30]) : (m36 == 1 ? abs(m36 - arrMax1[30]) : abs(m36 - arrUnclip[30]));
       loss += m37 == 0 ? abs(m37 - arrMin0[31]) : (m37 == 1 ? abs(m37 - arrMax1[31]) : abs(m37 - arrUnclip[31]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m40 == 0 ? abs(m40 - arrMin0[32]) : (m40 == 1 ? abs(m40 - arrMax1[32]) : abs(m40 - arrUnclip[32]));
       loss += m41 == 0 ? abs(m41 - arrMin0[33]) : (m41 == 1 ? abs(m41 - arrMax1[33]) : abs(m41 - arrUnclip[33]));
       loss += m42 == 0 ? abs(m42 - arrMin0[34]) : (m42 == 1 ? abs(m42 - arrMax1[34]) : abs(m42 - arrUnclip[34]));
@@ -1038,6 +1157,9 @@ public final class Matrix8 implements Matrix {
       loss += m45 == 0 ? abs(m45 - arrMin0[37]) : (m45 == 1 ? abs(m45 - arrMax1[37]) : abs(m45 - arrUnclip[37]));
       loss += m46 == 0 ? abs(m46 - arrMin0[38]) : (m46 == 1 ? abs(m46 - arrMax1[38]) : abs(m46 - arrUnclip[38]));
       loss += m47 == 0 ? abs(m47 - arrMin0[39]) : (m47 == 1 ? abs(m47 - arrMax1[39]) : abs(m47 - arrUnclip[39]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m50 == 0 ? abs(m50 - arrMin0[40]) : (m50 == 1 ? abs(m50 - arrMax1[40]) : abs(m50 - arrUnclip[40]));
       loss += m51 == 0 ? abs(m51 - arrMin0[41]) : (m51 == 1 ? abs(m51 - arrMax1[41]) : abs(m51 - arrUnclip[41]));
       loss += m52 == 0 ? abs(m52 - arrMin0[42]) : (m52 == 1 ? abs(m52 - arrMax1[42]) : abs(m52 - arrUnclip[42]));
@@ -1046,6 +1168,9 @@ public final class Matrix8 implements Matrix {
       loss += m55 == 0 ? abs(m55 - arrMin0[45]) : (m55 == 1 ? abs(m55 - arrMax1[45]) : abs(m55 - arrUnclip[45]));
       loss += m56 == 0 ? abs(m56 - arrMin0[46]) : (m56 == 1 ? abs(m56 - arrMax1[46]) : abs(m56 - arrUnclip[46]));
       loss += m57 == 0 ? abs(m57 - arrMin0[47]) : (m57 == 1 ? abs(m57 - arrMax1[47]) : abs(m57 - arrUnclip[47]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m60 == 0 ? abs(m60 - arrMin0[48]) : (m60 == 1 ? abs(m60 - arrMax1[48]) : abs(m60 - arrUnclip[48]));
       loss += m61 == 0 ? abs(m61 - arrMin0[49]) : (m61 == 1 ? abs(m61 - arrMax1[49]) : abs(m61 - arrUnclip[49]));
       loss += m62 == 0 ? abs(m62 - arrMin0[50]) : (m62 == 1 ? abs(m62 - arrMax1[50]) : abs(m62 - arrUnclip[50]));
@@ -1054,6 +1179,9 @@ public final class Matrix8 implements Matrix {
       loss += m65 == 0 ? abs(m65 - arrMin0[53]) : (m65 == 1 ? abs(m65 - arrMax1[53]) : abs(m65 - arrUnclip[53]));
       loss += m66 == 0 ? abs(m66 - arrMin0[54]) : (m66 == 1 ? abs(m66 - arrMax1[54]) : abs(m66 - arrUnclip[54]));
       loss += m67 == 0 ? abs(m67 - arrMin0[55]) : (m67 == 1 ? abs(m67 - arrMax1[55]) : abs(m67 - arrUnclip[55]));
+      if (loss > bound) {
+        return loss;
+      }
       loss += m70 == 0 ? abs(m70 - arrMin0[56]) : (m70 == 1 ? abs(m70 - arrMax1[56]) : abs(m70 - arrUnclip[56]));
       loss += m71 == 0 ? abs(m71 - arrMin0[57]) : (m71 == 1 ? abs(m71 - arrMax1[57]) : abs(m71 - arrUnclip[57]));
       loss += m72 == 0 ? abs(m72 - arrMin0[58]) : (m72 == 1 ? abs(m72 - arrMax1[58]) : abs(m72 - arrUnclip[58]));
@@ -1073,6 +1201,9 @@ public final class Matrix8 implements Matrix {
       loss += m05 == 0 ? pow(abs(m05 - arrMin0[5]), exponent) : (m05 == 1 ? pow(abs(m05 - arrMax1[5]), exponent) : pow(abs(m05 - arrUnclip[5]), exponent));
       loss += m06 == 0 ? pow(abs(m06 - arrMin0[6]), exponent) : (m06 == 1 ? pow(abs(m06 - arrMax1[6]), exponent) : pow(abs(m06 - arrUnclip[6]), exponent));
       loss += m07 == 0 ? pow(abs(m07 - arrMin0[7]), exponent) : (m07 == 1 ? pow(abs(m07 - arrMax1[7]), exponent) : pow(abs(m07 - arrUnclip[7]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m10 == 0 ? pow(abs(m10 - arrMin0[8]), exponent) : (m10 == 1 ? pow(abs(m10 - arrMax1[8]), exponent) : pow(abs(m10 - arrUnclip[8]), exponent));
       loss += m11 == 0 ? pow(abs(m11 - arrMin0[9]), exponent) : (m11 == 1 ? pow(abs(m11 - arrMax1[9]), exponent) : pow(abs(m11 - arrUnclip[9]), exponent));
       loss += m12 == 0 ? pow(abs(m12 - arrMin0[10]), exponent) : (m12 == 1 ? pow(abs(m12 - arrMax1[10]), exponent) : pow(abs(m12 - arrUnclip[10]), exponent));
@@ -1081,6 +1212,9 @@ public final class Matrix8 implements Matrix {
       loss += m15 == 0 ? pow(abs(m15 - arrMin0[13]), exponent) : (m15 == 1 ? pow(abs(m15 - arrMax1[13]), exponent) : pow(abs(m15 - arrUnclip[13]), exponent));
       loss += m16 == 0 ? pow(abs(m16 - arrMin0[14]), exponent) : (m16 == 1 ? pow(abs(m16 - arrMax1[14]), exponent) : pow(abs(m16 - arrUnclip[14]), exponent));
       loss += m17 == 0 ? pow(abs(m17 - arrMin0[15]), exponent) : (m17 == 1 ? pow(abs(m17 - arrMax1[15]), exponent) : pow(abs(m17 - arrUnclip[15]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m20 == 0 ? pow(abs(m20 - arrMin0[16]), exponent) : (m20 == 1 ? pow(abs(m20 - arrMax1[16]), exponent) : pow(abs(m20 - arrUnclip[16]), exponent));
       loss += m21 == 0 ? pow(abs(m21 - arrMin0[17]), exponent) : (m21 == 1 ? pow(abs(m21 - arrMax1[17]), exponent) : pow(abs(m21 - arrUnclip[17]), exponent));
       loss += m22 == 0 ? pow(abs(m22 - arrMin0[18]), exponent) : (m22 == 1 ? pow(abs(m22 - arrMax1[18]), exponent) : pow(abs(m22 - arrUnclip[18]), exponent));
@@ -1089,6 +1223,9 @@ public final class Matrix8 implements Matrix {
       loss += m25 == 0 ? pow(abs(m25 - arrMin0[21]), exponent) : (m25 == 1 ? pow(abs(m25 - arrMax1[21]), exponent) : pow(abs(m25 - arrUnclip[21]), exponent));
       loss += m26 == 0 ? pow(abs(m26 - arrMin0[22]), exponent) : (m26 == 1 ? pow(abs(m26 - arrMax1[22]), exponent) : pow(abs(m26 - arrUnclip[22]), exponent));
       loss += m27 == 0 ? pow(abs(m27 - arrMin0[23]), exponent) : (m27 == 1 ? pow(abs(m27 - arrMax1[23]), exponent) : pow(abs(m27 - arrUnclip[23]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m30 == 0 ? pow(abs(m30 - arrMin0[24]), exponent) : (m30 == 1 ? pow(abs(m30 - arrMax1[24]), exponent) : pow(abs(m30 - arrUnclip[24]), exponent));
       loss += m31 == 0 ? pow(abs(m31 - arrMin0[25]), exponent) : (m31 == 1 ? pow(abs(m31 - arrMax1[25]), exponent) : pow(abs(m31 - arrUnclip[25]), exponent));
       loss += m32 == 0 ? pow(abs(m32 - arrMin0[26]), exponent) : (m32 == 1 ? pow(abs(m32 - arrMax1[26]), exponent) : pow(abs(m32 - arrUnclip[26]), exponent));
@@ -1097,6 +1234,9 @@ public final class Matrix8 implements Matrix {
       loss += m35 == 0 ? pow(abs(m35 - arrMin0[29]), exponent) : (m35 == 1 ? pow(abs(m35 - arrMax1[29]), exponent) : pow(abs(m35 - arrUnclip[29]), exponent));
       loss += m36 == 0 ? pow(abs(m36 - arrMin0[30]), exponent) : (m36 == 1 ? pow(abs(m36 - arrMax1[30]), exponent) : pow(abs(m36 - arrUnclip[30]), exponent));
       loss += m37 == 0 ? pow(abs(m37 - arrMin0[31]), exponent) : (m37 == 1 ? pow(abs(m37 - arrMax1[31]), exponent) : pow(abs(m37 - arrUnclip[31]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m40 == 0 ? pow(abs(m40 - arrMin0[32]), exponent) : (m40 == 1 ? pow(abs(m40 - arrMax1[32]), exponent) : pow(abs(m40 - arrUnclip[32]), exponent));
       loss += m41 == 0 ? pow(abs(m41 - arrMin0[33]), exponent) : (m41 == 1 ? pow(abs(m41 - arrMax1[33]), exponent) : pow(abs(m41 - arrUnclip[33]), exponent));
       loss += m42 == 0 ? pow(abs(m42 - arrMin0[34]), exponent) : (m42 == 1 ? pow(abs(m42 - arrMax1[34]), exponent) : pow(abs(m42 - arrUnclip[34]), exponent));
@@ -1105,6 +1245,9 @@ public final class Matrix8 implements Matrix {
       loss += m45 == 0 ? pow(abs(m45 - arrMin0[37]), exponent) : (m45 == 1 ? pow(abs(m45 - arrMax1[37]), exponent) : pow(abs(m45 - arrUnclip[37]), exponent));
       loss += m46 == 0 ? pow(abs(m46 - arrMin0[38]), exponent) : (m46 == 1 ? pow(abs(m46 - arrMax1[38]), exponent) : pow(abs(m46 - arrUnclip[38]), exponent));
       loss += m47 == 0 ? pow(abs(m47 - arrMin0[39]), exponent) : (m47 == 1 ? pow(abs(m47 - arrMax1[39]), exponent) : pow(abs(m47 - arrUnclip[39]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m50 == 0 ? pow(abs(m50 - arrMin0[40]), exponent) : (m50 == 1 ? pow(abs(m50 - arrMax1[40]), exponent) : pow(abs(m50 - arrUnclip[40]), exponent));
       loss += m51 == 0 ? pow(abs(m51 - arrMin0[41]), exponent) : (m51 == 1 ? pow(abs(m51 - arrMax1[41]), exponent) : pow(abs(m51 - arrUnclip[41]), exponent));
       loss += m52 == 0 ? pow(abs(m52 - arrMin0[42]), exponent) : (m52 == 1 ? pow(abs(m52 - arrMax1[42]), exponent) : pow(abs(m52 - arrUnclip[42]), exponent));
@@ -1113,6 +1256,9 @@ public final class Matrix8 implements Matrix {
       loss += m55 == 0 ? pow(abs(m55 - arrMin0[45]), exponent) : (m55 == 1 ? pow(abs(m55 - arrMax1[45]), exponent) : pow(abs(m55 - arrUnclip[45]), exponent));
       loss += m56 == 0 ? pow(abs(m56 - arrMin0[46]), exponent) : (m56 == 1 ? pow(abs(m56 - arrMax1[46]), exponent) : pow(abs(m56 - arrUnclip[46]), exponent));
       loss += m57 == 0 ? pow(abs(m57 - arrMin0[47]), exponent) : (m57 == 1 ? pow(abs(m57 - arrMax1[47]), exponent) : pow(abs(m57 - arrUnclip[47]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m60 == 0 ? pow(abs(m60 - arrMin0[48]), exponent) : (m60 == 1 ? pow(abs(m60 - arrMax1[48]), exponent) : pow(abs(m60 - arrUnclip[48]), exponent));
       loss += m61 == 0 ? pow(abs(m61 - arrMin0[49]), exponent) : (m61 == 1 ? pow(abs(m61 - arrMax1[49]), exponent) : pow(abs(m61 - arrUnclip[49]), exponent));
       loss += m62 == 0 ? pow(abs(m62 - arrMin0[50]), exponent) : (m62 == 1 ? pow(abs(m62 - arrMax1[50]), exponent) : pow(abs(m62 - arrUnclip[50]), exponent));
@@ -1121,6 +1267,9 @@ public final class Matrix8 implements Matrix {
       loss += m65 == 0 ? pow(abs(m65 - arrMin0[53]), exponent) : (m65 == 1 ? pow(abs(m65 - arrMax1[53]), exponent) : pow(abs(m65 - arrUnclip[53]), exponent));
       loss += m66 == 0 ? pow(abs(m66 - arrMin0[54]), exponent) : (m66 == 1 ? pow(abs(m66 - arrMax1[54]), exponent) : pow(abs(m66 - arrUnclip[54]), exponent));
       loss += m67 == 0 ? pow(abs(m67 - arrMin0[55]), exponent) : (m67 == 1 ? pow(abs(m67 - arrMax1[55]), exponent) : pow(abs(m67 - arrUnclip[55]), exponent));
+      if ((float) loss > bound) {
+        return (float) loss;
+      }
       loss += m70 == 0 ? pow(abs(m70 - arrMin0[56]), exponent) : (m70 == 1 ? pow(abs(m70 - arrMax1[56]), exponent) : pow(abs(m70 - arrUnclip[56]), exponent));
       loss += m71 == 0 ? pow(abs(m71 - arrMin0[57]), exponent) : (m71 == 1 ? pow(abs(m71 - arrMax1[57]), exponent) : pow(abs(m71 - arrUnclip[57]), exponent));
       loss += m72 == 0 ? pow(abs(m72 - arrMin0[58]), exponent) : (m72 == 1 ? pow(abs(m72 - arrMax1[58]), exponent) : pow(abs(m72 - arrUnclip[58]), exponent));

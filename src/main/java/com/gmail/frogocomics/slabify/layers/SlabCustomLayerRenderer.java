@@ -29,6 +29,12 @@ public final class SlabCustomLayerRenderer implements BitLayerRenderer, Dimensio
   private final float opacity;
   private Dimension dimension;
 
+  /**
+   * Create a new renderer.
+   *
+   * @param color   the color, as an RGB value.
+   * @param opacity the opacity, from 0 to 1.
+   */
   public SlabCustomLayerRenderer(int color, float opacity) {
     this.color = color;
     this.opacity = opacity;

@@ -23,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Material;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.pepsoft.minecraft.Constants.MC_FACING;
 import static org.pepsoft.minecraft.Constants.MC_HALF;
@@ -36,7 +37,7 @@ public final class CornerSlabShape extends Shape {
 
   public static final String NAME = "corner_slab";
 
-  private final Map<String, Material[]> materials = new HashMap<>();
+  private final Map<String, Material[]> materials = new ConcurrentHashMap<>();
   private final Matrix shape = Matrix.of(new float[][]{
       {0.5f, 0.5f},
       {0.5f, 0}
@@ -57,12 +58,7 @@ public final class CornerSlabShape extends Shape {
 
       List<Matrix> shapes = new ArrayList<>();
 
-      int[] angles = {90, 180, 270};
-
-      shapes.add(upscaledShape);
-      for (int angle : angles) {
-        shapes.add(upscaledShape.rotate(angle));
-      }
+      addRotations(shapes, upscaledShape);
 
       return Optional.of(shapes);
     }

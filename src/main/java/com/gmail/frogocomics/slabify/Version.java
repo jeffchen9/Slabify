@@ -19,6 +19,7 @@
 package com.gmail.frogocomics.slabify;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -30,9 +31,8 @@ public final class Version {
 
   static {
     Properties versionProps = new Properties();
-    try {
-      versionProps.load(
-          Version.class.getResourceAsStream("/com.gmail.frogocomics.slabify.properties"));
+    try (InputStream stream = Version.class.getResourceAsStream("/com.gmail.frogocomics.slabify.properties")) {
+      versionProps.load(stream);
       VERSION = versionProps.getProperty("com.gmail.frogocomics.slabify.version");
     } catch (IOException e) {
       throw new RuntimeException("I/O error loading version number from classpath", e);

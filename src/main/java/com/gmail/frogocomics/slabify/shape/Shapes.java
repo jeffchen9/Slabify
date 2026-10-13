@@ -36,7 +36,6 @@ import java.util.*;
  */
 public final class Shapes {
   public static final List<Shape> shapesList = new ArrayList<>();
-  public static final List<Shape> stackableShapesList = new ArrayList<>();
   public static final BiMap<Integer, String> shapesMap = HashBiMap.create();
 
   // Key: block, Values: block for each shape
@@ -68,10 +67,6 @@ public final class Shapes {
 
     for (int i = 0; i < shapesList.size(); i++) {
       shapesMap.put(i, shapesList.get(i).getName());
-
-      if (shapesList.get(i).supportsStacking()) {
-        stackableShapesList.add(shapesList.get(i));
-      }
     }
 
     // Get the block mapping list
@@ -94,13 +89,13 @@ public final class Shapes {
 
       for (String[] row : rows) {
         String[] arr = new String[shapesList.size()];
-        String baseMaterial = row[0].contains(":") ? row[0] : Constants.MC_NAMESPACE + ":" + row[0];
+        String baseMaterial = Utils.withNamespace(row[0]);
         for (int i = 1; i < row.length; i++) {
           // Skip first element
           if (row[i].isEmpty()) {
             arr[indices[i]] = null;
           } else {
-            arr[indices[i]] = row[i].contains(":") ? row[i] : Constants.MC_NAMESPACE + ":" + row[i];
+            arr[indices[i]] = Utils.withNamespace(row[i]);
           }
         }
 
@@ -111,6 +106,19 @@ public final class Shapes {
     }
   }
 
+  /**
+   * Find the most similar shapes, with stacking. Unlike
+   * {@link #findMostSimilarShapes(float[][], int, List, List, boolean, boolean[][])}, each cell only covers the range of
+   * z values it needs, rather than the range of the whole difference map.
+   *
+   * @param differenceMap        the difference map.
+   * @param resolution           the upscaled resolution.
+   * @param shapeMatrices        a list of all the available shape matrices.
+   * @param shapeMatricesStacked a list of all the available shape matrices for stacked shapes.
+   * @param mask                 {@code true} for each cell that needs shapes; other cells are skipped.
+   * @return the most similar shapes as a shapemap. The final dimension is an array of indices in the order of
+   * closeness.
+   */
   public static Shapemap findMostSimilarShapesRagged(float[][] differenceMap, int resolution, List<Matrix> shapeMatrices,
                                                List<Matrix> shapeMatricesStacked, boolean[][] mask) {
     int height = differenceMap.length / resolution;
@@ -124,10 +132,6 @@ public final class Shapes {
     float[] scratch3 = new float[resolutionSquared];
     float[] scratch4 = new float[resolutionSquared];
     long[] scratch5 = new long[maxShapeSize];
-
-    int fullIdx = shapeMatrices.size() - 2;
-    int emptyIdx = shapeMatrices.size() - 1;
-    int fullStackedIdx = shapeMatricesStacked.size() - 2;
 
     int totalMapSize = 0;
 
@@ -169,8 +173,8 @@ public final class Shapes {
       }
     }
 
-    int[] shapeMap = new int[totalMapSize];
-    Arrays.fill(shapeMap, -1);
+    short[] shapeMap = new short[totalMapSize];
+    Arrays.fill(shapeMap, (short) -1);
 
     for (int x = 0; x < height; x++) {
       int rowBase = x * resolution;
@@ -194,30 +198,8 @@ public final class Shapes {
           scratch[i] -= localMinHeight;
         }
 
-        boolean top = true;
-
-        for (int i = localVertDiff - 1; i >= 0; i--) {
-          int targetOffset = baseOffset + (i * maxShapeSize);
-
-          for (int j = 0; j < resolutionSquared; j++) {
-            float val = scratch[j] - i;
-            scratch2[j] = val;
-            scratch3[j] = Math.max(0f, val);
-            scratch4[j] = Math.min(1f, val);
-          }
-
-          if (Utils.allAtOrBelowZero(scratch2)) {
-            shapeMap[targetOffset] = emptyIdx;
-          } else if (Utils.allAtOrAboveOne(scratch2)) {
-            shapeMap[targetOffset] = top ? fullIdx : fullStackedIdx;
-          } else {
-            Shapes.findMostSimilarShape(shapeMap, targetOffset, scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
-          }
-
-          if (shapeMap[targetOffset] != emptyIdx) {
-            top = false;
-          }
-        }
+        rankLevels(shapeMap, baseOffset, localVertDiff, maxShapeSize, scratch, scratch2, scratch3, scratch4, scratch5,
+            shapeMatrices, shapeMatricesStacked);
       }
     }
 
@@ -255,12 +237,8 @@ public final class Shapes {
       int minHeight = (int) Math.floor(maxMin.getValue1());
       int vertDiff = maxHeight - minHeight;
 
-      int fullIdx = shapeMatrices.size() - 2;
-      int emptyIdx = shapeMatrices.size() - 1;
-      int fullStackedIdx = shapeMatricesStacked.size() - 2;
-
-      int[] shapeMap = new int[height * width * vertDiff * maxShapeSize];
-      Arrays.fill(shapeMap, -1);
+      short[] shapeMap = new short[height * width * vertDiff * maxShapeSize];
+      Arrays.fill(shapeMap, (short) -1);
 
       // Make minHeight equal to 0
       for (int i = 0; i < differenceMap.length; i++) {
@@ -290,35 +268,14 @@ public final class Shapes {
             );
           }
 
-          boolean top = true;
-
-          for (int i = vertDiff - 1; i >= 0; i--) {
-            int targetOffset = baseOffset + (i * maxShapeSize);
-            for (int j = 0; j < resolutionSquared; j++) {
-              float val = scratch[j] - i;
-              scratch2[j] = val;
-              scratch3[j] = Math.max(0f, val);
-              scratch4[j] = Math.min(1f, val);
-            }
-
-            if (Utils.allAtOrBelowZero(scratch2)) {
-              shapeMap[targetOffset] = emptyIdx;
-            } else if (Utils.allAtOrAboveOne(scratch2)) {
-              shapeMap[targetOffset] = top ? fullIdx : fullStackedIdx;
-            } else {
-              Shapes.findMostSimilarShape(shapeMap, targetOffset, scratch2, scratch3, scratch4, top ? shapeMatrices : shapeMatricesStacked, scratch5);
-            }
-
-            if (shapeMap[targetOffset] != emptyIdx) {
-              top = false;
-            }
-          }
+          rankLevels(shapeMap, baseOffset, vertDiff, maxShapeSize, scratch, scratch2, scratch3, scratch4, scratch5,
+              shapeMatrices, shapeMatricesStacked);
         }
       }
 
       return new StackedShapemap(shapeMap, minHeight, maxHeight, maxShapeSize);
     } else {
-      int[] shapeMap = new int[height * width * shapeSize];
+      short[] shapeMap = new short[height * width * shapeSize];
 
       for (int x = 0; x < height; x++) {
         int rowBase = x * resolution;
@@ -344,34 +301,108 @@ public final class Shapes {
     }
   }
 
-  public static void findMostSimilarShape(int[] flatMap, int targetOffset, float[] difference, List<Matrix> matrices, long[] scratch) {
-    int size = matrices.size();
+  /**
+   * Rank the shapes for each level of one cell, from the top down. Levels use the full shape list until the first one
+   * whose closest shape is not empty, and the stackable shape list below it.
+   *
+   * @param scratch the cell's difference values, relative to the bottom of the lowest level.
+   */
+  private static void rankLevels(short[] shapeMap, int baseOffset, int levels, int maxShapeSize, float[] scratch,
+                                 float[] scratch2, float[] scratch3, float[] scratch4, long[] scratch5,
+                                 List<Matrix> shapeMatrices, List<Matrix> shapeMatricesStacked) {
+    int fullIdx = shapeMatrices.size() - 2;
+    int emptyIdx = shapeMatrices.size() - 1;
+    int fullStackedIdx = shapeMatricesStacked.size() - 2;
+    boolean top = true;
 
-    for (int i = 0; i < size; i++) {
-      float loss = matrices.get(i).getLoss(difference, Constants.LOSS_EXPONENT);
-      scratch[i] = ((long) Float.floatToRawIntBits(loss) << 32) | (i & 0xFFFFFFFFL);
-    }
-    Arrays.sort(scratch, 0, size);
+    for (int i = levels - 1; i >= 0; i--) {
+      int targetOffset = baseOffset + (i * maxShapeSize);
 
-    for (int i = 0; i < size; i++) {
-      flatMap[targetOffset + i] = (int) (scratch[i] & 0xFFFFFFFFL);
+      for (int j = 0; j < scratch.length; j++) {
+        float val = scratch[j] - i;
+        scratch2[j] = val;
+        scratch3[j] = Math.max(0f, val);
+        scratch4[j] = Math.min(1f, val);
+      }
+
+      if (Utils.allAtOrBelowZero(scratch2)) {
+        shapeMap[targetOffset] = (short) emptyIdx;
+      } else if (Utils.allAtOrAboveOne(scratch2)) {
+        shapeMap[targetOffset] = (short) (top ? fullIdx : fullStackedIdx);
+      } else {
+        findMostSimilarShape(shapeMap, targetOffset, scratch2, scratch3, scratch4,
+            top ? shapeMatrices : shapeMatricesStacked, scratch5);
+      }
+
+      if (shapeMap[targetOffset] != emptyIdx) {
+        top = false;
+      }
     }
   }
 
-  public static void findMostSimilarShape(int[] flatMap, int targetOffset, float[] differenceUnclip, float[] differenceMin0, float[] differenceMax1, List<Matrix> matrices, long[] scratch) {
+  /**
+   * Rank all shapes by similarity. The last two matrices must be the full and empty shapes, which are allowed for every
+   * block, so the ranking is never read past the better of the two. Other shapes therefore stop being scored once their
+   * loss exceeds its loss; such shapes still rank after it, so every index that can be read is unchanged.
+   */
+  public static void findMostSimilarShape(short[] flatMap, int targetOffset, float[] difference, List<Matrix> matrices, long[] scratch) {
     int size = matrices.size();
+    float fullLoss = matrices.get(size - 2).getLoss(difference, Constants.LOSS_EXPONENT, Float.POSITIVE_INFINITY);
+    float emptyLoss = matrices.get(size - 1).getLoss(difference, Constants.LOSS_EXPONENT, Float.POSITIVE_INFINITY);
+    float bound = Math.min(fullLoss, emptyLoss);
 
-    for (int i = 0; i < size; i++) {
-      float loss = matrices.get(i).getLossClip(differenceUnclip, differenceMin0, differenceMax1, Constants.LOSS_EXPONENT);
-      scratch[i] = ((long) Float.floatToRawIntBits(loss) << 32) | (i & 0xFFFFFFFFL);
+    for (int i = 0; i < size - 2; i++) {
+      scratch[i] = sortKey(matrices.get(i).getLoss(difference, Constants.LOSS_EXPONENT, bound), i);
     }
+    scratch[size - 2] = sortKey(fullLoss, size - 2);
+    scratch[size - 1] = sortKey(emptyLoss, size - 1);
     Arrays.sort(scratch, 0, size);
 
     for (int i = 0; i < size; i++) {
-      flatMap[targetOffset + i] = (int) (scratch[i] & 0xFFFFFFFFL);
+      flatMap[targetOffset + i] = (short) (scratch[i] & 0xFFFFFFFFL);
     }
   }
 
+  /**
+   * Rank all shapes by similarity using the clipped loss. Stops scoring early in the same way as
+   * {@link #findMostSimilarShape(short[], int, float[], List, long[])}.
+   */
+  public static void findMostSimilarShape(short[] flatMap, int targetOffset, float[] differenceUnclip, float[] differenceMin0, float[] differenceMax1, List<Matrix> matrices, long[] scratch) {
+    int size = matrices.size();
+    float fullLoss = matrices.get(size - 2).getLossClip(differenceUnclip, differenceMin0, differenceMax1,
+        Constants.LOSS_EXPONENT, Float.POSITIVE_INFINITY);
+    float emptyLoss = matrices.get(size - 1).getLossClip(differenceUnclip, differenceMin0, differenceMax1,
+        Constants.LOSS_EXPONENT, Float.POSITIVE_INFINITY);
+    float bound = Math.min(fullLoss, emptyLoss);
+
+    for (int i = 0; i < size - 2; i++) {
+      scratch[i] = sortKey(matrices.get(i).getLossClip(differenceUnclip, differenceMin0, differenceMax1,
+          Constants.LOSS_EXPONENT, bound), i);
+    }
+    scratch[size - 2] = sortKey(fullLoss, size - 2);
+    scratch[size - 1] = sortKey(emptyLoss, size - 1);
+    Arrays.sort(scratch, 0, size);
+
+    for (int i = 0; i < size; i++) {
+      flatMap[targetOffset + i] = (short) (scratch[i] & 0xFFFFFFFFL);
+    }
+  }
+
+  /**
+   * Pack a loss and shape index into a key that sorts by loss, then by index. Losses are never negative, so their bits
+   * sort in the same order as their values.
+   */
+  private static long sortKey(float loss, int i) {
+    return ((long) Float.floatToRawIntBits(loss) << 32) | (i & 0xFFFFFFFFL);
+  }
+
+  /**
+   * Get the block to use for a shape of a material.
+   *
+   * @param shape        the shape.
+   * @param baseMaterial the name of the material.
+   * @return the name of the block, or {@code null} if the shape is not available for the material.
+   */
   @Nullable
   public static String getMaterial(Shape shape, String baseMaterial) {
 
@@ -390,6 +421,12 @@ public final class Shapes {
     return index != null ? row[index] : null;
   }
 
+  /**
+   * Check if a material is in the block mapping.
+   *
+   * @param baseMaterial the name of the material.
+   * @return {@code true} if the material is in the block mapping.
+   */
   public static boolean isAvailable(String baseMaterial) {
     return mappings.containsKey(baseMaterial);
   }

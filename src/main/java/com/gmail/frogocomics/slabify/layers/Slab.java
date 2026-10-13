@@ -64,6 +64,12 @@ public final class Slab extends CustomLayer {
   private Interpolation interpolation = Interpolation.BILINEAR;
   private boolean stacking = false;
 
+  /**
+   * Create a new slab layer.
+   *
+   * @param name     the name of the layer.
+   * @param material the material to use when the layer does not mimic the terrain.
+   */
   public Slab(String name, MixedMaterial material) {
     // Load slab icon from resources
     super(name, "A layer of " + material.getName() + " slab on top of the terrain", DataSize.BIT,
