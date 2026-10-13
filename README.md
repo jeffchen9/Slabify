@@ -4,7 +4,7 @@
 </h1>
 
 This is a _WorldPainter_ plugin designed to add slab and stair detail to terrain and increase
-the effective resolution of the terrain. **Current version: 1.0.5**
+the effective resolution of the terrain. **Current version: 1.0.6**
 
 
 <h2>
@@ -67,7 +67,7 @@ Creating a slab layer is done in a similar manner to a custom object layer.
 All the shapes should be self-explanatory. Note that in Vanilla Minecraft, the shape is only available for
 `minecraft:snow_block` (as snow layers). No issues will arise if a shape that is not available is selected.
 
-**Advanced**: After running the plugin at least once, there should be a file `%AppData%/Roaming/WorldPainter/mapping.csv`.
+**Advanced**: After running the plugin at least once, there should be a file `%AppData%/Roaming/WorldPainter/mappings.csv`.
 This file links together blocks and their slab and stair (and Conquest shape) variants. The first column represents
 the block to be entered and the remaining columns represent the variants connected to that block. If you
 are unsure which block to enter to get a certain slab material, this file is your guide. While you can also
