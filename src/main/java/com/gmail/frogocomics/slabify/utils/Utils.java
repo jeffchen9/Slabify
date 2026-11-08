@@ -22,6 +22,7 @@ import com.gmail.frogocomics.slabify.Constants;
 import com.gmail.frogocomics.slabify.layers.Slab.Interpolation;
 import com.gmail.frogocomics.slabify.shape.Shapes;
 import org.javatuples.Pair;
+import org.pepsoft.minecraft.Material;
 import org.pepsoft.worldpainter.Configuration;
 import org.pepsoft.worldpainter.Dimension;
 import org.pepsoft.worldpainter.Tile;
@@ -32,6 +33,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
 import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
 /**
@@ -291,7 +293,7 @@ public final class Utils {
    * @param arr  the array.
    * @param mask the mask; only when the value true will the point be considered in the calculation of the maximum and
    *             minimum.
-   * @return the maximum and minimum value, as a pair.
+   * @return the maximum and minimum value, as a pair, or 0 for both if no point is considered.
    */
   public static Pair<Float, Float> findMinAndMax(float[][] arr, boolean[][] mask, int resolution) {
     float min = Integer.MAX_VALUE;
@@ -322,6 +324,11 @@ public final class Utils {
 
 
       }
+    }
+
+    // No point was considered, as when a tile still holds the layer's data after all of it was erased
+    if (min > max) {
+      return new Pair<>(0f, 0f);
     }
 
     return new Pair<>(max, min);
@@ -360,6 +367,21 @@ public final class Utils {
   }
 
   /**
+   * Waterlog a material, if it can be waterlogged. Blocks that are not in WorldPainter's database, such as Conquest
+   * blocks, have no known properties and are assumed to be waterloggable.
+   *
+   * @param material the material.
+   * @return the waterlogged material, or {@code material} itself if it cannot be waterlogged (such as snow layers).
+   */
+  public static Material waterlog(Material material) {
+    if (material.propertyDescriptors == null || material.hasProperty(MC_WATERLOGGED)) {
+      return material.withProperty(MC_WATERLOGGED, "true");
+    }
+
+    return material;
+  }
+
+  /**
    * Copy a file from resources to the configuration folder.
    *
    * @param fileName the name of the resource.
@@ -392,6 +414,16 @@ public final class Utils {
    */
   public static String withNamespace(String name) {
     return name.contains(":") ? name : Constants.MC_NAMESPACE + ":" + name;
+  }
+
+  /**
+   * Clean a namespace or block name by lowering its case and removing the characters that are not allowed in it.
+   *
+   * @param name the namespace or block name.
+   * @return the cleaned namespace or block name.
+   */
+  public static String cleanId(String name) {
+    return name.toLowerCase().replaceAll("[^a-z0-9_]", "");
   }
 
   /**

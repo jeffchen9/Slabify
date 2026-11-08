@@ -94,6 +94,9 @@ public final class Slab extends CustomLayer {
   private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
     stream.defaultReadObject();
 
+    // Remove shapes that are not in the shapes list
+    shapes.keySet().retainAll(Shapes.shapesMap.values());
+
     // For shapes that do not exist in the shapes list add default option
     for (Shape shape : Shapes.shapesList) {
       String shapeName = shape.getName();

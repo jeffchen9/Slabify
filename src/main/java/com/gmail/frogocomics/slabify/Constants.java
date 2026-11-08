@@ -64,7 +64,7 @@ public final class Constants {
       try {
         CORRECT = Boolean.parseBoolean(s);
       } catch (NumberFormatException ignored) {
-        // Keep default of false
+        // Keep default
       }
     }
   }

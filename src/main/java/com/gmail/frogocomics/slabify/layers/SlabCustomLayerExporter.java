@@ -45,7 +45,6 @@ import static com.gmail.frogocomics.slabify.Constants.CHUNK_SIZE;
 import static com.gmail.frogocomics.slabify.Constants.CQ_NAMESPACE;
 import static org.pepsoft.minecraft.Constants.MC_HALF;
 import static org.pepsoft.minecraft.Constants.MC_WATER;
-import static org.pepsoft.minecraft.Constants.MC_WATERLOGGED;
 import static org.pepsoft.worldpainter.Constants.TILE_SIZE;
 
 public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> implements
@@ -72,10 +71,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
   private final Set<Integer> allIndices = new HashSet<>();
   private final Map<String, Set<Integer>> availableIndicesNoLayer = new HashMap<>();
   private final Map<String, Set<Integer>> availableIndicesStacked = new HashMap<>();
-  // WorldPainter renders a region one column of chunks at a time, which touches at most 6 tiles: the region's 4, plus
-  // the tiles bordering it above and below, which only have their edge chunks rendered. Keeping the 8 most recently used
-  // shapemaps covers every tile in use while releasing finished and bordering tiles. A tile evicted too early is just
-  // recomputed, as shapemaps are deterministic.
+  // Rendering a column of chunks touches at most 6 tiles, so the 8 most recently used shapemaps cover those in use
   private static final int MAX_CACHED_SHAPEMAPS = 8;
   private final Map<Tile, Shapemap> shapemaps = new LinkedHashMap<>(16, 0.75f, true) {
     @Override
@@ -361,9 +357,7 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
             int localMinZ = shapemap.getMinZ(localX, localZ);
 
             for (int relZ = localRange - 1; relZ >= 0; relZ--) {
-              // Must switch to the stackable shape list at the same level as the shapemap, whose indices refer to that
-              // list for every level below the first one whose closest shape is not empty, whether or not anything is
-              // placed there
+              // Switch lists where the shapemap does: below the first level whose closest shape is not empty
               boolean top = !topFound;
               if (top && shapemap.getIndexAt(localX, localZ, relZ, allIndices) != emptyIdx) {
                 topFound = true;
@@ -400,13 +394,20 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               Shape shape = top ? listShapes[idx] : listShapesStacked[idx];
               if (!(shape instanceof FullShape) && (isWater(blockAbove)
                   || terrainHeight + relZ + localMinZ < tile.getWaterLevel(localX, localZ))) {
-                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+                slabMaterial = Utils.waterlog(slabMaterial);
               }
 
               int h = terrainHeight + relZ + localMinZ + 1;
-              if (h < maxHeight && h >= minHeight) {
-                shape.place(worldX, h, worldZ, x, z, chunk, slabMaterial, baseMaterial);
+              if (h >= maxHeight || h < minHeight) {
+                continue;
               }
+
+              // Above the terrain, only full blocks replace everything, as without stacking; below it, shapes cut in
+              if (h > terrainHeight && !(shape instanceof FullShape) && !canReplace(chunk.getMaterial(x, h, z))) {
+                continue;
+              }
+
+              shape.place(worldX, h, worldZ, x, z, chunk, slabMaterial, baseMaterial);
             }
           } else { // No block stacking
             // Get blocks
@@ -427,10 +428,6 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
             Material blockTwoAbove =
                 (terrainHeight < maxHeight - 2) ? chunk.getMaterial(x, terrainHeight + 2, z)
-                    : null;
-
-            Material blockThreeAbove =
-                (terrainHeight < maxHeight - 3) ? chunk.getMaterial(x, terrainHeight + 3, z)
                     : null;
 
             Material baseMaterial = layer.mimicsTerrain() ? mapping.get(materialStr)
@@ -466,29 +463,35 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
 
             if (height == 1) {
               // Full blocks will replace everything no matter what
-              if (!(listShapes[idx] instanceof FullShape)) {
-                if (layer.replacesNonSolidBlocks() && blockAbove.solid) {
-                  continue;
-                }
-
-                if (!layer.replacesNonSolidBlocks() && blockAbove != Material.AIR && !isWater(blockAbove)) {
-                  continue;
-                }
+              if (!(listShapes[idx] instanceof FullShape) && !canReplace(blockAbove)) {
+                continue;
               }
 
               // Check for waterlogging; full blocks cannot be waterlogged
               if (!(listShapes[idx] instanceof FullShape) && (isWater(blockAbove)
                   || terrainHeight + 1 < tile.getWaterLevel(localX, localZ))) {
-                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+                slabMaterial = Utils.waterlog(slabMaterial);
               }
 
               // Place the block
               listShapes[idx].place(worldX, terrainHeight + 1, worldZ, x, z, chunk, slabMaterial, baseMaterial);
 
-              if (Constants.CORRECT && isDoubleBlock(blockAbove, blockTwoAbove)) {
-                chunk.setMaterial(x, terrainHeight + 2, z, Material.AIR);
+              if (Constants.CORRECT) {
+                if (listShapes[idx] instanceof FullShape) {
+                  // Plants can stand on a full block, but not the upper half of a tall plant whose lower half it replaced
+                  if (isDoubleBlock(blockAbove, blockTwoAbove)) {
+                    chunk.setMaterial(x, terrainHeight + 2, z, emptied(blockTwoAbove));
+                  }
+                } else {
+                  removeUnsupported(chunk, x, terrainHeight + 1, z);
+                }
               }
             } else if (height == 2) {
+              // The base only replaces what the shape could, or it could leave the top of a tall plant floating
+              if (!canReplace(blockAbove)) {
+                continue;
+              }
+
               // Set the base material
               chunk.setMaterial(x, terrainHeight + 1, z, baseMaterial);
 
@@ -497,39 +500,34 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
               }
 
               // Full blocks will replace everything no matter what
-              if (!(listShapes[idx] instanceof FullShape)) {
-                if (layer.replacesNonSolidBlocks() && blockTwoAbove.solid) {
-                  continue;
-                }
-
-                if (!layer.replacesNonSolidBlocks() && blockTwoAbove != Material.AIR && !isWater(blockTwoAbove)) {
-                  continue;
-                }
+              if (!(listShapes[idx] instanceof FullShape) && !canReplace(blockTwoAbove)) {
+                continue;
               }
 
               // Check for waterlogging (the full shape is only ever registered at height 1)
               if (isWater(blockTwoAbove) || terrainHeight + 2 < tile.getWaterLevel(localX, localZ)) {
-                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+                slabMaterial = Utils.waterlog(slabMaterial);
               }
 
               // Place the block
               listShapes[idx].place(worldX, terrainHeight + 2, worldZ, x, z, chunk, slabMaterial, baseMaterial);
 
-              if (Constants.CORRECT && isDoubleBlock(blockTwoAbove, blockThreeAbove)) {
-                chunk.setMaterial(x, terrainHeight + 3, z, Material.AIR);
+              if (Constants.CORRECT) {
+                removeUnsupported(chunk, x, terrainHeight + 2, z);
               }
             } else { // Cut, height == 0
               // Check for waterlogging
               if (isWater(blockBelow) || (blockAbove != null && isWater(blockAbove))
                   || terrainHeight <= tile.getWaterLevel(localX, localZ)) {
-                slabMaterial = slabMaterial.withProperty(MC_WATERLOGGED, "true");
+                slabMaterial = Utils.waterlog(slabMaterial);
               }
 
               // Place the block
               listShapes[idx].place(worldX, terrainHeight, worldZ, x, z, chunk, slabMaterial, baseMaterial);
 
-              if (Constants.CORRECT && isDoubleBlock(blockBelow, blockAbove)) {
-                chunk.setMaterial(x, terrainHeight + 1, z, Material.AIR);
+              // Plants that stood on the terrain block now stand on the shape
+              if (Constants.CORRECT) {
+                removeUnsupported(chunk, x, terrainHeight, z);
               }
             }
           }
@@ -571,6 +569,17 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
   }
 
   /**
+   * Check whether a shape other than a full block may replace a block that is already there. If the layer replaces
+   * non-solid blocks, any non-solid block may be replaced; otherwise only air and water.
+   *
+   * @param existing the block that is already there.
+   * @return {@code true} if the shape may replace the block.
+   */
+  private boolean canReplace(Material existing) {
+    return layer.replacesNonSolidBlocks() ? !existing.solid : (existing == Material.AIR || isWater(existing));
+  }
+
+  /**
    * Check whether two blocks form a double-height block such as tall grass.
    *
    * @param lower the lower block.
@@ -580,5 +589,40 @@ public final class SlabCustomLayerExporter extends AbstractLayerExporter<Slab> i
   private boolean isDoubleBlock(@Nullable Material lower, @Nullable Material upper) {
       return lower != null && upper != null && lower.hasProperty(MC_HALF) && lower.getProperty(MC_HALF).equals("lower") &&
           upper.hasProperty(MC_HALF) && upper.getProperty(MC_HALF).equals("upper") && lower.name.equals(upper.name);
+  }
+
+  /**
+   * Remove the blocks standing on a block that was replaced by a shape they cannot stand on, such as plants, both halves
+   * of tall plants, stacks of sugar cane and snow. These are the blocks that WorldPainter considers insubstantial; blocks
+   * it does not know, such as Conquest blocks, are left alone. WorldPainter's own removal of unsupported plants cannot be
+   * relied on, as it can be turned off.
+   *
+   * @param chunk the chunk.
+   * @param x     the chunk X coordinate.
+   * @param y     the height of the replaced block.
+   * @param z     the chunk Z coordinate.
+   */
+  private void removeUnsupported(Chunk chunk, int x, int y, int z) {
+    for (int h = y + 1; h < maxHeight; h++) {
+      Material material = chunk.getMaterial(x, h, z);
+
+      // Air and water are not insubstantial, so this stops at the top of whatever rested on the block
+      if (!material.insubstantial) {
+        break;
+      }
+
+      chunk.setMaterial(x, h, z, emptied(material));
+    }
+  }
+
+  /**
+   * Get the block to leave in place of a removed block: water if it held water, such as seagrass, so that no air pocket
+   * is left underwater, otherwise air.
+   *
+   * @param removed the removed block.
+   * @return the block to leave in its place.
+   */
+  private static Material emptied(Material removed) {
+    return isWater(removed) ? Material.STATIONARY_WATER : Material.AIR;
   }
 }

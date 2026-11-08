@@ -25,6 +25,8 @@ import com.gmail.frogocomics.slabify.utils.Utils;
 import org.jspecify.annotations.Nullable;
 import org.pepsoft.minecraft.Chunk;
 import org.pepsoft.minecraft.Material;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +38,8 @@ import java.util.*;
  * This shape is available in Vanilla.
  */
 public final class HeadShape extends Shape {
+
+  private static final Logger logger = LoggerFactory.getLogger(HeadShape.class);
 
   public static final String NAME = "head";
   public static final String BLOCK = "minecraft:player_head";
@@ -62,6 +66,15 @@ public final class HeadShape extends Shape {
       rows = Utils.readCsv(mappingFile);
 
       for (String[] row : rows) {
+        // Line without a texture is skipped rather than stopping the plugin
+        if (row.length < 2) {
+          if (row.length == 1 && !row[0].isEmpty()) {
+            logger.warn("{} in {} has no texture, so it is ignored", row[0], mappingFile);
+          }
+
+          continue;
+        }
+
         String name = row[0];
         heads.put(Utils.withNamespace(name), row[1]);
       }

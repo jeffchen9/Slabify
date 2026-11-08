@@ -26,6 +26,8 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import org.javatuples.Pair;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +37,8 @@ import java.util.*;
  * Utility class for assigning the most appropriate shape to use to add detail to terrain.
  */
 public final class Shapes {
+  private static final Logger logger = LoggerFactory.getLogger(Shapes.class);
+
   public static final List<Shape> shapesList = new ArrayList<>();
   public static final BiMap<Integer, String> shapesMap = HashBiMap.create();
 
@@ -76,22 +80,48 @@ public final class Shapes {
     try {
       List<String[]> rows = Utils.readCsv(mappingFile);
 
+      // The file can be edited by hand, so mistakes logged and skipped rather than stopping the plugin
+      if (rows.isEmpty()) {
+        logger.warn("{} is empty, so no blocks have shapes", mappingFile);
+        return;
+      }
+
       // Get and remove header row
       String[] shapes = rows.get(0);
       rows.remove(0);
-      // In = csv index; out = index in shapes list
+      // In = csv index; out = index in shapes list, or -1 for a column that is not a shape
       int[] indices = new int[shapes.length];
 
       for (int i = 1; i < shapes.length; i++) {
         // Skip first element
-        indices[i] = shapesMap.inverse().get(shapes[i]);
+        Integer index = shapesMap.inverse().get(shapes[i].trim());
+
+        if (index == null) {
+          logger.warn("Column \"{}\" of {} is not a shape, so it is ignored", shapes[i], mappingFile);
+        }
+
+        indices[i] = index == null ? -1 : index;
       }
 
       for (String[] row : rows) {
+        // A blank line, or one of only commas, which splits into nothing
+        if (row.length == 0 || row[0].isEmpty()) {
+          continue;
+        }
+
+        if (row.length > shapes.length) {
+          logger.warn("The row for {} in {} has more cells than there are columns; the extra cells are ignored", row[0],
+              mappingFile);
+        }
+
         String[] arr = new String[shapesList.size()];
         String baseMaterial = Utils.withNamespace(row[0]);
-        for (int i = 1; i < row.length; i++) {
+        for (int i = 1; i < Math.min(row.length, shapes.length); i++) {
           // Skip first element
+          if (indices[i] == -1) {
+            continue;
+          }
+
           if (row[i].isEmpty()) {
             arr[indices[i]] = null;
           } else {
